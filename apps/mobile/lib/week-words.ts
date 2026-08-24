@@ -1,6 +1,8 @@
 import {
   fmtKm,
   fmtTonnage,
+  disciplinePaceFigure,
+  formatDisciplinePace,
   fmtWeight,
   formatDuration,
   durationUnits,
@@ -9,6 +11,7 @@ import {
   sliceName,
   type Lang,
   type WeekLine,
+  type WeekSportRead,
   type WeekTopRecord,
   type WeightUnit,
 } from "@hybrid/core";
@@ -60,13 +63,8 @@ export function weekWords(
           s: String(line.sets),
           l: lifts(line.lifts),
         });
-      case "ground":
-        return fill(line.key, {
-          k: fmtKm(line.distanceKm),
-          h: formatDuration(line.minutes, u),
-          s: line.lead ? sliceName(line.lead, t).toLowerCase() : "",
-          p: line.paceSecPerKm != null ? `${paceClock(line.paceSecPerKm)} /km` : "",
-        });
+      case "sports":
+        return fill(line.key, { list: sportList(line.sports, t, u) });
       case "records":
         return fill(line.key, { n: records(line.count), r: recordPhrase(line.top, t, units) });
       case "verdict":
@@ -74,6 +72,42 @@ export function weekWords(
     }
   });
 }
+
+/**
+ * EVERY SPORT, NAMED — "8.2 km of running at 5:22 /km and 1h 15min of tennis".
+ *
+ * The list is joined in words rather than with a comma throughout, because the
+ * paragraph is prose: an Oxford-less "a, b and c" is what a person says, and
+ * the conjunction is a translated word for the same reason the sentences are.
+ * (Intl.ListFormat would do this too, and is not reliably present on the
+ * JS engine this ships on.)
+ */
+function sportList(sports: WeekSportRead[], t: (key: string) => string, u: { h: string; min: string }): string {
+  const parts = sports.map((sp) =>
+    t(sp.key)
+      .split("{k}").join(fmtKm(sp.distanceKm))
+      .split("{h}").join(formatDuration(sp.minutes, u))
+      .split("{s}").join(sliceName(sp.slice, t).toLowerCase())
+      // THE DISCIPLINE'S OWN READING, not "/km" for everything: a swim is
+      // quoted per 100 m and a ride as a speed, which is how each is spoken
+      // and how every other rate in the app is already printed.
+      .split("{p}").join(rate(sp, sp.paceSecPerKm))
+      // THE BEST GOES IN BARE, no unit — it sits in a parenthesis directly
+      // after the average, which has just stated the unit both are in.
+      .split("{b}").join(figure(sp, sp.bestPaceSecPerKm)),
+  );
+  if (parts.length <= 1) return parts[0] ?? "";
+  return `${parts.slice(0, -1).join(", ")} ${t("recap.narr.and")} ${parts[parts.length - 1]}`;
+}
+
+/** A rate in the discipline's own convention — "5:22 /km", "1:48 /100m",
+ *  "32.5 km/h" — or nothing at all where there is no rate to state. */
+const rate = (sp: WeekSportRead, secPerKm: number | null): string =>
+  secPerKm == null ? "" : sp.slice.discipline ? formatDisciplinePace(secPerKm, sp.slice.discipline) : `${paceClock(secPerKm)} /km`;
+
+/** The same rate with the unit left off. */
+const figure = (sp: WeekSportRead, secPerKm: number | null): string =>
+  secPerKm == null ? "" : sp.slice.discipline ? disciplinePaceFigure(secPerKm, sp.slice.discipline) : paceClock(secPerKm);
 
 /** "Bench Press at 102.5 kg" — the record, named, with the figure it stands at. */
 function recordPhrase(top: WeekTopRecord, t: (key: string) => string, units: WeightUnit): string {

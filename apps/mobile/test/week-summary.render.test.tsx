@@ -101,7 +101,9 @@ describe("the week summary", () => {
     const { container } = renderScreen(<AuroraWeekSummary startKey={START} />);
     const text = container.textContent ?? "";
     expect(text).toContain("Gym");
-    expect(text).toContain("Endurance & sport");
+    // SPORT, not "Endurance & sport": the athlete's word for the half, and the
+    // one the paragraph uses.
+    expect(text).toContain("Sport");
     // the gym half's own figure, and the ground the other half covered
     expect(text).toContain("1.0 t");
     expect(text).toContain("9 km");
@@ -141,9 +143,11 @@ describe("the week summary", () => {
     expect(text).toContain("3 sessions across 3 days");
     // Each half in its own words: what was lifted, what was covered.
     expect(text).toContain("1.0 t");
-    // THE PACE BELONGS TO THE DISCIPLINE THAT COVERED THE GROUND. The tennis
-    // match is the bigger slice by time; the 9 km and the 5:00 are the run's.
+    // EVERY SPORT NAMED, each with its own figures and its own rate — not a
+    // total with the biggest one credited for it. The pace belongs to the run;
+    // the tennis match is time, and reporting "0 km of tennis" was the bug.
     expect(text).toContain("9 km of running at 5:00 /km");
+    expect(text).toContain("1h 15min of tennis");
     // Every slot substituted — an unresolved template is the failure mode a
     // key-plus-numbers contract has and a formatted string does not.
     expect(text).not.toMatch(/\{[a-z]+\}/);
@@ -186,6 +190,6 @@ describe("the week summary", () => {
     const { container } = renderScreen(<AuroraWeekSummary startKey={empty} />);
     expect(container.textContent).toContain("No sessions");
     // and neither half's section appears at all
-    expect(container.textContent).not.toContain("Endurance & sport");
+    expect(container.textContent).not.toContain("Sport");
   });
 });

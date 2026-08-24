@@ -16,6 +16,7 @@ import {
   fmtWeight,
   kgToUnit,
   formatCardioPr,
+  formatDisciplinePace,
   strengthPrProof,
   splitFigure,
   paceClock,
@@ -326,7 +327,7 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
           {/* ══ ENDURANCE & SPORT ════════════════════════════════════════════ */}
           {split.endurance.totals.efforts > 0 && (
             <AWidget
-              name={t("recap.enduranceSport")}
+              name={t("recap.sport")}
               meta={`${effortCount(split.endurance.totals.efforts, t)}   ${formatDuration(split.endurance.totals.minutes, units_)}`}
               style={cardStack}
             >
@@ -417,10 +418,14 @@ function SliceRow({ slice }: { slice: EnduranceSlice }) {
   const { t } = useLang();
   const name = slice.labelKey ? t(slice.labelKey) : (slice.label ?? "");
   const dist = slice.distanceKm > 0 ? `${groupDistanceDisplay(slice.distanceKm, slice.unit)} ${slice.unit}` : null;
-  // A pace only where the ground was covered in ONE named discipline — a sport
-  // has no pace anybody quotes, and a slice with no distance has none at all.
-  const pace = slice.kind === "endurance" && slice.distanceKm > 0 && slice.minutes > 0
-    ? paceStr((slice.minutes * 60) / slice.distanceKm)
+  // A pace only where a named DISCIPLINE covered ground — a tennis match has no
+  // pace anybody quotes, and a slice with no distance has none at all. The rate
+  // reads in the discipline's own convention (a swim per 100 m, a ride as a
+  // speed), which is both how it is spoken and what the paragraph above this
+  // section says: printing "25:00 /km" beside "2:30 /100m" is one screen
+  // stating one swim two ways.
+  const pace = slice.discipline && slice.paceSecPerKm !== null
+    ? formatDisciplinePace(slice.paceSecPerKm, slice.discipline)
     : null;
   return (
     <View
@@ -578,7 +583,7 @@ function storyFigures(
   }
   if (split.endurance.totals.efforts > 0) {
     halves.push({
-      label: t("recap.enduranceSport"),
+      label: t("recap.sport"),
       value: split.endurance.totals.distanceKm > 0
         ? fmtKm(split.endurance.totals.distanceKm)
         : formatDuration(split.endurance.totals.minutes, u),

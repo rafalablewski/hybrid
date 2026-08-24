@@ -51,34 +51,53 @@ describe("weekNarrative", () => {
 
   it("does not offer a split a pure lifter does not have", () => {
     expect(line([lift("a", 0, 70)], "shape").key).toBe("recap.narr.shapeGym");
-    expect(line([run("b", 2, 44, 8.2)], "shape").key).toBe("recap.narr.shapeOut");
+    expect(line([run("b", 2, 44, 8.2)], "shape").key).toBe("recap.narr.shapeSport");
   });
 
-  it("names the discipline the PACE belongs to, not the half's biggest slice", () => {
-    // A short run and a longer tennis match: tennis leads the half by time, but
-    // the 9 km and the 5:00 are the run's, so the sentence is about the run.
-    const l = line([run("b", 2, 45, 9), match("m", 5, 75)], "ground");
-    expect(l.key).toBe("recap.narr.groundPace");
-    expect(l.kind === "ground" && l.lead?.id).toBe("d:running");
+  it("NAMES EVERY SPORT, rather than the leader or a total", () => {
+    // A short run and a longer tennis match. The old line stated the half as
+    // one figure and named at most its biggest slice, so this week read as
+    // "9 km, led by tennis" — which answers how much, and not what.
+    const l = line([run("b", 2, 45, 9), match("m", 5, 75)], "sports");
+    expect(l.kind === "sports" && l.sports.map((sp) => sp.slice.id)).toEqual(["sport:tennis", "d:running"]);
+    // and each takes the phrase its own figures support
+    expect(l.kind === "sports" && l.sports.map((sp) => sp.key)).toEqual([
+      "recap.narr.sportTime",  // a match is time; "0 km of tennis" is the bug
+      "recap.narr.sportPace",  // the run's own ground, at the run's own pace
+    ]);
   });
 
-  it("quotes a pace only when ONE discipline covered the ground", () => {
-    // One kind of kilometre → a pace can be quoted honestly.
-    const one = line([run("b", 2, 45, 9)], "ground");
-    expect(one.key).toBe("recap.narr.groundPace");
-    expect(one.kind === "ground" && one.paceSecPerKm).toBe(300);
-
-    // Two kinds → the sentence names the leader instead. A pace averaged over
-    // a run and a swim is a number nobody trained at.
-    const two = line([run("b", 2, 45, 9), run("s", 4, 40, 1.5, "Swimming")], "ground");
-    expect(two.key).toBe("recap.narr.groundLed");
-    expect(two.kind === "ground" && two.paceSecPerKm).toBeNull();
+  it("quotes each discipline's pace, and never one averaged across two", () => {
+    // A run and a swim in the same week: BOTH get a pace, because each is its
+    // own. The single figure this replaced could quote none at all here — an
+    // average over a run and a swim is a number nobody trained at.
+    const l = line([run("b", 2, 45, 9), run("s", 4, 40, 1.5, "Swimming")], "sports");
+    const paces = l.kind === "sports" ? l.sports.map((sp) => sp.paceSecPerKm) : [];
+    expect(paces).toEqual([300, 1600]);
   });
 
-  it("reports the clock for a week that covered no ground at all", () => {
-    const l = line([match("m", 5, 75)], "ground");
-    expect(l).toMatchObject({ key: "recap.narr.groundTime", distanceKm: 0, minutes: 75 });
-    expect(l.kind === "ground" && l.lead?.kind).toBe("sport");
+  it("states a BEST pace only when there were two outings and one of them beat the average", () => {
+    // Two runs, 5:00 and 4:00 per km — the average is nobody's run.
+    const two = line([run("a", 1, 45, 9), run("b", 3, 40, 10)], "sports");
+    const s2 = two.kind === "sports" ? two.sports[0]! : null;
+    expect(s2?.key).toBe("recap.narr.sportPaceBest");
+    expect(s2?.bestPaceSecPerKm).toBe(240);
+    expect(s2?.efforts).toBe(2);
+
+    // One run IS its own best, and saying so twice is padding.
+    const one = line([run("a", 1, 45, 9)], "sports");
+    expect(one.kind === "sports" && one.sports[0]!.bestPaceSecPerKm).toBeNull();
+
+    // Two runs at the same pace: there is no best to name.
+    const same = line([run("a", 1, 45, 9), run("b", 3, 30, 6)], "sports");
+    expect(same.kind === "sports" && same.sports[0]!.key).toBe("recap.narr.sportPace");
+  });
+
+  it("reports the clock for a sport that covered no ground at all", () => {
+    const l = line([match("m", 5, 75)], "sports");
+    expect(l.kind === "sports" && l.sports[0]).toMatchObject({
+      key: "recap.narr.sportTime", minutes: 75, distanceKm: 0, paceSecPerKm: null,
+    });
   });
 
   it("carries the gym's own grain, and skips the sentence when nothing was lifted", () => {
@@ -111,6 +130,6 @@ describe("weekNarrative", () => {
 
   it("reads in one order, every time", () => {
     const week = [lift("prev", -5, 60, "90"), lift("a", 0, 70, "120"), run("b", 2, 45, 9), match("m", 5, 75)];
-    expect(kinds(week)).toEqual(["shape", "gym", "ground", "records", "verdict"]);
+    expect(kinds(week)).toEqual(["shape", "gym", "sports", "records", "verdict"]);
   });
 });

@@ -70,6 +70,28 @@ export interface EnduranceSlice {
   distanceKm: number;
   /** Distinct sessions this slice appeared in, inside the window. */
   sessions: number;
+  /**
+   * THE SLICE'S OWN PACE, seconds per km — its minutes over its distance, and
+   * null where it covered no ground (a tennis match has no pace anybody quotes)
+   * or was imported with a route and no clock.
+   *
+   * PER SLICE IS THE ONLY HONEST GRAIN for a pace. The window's pace across
+   * every discipline is a number nobody trained at — a run and a swim averaged
+   * together — which is why nothing here sums one.
+   */
+  paceSecPerKm: number | null;
+  /**
+   * THE FASTEST SINGLE OUTING'S pace, over the same window. `paceSecPerKm` is
+   * the average of everything the slice did, and over three runs the average is
+   * nobody's run: it is slower than the fast one and faster than the long one.
+   * Equal to the average when the slice was one outing — a client states a best
+   * only where there were two to choose between.
+   *
+   * The grain is the SESSION, because that is the grain of `parts` upstream:
+   * two runs on one entry are one outing, which is also what the effort counts
+   * everywhere else in this file mean.
+   */
+  bestPaceSecPerKm: number | null;
   /** 0…1 of the window's MINUTES — the share bar, computed once here so both
    *  clients draw the same widths. Time is the one measure every endurance
    *  discipline and every timed sport carries, which distance is not: a share
@@ -126,6 +148,10 @@ export interface EnduranceWindow {
   baselineOf: number;
 }
 
+/** Minutes over km as seconds per km — null unless the slice has both. */
+const paceOf = (minutes: number, km: number): number | null =>
+  minutes > 0 && km > 0 ? (minutes * 60) / km : null;
+
 /** Totals + slices for one already-resolved window. */
 function windowSlice(
   sessions: LoggedSession[],
@@ -148,6 +174,21 @@ function windowSlice(
   const metas = new Map(hours.map((g) => [g.id, g]));
   for (const g of distance) if (!metas.has(g.id)) metas.set(g.id, g);
 
+  // THE FASTEST OUTING PER GROUP. Read off the HOURS entries because a pace
+  // needs both halves and only those carry a clock: a distance-only import has
+  // no pace to be the best of. One entry is one session's contribution to one
+  // group (activity-window's `parts`), so this is the fastest OUTING, not the
+  // fastest block.
+  const bestPace = new Map<string, number>();
+  for (const g of hours) {
+    for (const it of g.items) {
+      if (it.distanceKm <= 0 || it.minutes <= 0) continue;
+      const pace = (it.minutes * 60) / it.distanceKm;
+      const cur = bestPace.get(g.id);
+      if (cur === undefined || pace < cur) bestPace.set(g.id, pace);
+    }
+  }
+
   const slices: EnduranceSlice[] = [...metas.values()]
     .map((g) => ({
       id: g.id,
@@ -160,6 +201,8 @@ function windowSlice(
       minutes: minutesById.get(g.id) ?? 0,
       distanceKm: kmById.get(g.id) ?? 0,
       sessions: g.sessions,
+      paceSecPerKm: paceOf(minutesById.get(g.id) ?? 0, kmById.get(g.id) ?? 0),
+      bestPaceSecPerKm: bestPace.get(g.id) ?? null,
       share: minutes > 0 ? (minutesById.get(g.id) ?? 0) / minutes : 0,
     }))
     // Biggest first; a tie falls back to the id so the order is total and the

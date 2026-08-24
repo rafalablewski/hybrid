@@ -39,18 +39,54 @@ export type WeekTopRecord =
   | { kind: "distance"; name: string; km: number }
   | { kind: "pace"; name: string; secPerKm: number };
 
+/**
+ * ONE DISCIPLINE OR SPORT, as the paragraph says it.
+ *
+ * `key` picks the phrase, and the three are different SENTENCES rather than one
+ * sentence with holes: ground covered at a pace, ground covered by something
+ * with no clock to pace it against, and a sport that covered none (a tennis
+ * match is time, and reporting "0 km of tennis" is the failure this replaces).
+ */
+export interface WeekSportRead {
+  slice: EnduranceSlice;
+  /** recap.narr.sportPace | sportPaceBest | sportKm | sportTime */
+  key: string;
+  distanceKm: number;
+  minutes: number;
+  /** The slice's average over the week — null where it covered no ground. */
+  paceSecPerKm: number | null;
+  /**
+   * The fastest single outing's pace, and ONLY when there were at least two
+   * outings and one of them actually beat the average. One run is its own best,
+   * and "8.2 km of running at 5:22 /km, best 5:22" is the paragraph padding
+   * itself with a fact it already stated.
+   */
+  bestPaceSecPerKm: number | null;
+  /** How many times the athlete went out in this discipline. */
+  efforts: number;
+}
+
 export type WeekLine =
   /** How much, how often, and how it divided. Always present. */
   | { kind: "shape"; key: string; sessions: number; days: number; gymEfforts: number; endEfforts: number }
   /** What the gym half moved. Absent when nothing was lifted. */
   | { kind: "gym"; key: string; tonnageKg: number; sets: number; lifts: number }
   /**
-   * What the other half covered. Three shapes, and each is true of the week it
-   * describes rather than a degenerate case of the others: ONE discipline that
-   * covered ground (so a pace can be quoted honestly), SEVERAL (so it names the
-   * leader instead), or none that covered any (so it reports the clock).
+   * WHAT THE SPORT HALF ACTUALLY WAS — every discipline and sport NAMED, with
+   * its own ground, its own clock and its own pace.
+   *
+   * It used to state the half as one figure and name at most the leader ("you
+   * covered 9 km, led by running"), which answers how much and not what. A
+   * hybrid week is two runs, a swim and a squash match, and a paragraph that
+   * cannot say so is describing somebody's training in the abstract.
+   *
+   * PER SLICE IS ALSO WHAT MAKES A PACE HONEST. The old line could quote one
+   * only when a single discipline had covered any ground at all, because the
+   * alternative was averaging a run with a swim; a pace attached to the
+   * discipline it belongs to has no such problem, and every one of them can be
+   * quoted at once.
    */
-  | { kind: "ground"; key: string; distanceKm: number; minutes: number; paceSecPerKm: number | null; lead: EnduranceSlice | null }
+  | { kind: "sports"; key: string; sports: WeekSportRead[] }
   /** What came out of it. Absent when the week set none. */
   | { kind: "records"; key: string; count: number; top: WeekTopRecord }
   /**
@@ -71,23 +107,37 @@ const METRIC_KEY: Record<VerdictMetric, string> = {
 };
 
 /**
- * The one discipline that covered the ground, and the pace it covered it at —
- * or null when more than one did, because a pace averaged over a run and a swim
- * is a number nobody trained at.
+ * A SLICE, READ. Which phrase it takes, and the figures that go in it.
  *
- * IT RETURNS THE SLICE AS WELL AS THE PACE, and that is not tidiness: the
- * sentence has to NAME the discipline the pace belongs to. Naming the half's
- * biggest slice instead — which is what this did first — produced "you covered
- * 9 km of tennis at 5:00 /km" for a week of one run and a longer tennis match.
- * The pace and the name have to come out of the same slice or the sentence is
- * about two different things.
+ * THE BEST PACE IS WITHHELD unless it is worth stating: two outings at least,
+ * and one of them faster than the average by enough to be a different clock
+ * reading. Half a second per kilometre is the two runs being the same run.
  */
-const paced = (e: EnduranceWindow): { slice: EnduranceSlice; secPerKm: number } | null => {
-  const moved = e.slices.filter((s) => s.distanceKm > 0);
-  const only = moved.length === 1 ? moved[0]! : null;
-  if (!only || only.kind !== "endurance" || only.minutes <= 0) return null;
-  return { slice: only, secPerKm: (only.minutes * 60) / only.distanceKm };
-};
+const PACE_BEST_MIN_GAP_SEC = 2;
+
+function readSlice(s: EnduranceSlice): WeekSportRead {
+  const pace = s.kind === "endurance" ? s.paceSecPerKm : null;
+  const best =
+    pace !== null && s.bestPaceSecPerKm !== null && s.sessions > 1 && pace - s.bestPaceSecPerKm >= PACE_BEST_MIN_GAP_SEC
+      ? s.bestPaceSecPerKm
+      : null;
+  return {
+    slice: s,
+    key:
+      s.distanceKm <= 0
+        ? "recap.narr.sportTime"
+        : pace === null
+          ? "recap.narr.sportKm"
+          : best !== null
+            ? "recap.narr.sportPaceBest"
+            : "recap.narr.sportPace",
+    distanceKm: s.distanceKm,
+    minutes: s.minutes,
+    paceSecPerKm: pace,
+    bestPaceSecPerKm: best,
+    efforts: s.sessions,
+  };
+}
 
 /**
  * The biggest thing the week produced. A strength record outranks a cardio one
@@ -106,7 +156,7 @@ function topRecord(recap: WeeklyRecap): WeekTopRecord | null {
 
 /**
  * The week's paragraph, in reading order: what it was, what the gym did, what
- * the road did, what came out of it, and which way it went.
+ * sports it was made of, what came out of it, and which way it went.
  */
 export function weekNarrative(
   recap: WeeklyRecap,
@@ -121,7 +171,7 @@ export function weekNarrative(
   const e = endurance.totals.efforts;
   lines.push({
     kind: "shape",
-    key: g > 0 && e > 0 ? "recap.narr.shapeBoth" : e > 0 ? "recap.narr.shapeOut" : "recap.narr.shapeGym",
+    key: g > 0 && e > 0 ? "recap.narr.shapeBoth" : e > 0 ? "recap.narr.shapeSport" : "recap.narr.shapeGym",
     sessions: recap.sessions,
     days: recap.activeDays,
     gymEfforts: g,
@@ -138,24 +188,13 @@ export function weekNarrative(
     });
   }
 
-  if (endurance.totals.efforts > 0) {
-    const p = paced(endurance);
-    // `lead` NAMES THE SUBJECT OF THE SENTENCE, which is not always the half's
-    // biggest slice: where a pace is quoted it belongs to the one discipline
-    // that covered the ground, and that is the one the sentence is about.
-    const lead = p ? p.slice : (endurance.slices[0] ?? null);
+  if (endurance.slices.length > 0) {
     lines.push({
-      kind: "ground",
-      key:
-        endurance.totals.distanceKm <= 0
-          ? "recap.narr.groundTime"
-          : p
-            ? "recap.narr.groundPace"
-            : "recap.narr.groundLed",
-      distanceKm: endurance.totals.distanceKm,
-      minutes: endurance.totals.minutes,
-      paceSecPerKm: p ? p.secPerKm : null,
-      lead,
+      kind: "sports",
+      key: "recap.narr.sports",
+      // Biggest first, which is the order the window already sorts in and the
+      // order the section below the paragraph lists them in.
+      sports: endurance.slices.map(readSlice),
     });
   }
 

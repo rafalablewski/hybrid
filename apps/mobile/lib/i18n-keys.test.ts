@@ -98,6 +98,18 @@ const TEMPLATED: string[] = [
   "recap.dayN.one",
   "recap.dayN.few",
   "recap.dayN.many",
+  // lib/week-words.ts — sportList(): the phrase core picks per discipline.
+  "recap.narr.sportPace",
+  "recap.narr.sportPaceBest",
+  "recap.narr.sportKm",
+  "recap.narr.sportTime",
+  // core week-narrative.ts — the sentence keys, chosen there and resolved here.
+  "recap.narr.shapeBoth",
+  "recap.narr.shapeGym",
+  "recap.narr.shapeSport",
+  "recap.narr.gym",
+  "recap.narr.sports",
+  "recap.narr.records",
 ];
 
 describe("i18n keys", () => {
