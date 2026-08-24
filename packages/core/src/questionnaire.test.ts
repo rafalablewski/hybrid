@@ -262,12 +262,10 @@ describe("what setup already asked", () => {
     const p = questionnaireFromAnswers(qs, {
       persona: "athlete", goal: "hybrid", experience: "advanced",
       sex: "F", birth: "1992-04", bodyweight: 61.5, days: 5, equipment: "full",
-      sleep: 4, stress: 2, days: 5,
+      sleep: 4, stress: 2,
     }, { now: NOW });
-    // The date is stored as given; body mass is not here at all (a dated
-    // measurement, so it goes to the body log); and neither is TRAINING AGE,
-    // even though an answer for it was passed in — setup does not ask for one,
-    // and the profile takes it from the log rather than from a tap.
+    // The date is stored as given, and body mass is not here at all — a dated
+    // measurement, so it goes to the body log.
     // Neither TRAINING AGE nor SLEEP is here, though an answer for each was
     // passed in: both are measured (off the bar, and off the daily check-in),
     // and in both cases a stored value outranks the measurement — so setup, the
