@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View, Text } from "react-native";
+import { space } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { leading, F, tracking } from "../../lib/ui";
 
@@ -47,9 +48,9 @@ export default function GroupMark({ label, mt = 36, right }: { label: string; mt
       {label}
     </Text>
   );
-  if (!right) return <View style={{ marginTop: mt, marginHorizontal: 2 }}>{heading}</View>;
+  if (!right) return <View style={{ marginTop: mt }}>{heading}</View>;
   return (
-    <View style={{ marginTop: mt, marginHorizontal: 2, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+    <View style={{ marginTop: mt, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md }}>
       {heading}
       {right}
     </View>

@@ -1,7 +1,7 @@
 import type { CardioBlock, CardioDiscipline, LoggedSession } from "./engines/session";
-import { topLoadSeries, paceSeries, type PacePoint } from "./engines/session";
+import { topLoadSeries, paceSeries, paceClock, type PacePoint } from "./engines/session";
 import { blockDiscipline } from "./engines/running";
-import { activeDisciplines } from "./endurance";
+import { activeDisciplines, formatDisciplinePace } from "./endurance";
 import { exerciseHistory } from "./engines/records";
 import {
   exerciseDashboard,
@@ -73,6 +73,42 @@ export interface ExerciseWidgetCard {
   value: number;
   /** signed % change vs the previous 8-week window, 1 decimal; null = no baseline */
   deltaPct: number | null;
+  /**
+   * THE FIGURE `deltaPct` IS MEASURED FROM — the previous window's value, in
+   * the same unit as `value`. Null exactly when `deltaPct` is null.
+   *
+   * It exists because the card now PRINTS its baseline, and a percentage whose
+   * baseline is not on the card is a number the reader has to trust. The two
+   * fields are computed from the same pair in every branch below
+   * (`pctChange(value, prevValue)`), so they cannot drift apart — a test pins
+   * that they are null together.
+   *
+   * IT IS THE BEST BASELINE THAT EXISTS, not always the previous window — and
+   * that correction is the whole reason this shipped twice.
+   *
+   * The first cut used the previous 8-week window and nothing else, on the
+   * argument that `spark[0]` is a different quantity (the spark falls back to
+   * all-time points when the window is thin) and that printing it beside a
+   * window-over-window percentage would put TWO baselines on one card. The
+   * argument was right. The conclusion was wrong, because it made the card
+   * silent for every athlete without sixteen weeks of history on a movement: a
+   * three-week-old account climbing 60 → 65 → 70 kg printed "Heaviest —
+   * 8 weeks" and no change at all, which is the card it replaced minus a chart.
+   *
+   * So the baseline is chosen per card — the previous window when there is one,
+   * otherwise the window's own first point — and `deltaPct` is ALWAYS computed
+   * from whichever was chosen. One comparison, stated with its own baseline;
+   * the two can no longer disagree because there is only ever one.
+   */
+  prevValue: number | null;
+  /**
+   * The baseline's DATE, when it came from the athlete's own log rather than
+   * from the previous window — so the card can say "from 60 kg, 2 Aug" instead
+   * of naming a period it did not measure. Null when `prevValue` is the
+   * previous window (which is a period, not a day) or when there is no
+   * baseline at all.
+   */
+  prevAt: string | null;
   /** whether that change is an improvement (pace: lower is better); null with no baseline */
   improving: boolean | null;
   /** sparkline series inside the window, oldest → newest (falls back to the
@@ -107,7 +143,7 @@ const ts = (iso: string): number => new Date(iso).getTime();
  * lanes' own `blockDiscipline`, never re-classified here: two definitions of
  * "what sport is this" is how a swim ends up measured in kilometres.
  */
-function moveDiscipline(sessions: LoggedSession[], name: string): CardioDiscipline | undefined {
+export function moveDiscipline(sessions: LoggedSession[], name: string): CardioDiscipline | undefined {
   let out: CardioDiscipline | undefined;
   let at = -Infinity;
   for (const s of sessions) {
@@ -183,6 +219,30 @@ function splitWindows<P extends { date: string }>(points: P[], now: number): Win
 }
 
 /** One widget card for a movement, or null when it has nothing to show. */
+/**
+ * THE BEST BASELINE THAT EXISTS — the previous window if there is one, else the
+ * window's own first point, else nothing.
+ *
+ * A card that can only speak after sixteen weeks says nothing to the athlete
+ * who most needs to see a number moving. The previous window is the better
+ * comparison and stays first; the spark's own opening point is the honest
+ * second, and it comes WITH ITS DATE so the card names a day it actually
+ * measured rather than a period it did not.
+ *
+ * A zero or negative baseline is no baseline: `pctChange` refuses it anyway,
+ * and a card must never print "from 0".
+ */
+function baseline(
+  prevWindow: number | null,
+  spark: number[],
+  sparkAt: string[],
+): { value: number; at: string | null } | null {
+  if (prevWindow != null && prevWindow > 0) return { value: prevWindow, at: null };
+  const first = spark[0];
+  if (spark.length < 2 || first == null || !(first > 0)) return null;
+  return { value: first, at: sparkAt[0] ?? null };
+}
+
 export function exerciseWidgetCard(
   sessions: LoggedSession[],
   name: string,
@@ -199,10 +259,17 @@ export function exerciseWidgetCard(
       const best = (pts: PacePoint[]) => (pts.length ? Math.min(...pts.map((p) => p.secPerKm)) : NaN);
       const value = cur.length ? best(cur) : best(all.slice(-1));
       // pace: sign of the raw change, improvement = got faster (negative change)
-      const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
       const points = cur.length >= 2 ? cur : all.slice(-8);
+      const base = baseline(
+        cur.length && prev.length ? best(prev) : null,
+        points.map((p) => p.secPerKm),
+        points.map((p) => p.date),
+      );
+      const deltaPct = base == null ? null : pctChange(value, base.value);
       return {
         name, kind, discipline: moveDiscipline(sessions, name), metric: "pace", value, deltaPct,
+        prevValue: deltaPct == null ? null : base!.value,
+        prevAt: deltaPct == null ? null : base!.at,
         improving: deltaPct == null ? null : deltaPct < 0,
         spark: points.map((p) => p.secPerKm),
         sparkBy: "session", sparkAt: points.map((p) => p.date),
@@ -218,10 +285,18 @@ export function exerciseWidgetCard(
       const { cur, prev } = splitWindows(all, now);
       const best = (pts: { weightKg: number }[]) => (pts.length ? Math.max(...pts.map((p) => p.weightKg)) : NaN);
       const value = cur.length ? best(cur) : best(all.slice(-1));
-      const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
       const points = cur.length >= 2 ? cur : all.slice(-8);
+      const base = baseline(
+        cur.length && prev.length ? best(prev) : null,
+        points.map((p) => p.weightKg),
+        points.map((p) => p.date),
+      );
+      const deltaPct = base == null ? null : pctChange(value, base.value);
       return {
-        name, kind, metric: "weight", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0,
+        name, kind, metric: "weight", value, deltaPct,
+        prevValue: deltaPct == null ? null : base!.value,
+        prevAt: deltaPct == null ? null : base!.at,
+        improving: deltaPct == null ? null : deltaPct > 0,
         spark: points.map((p) => p.weightKg),
         sparkBy: "session", sparkAt: points.map((p) => p.date),
         sessions: count,
@@ -233,9 +308,13 @@ export function exerciseWidgetCard(
     const curW = weeks.slice(8), prevW = weeks.slice(0, 8);
     const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
     if (sum(curW) > 0) {
-      const deltaPct = pctChange(sum(curW), sum(prevW));
+      const base = baseline(sum(prevW) > 0 ? sum(prevW) : null, curW, buckets.slice(8).map((w) => w.weekStart));
+      const deltaPct = base == null ? null : pctChange(sum(curW), base.value);
       return {
-        name, kind, metric: "volume", value: sum(curW), deltaPct, improving: deltaPct == null ? null : deltaPct > 0,
+        name, kind, metric: "volume", value: sum(curW), deltaPct,
+        prevValue: deltaPct == null ? null : base!.value,
+        prevAt: deltaPct == null ? null : base!.at,
+        improving: deltaPct == null ? null : deltaPct > 0,
         spark: curW, sparkBy: "week", sparkAt: buckets.slice(8).map((w) => w.weekStart),
         sessions: count,
       };
@@ -250,10 +329,14 @@ export function exerciseWidgetCard(
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
   const value = sum(curW);
   if (value <= 0) return null;
-  const deltaPct = pctChange(value, sum(prevW));
+  const base = baseline(sum(prevW) > 0 ? sum(prevW) : null, curW, minuteWeeks.slice(8).map((w) => w.weekStart));
+  const deltaPct = base == null ? null : pctChange(value, base.value);
   return {
     name, kind, discipline: kind === "cardio" ? moveDiscipline(sessions, name) : undefined,
-    metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0,
+    metric: "time", value, deltaPct,
+    prevValue: deltaPct == null ? null : base!.value,
+    prevAt: deltaPct == null ? null : base!.at,
+    improving: deltaPct == null ? null : deltaPct > 0,
     spark: curW, sparkBy: "week", sparkAt: minuteWeeks.slice(8).map((w) => w.weekStart),
     sessions: count,
   };
@@ -622,24 +705,42 @@ export function exerciseSlideReading(slide: ExercisePageSlide, index: number, un
 }
 
 /**
- * One held point of a Today widget card's strip.
+ * A RAW FIGURE IN THE CARD'S OWN CONVENTION — `exerciseCardFigure(card, 70,
+ * "kg")` → `{ value: "70", unit: "kg" }`.
  *
- * The strip is built two ways — one point per SESSION for a lift with parseable
- * loads, one per WEEK for a movement measured in volume or minutes — so the
- * card carries `sparkBy` and the reading passes it through as `efforts`-free
- * data the client uses to pick its sentence ("12 Jul" vs "Week of 12 Jul").
+ * ONE FORMATTER FOR THE HEADLINE AND ITS BASELINE, which is the whole reason it
+ * exists as a function rather than as two call sites. The card prints `value`
+ * and `prevValue` beside each other; if those two took different code paths
+ * they would eventually disagree about the unit, and a card reading
+ * "38:36 /km — from 3:52 /100m" is worse than one that prints no baseline at
+ * all.
+ *
+ * THE PACE CASE IS WHY THIS IS NOT A ONE-LINER. A rate reads in ITS
+ * DISCIPLINE'S convention — /km on the road, /100m in the pool, /500m on the
+ * erg, km/h on the bike — and `formatDisciplinePace` is the one function that
+ * knows. The reading this replaced hard-coded "/km" for every discipline, which
+ * is the exact defect the headline had already been fixed for: it showed a
+ * swimmer "38:36 /km" while the lane below printed the same rate as
+ * "3:52 /100m". That was survivable while the string only appeared under a held
+ * finger. It is not survivable now the baseline is always on screen.
+ *
+ * A card with no resolved discipline keeps the /km fallback, which is what its
+ * canonical value already is.
  */
-export function exerciseCardReading(card: ExerciseWidgetCard, index: number, units: WeightUnit): ChartReading | null {
-  const v = card.spark[index];
-  if (v == null) return null;
-  const at = card.sparkAt[index] ?? "";
-  const best = card.metric === "pace" ? Math.min(...card.spark) : Math.max(...card.spark);
-  const figure = (): [string, string] => {
-    if (card.metric === "pace") return [mmss(v), "/km"];
-    if (card.metric === "weight") return splitFigure(fmtWeight(v, units));
-    if (card.metric === "time") return [String(Math.round(v)), "min"];
-    return splitFigure(fmtTonnage(v, units));
-  };
-  const [value, unit] = figure();
-  return { index, weekStart: at, value, unit, efforts: null, best: v === best };
+export function exerciseCardFigure(
+  card: Pick<ExerciseWidgetCard, "metric" | "discipline">,
+  raw: number,
+  units: WeightUnit,
+): { value: string; unit: string } {
+  if (card.metric === "pace") {
+    if (!card.discipline) return { value: paceClock(raw), unit: "/km" };
+    const s = formatDisciplinePace(raw, card.discipline);
+    const i = s.lastIndexOf(" ");
+    return i < 0 ? { value: s, unit: "" } : { value: s.slice(0, i), unit: s.slice(i + 1) };
+  }
+  if (card.metric === "time") return { value: String(Math.round(raw)), unit: "min" };
+  const [value, unit] = card.metric === "weight"
+    ? splitFigure(fmtWeight(raw, units))
+    : splitFigure(fmtTonnage(raw, units));
+  return { value, unit };
 }

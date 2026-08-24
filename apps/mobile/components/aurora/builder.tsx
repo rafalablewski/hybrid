@@ -30,7 +30,7 @@ import {
   type StrengthSet,
   type WeightUnit,
 
-  ALPHA, GHOST_PLACEHOLDER_ALPHA } from "@hybrid/core";
+  ALPHA, GHOST_PLACEHOLDER_ALPHA, LABEL_GAP } from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
 import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -244,7 +244,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
     { pct: sig.split.endurance, fill: C.blue, label: t("w.train.signal.end") },
   ];
   return (
-    <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }}>
+    <View style={{ marginTop: space.xxs, marginBottom: space.lg }}>
       {/* The One Number GROWS as exercises are added — composing a routine is
           meant to feel like loading a bar — so it rolls to each new value
           instead of swapping to it. */}
@@ -278,7 +278,7 @@ function Metric({ label, value, c, C }: { label: string; value: string; c?: stri
   return (
     <View style={{ marginRight: 16 }}>
       <Text style={ty(C, "overline")}>{label}</Text>
-      <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: c ? txt(C, c) : C.chalk, marginTop: LABEL_GAP, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
 }

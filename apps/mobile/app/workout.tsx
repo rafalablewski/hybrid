@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, ActivityIndicator, Animated, Keyboar
 import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getPref, setPref } from "../lib/synced-prefs";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
@@ -112,7 +113,7 @@ import {
   HERO,
   SATELLITE,
   type ReadinessFeeling,
-  ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+  ALPHA, FEEDBACK, STATE_OPACITY, LABEL_GAP } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
 
 // Today's one-tap readiness feeling from the check-in list → scales the AI
@@ -159,7 +160,7 @@ import ASatellite from "../components/aurora/satellite";
 import { SHARE_MARK } from "../components/aurora/share-mark";
 import { HeroNav } from "../components/aurora/hero";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { coverInsets } from "../lib/layout";
+import { coverInsets, coverPadBottom } from "../lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Mark } from "../components/aurora/mark";
 
@@ -476,7 +477,7 @@ export default function Workout() {
 
   // Show the one-time logging guide until the athlete has banked a set before.
   useEffect(() => {
-    AsyncStorage.getItem(TIP_KEY).then((v) => setShowTip(v !== "1")).catch(() => {});
+    setShowTip(!getPref<boolean>(TIP_KEY, false));
   }, []);
   const dismissTip = () => {
     // A whole card leaving the top of the scroller, so it travels like any other
@@ -485,7 +486,7 @@ export default function Workout() {
     // arming it twice is the same config and costs nothing.
     animateListChange(reducedMotion);
     setShowTip(false);
-    AsyncStorage.setItem(TIP_KEY, "1").catch(() => {});
+    setPref(TIP_KEY, true);
   };
 
   // Keep the screen on while logging — no dimming/sleep mid-set (chalky hands,
@@ -1391,7 +1392,7 @@ export default function Workout() {
           shell's paddings itself: 16 of vertical rhythm, the kit's GUTTER at
           the sides — web's logger renders inside main's 12px gutter, and this
           is the mobile half of that parity. */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: space.huge }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
             only entered on the summary (Save as routine / optional rename).
 
@@ -1701,7 +1702,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1716,7 +1717,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>
@@ -2346,12 +2347,12 @@ function ExerciseSheet({
             {/* Flat totals — big number over a small mono label, no boxes. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
-                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{t("workout.totalVolume")}</Text>
+                <Text style={{ fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{t("workout.totalVolume")}</Text>
               </View>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{setLine}</Text>
-                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+                <Text style={{ fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{setLine}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
               </View>
             </View>
 
@@ -2754,7 +2755,7 @@ function Summary({
           padding above them would stop the field at the status bar. */}
       <AuroraField />
       <FinishField />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: safe.bottom + 28, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: coverPadBottom(safe.bottom), flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
             to the welcome screen (there's no Today tab behind them). The same
             satellite the dock's Pause and Finish are, at the same 44: this

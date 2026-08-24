@@ -4,7 +4,7 @@ import {
   RECIPES, isHighProtein, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
   type Recipe, type RecipeCollection, type RecipeCookView,
  colors,
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { F, FIXED_FONT_SCALE, PressScale, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -84,7 +84,6 @@ export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout, saved
       <ASection
         title={collectionTitle(shelf.key, t)}
         meta={`${n} ${n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")}`}
-        style={{ marginHorizontal: 2 }}
       />
       <ScrollView
         horizontal
@@ -123,8 +122,8 @@ export function SavedRecipeShelf({ recipes, openRecipe }: { recipes: Recipe[]; o
   if (recipes.length === 0) return null;
   return (
     <View style={{ marginTop: 20 }}>
-      <ASection title={t("w.recovery.nutrition.savedRecipesHead")} meta={String(recipes.length)} style={{ marginHorizontal: 2 }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginHorizontal: 2, marginBottom: 10 }}>
+      <ASection title={t("w.recovery.nutrition.savedRecipesHead")} meta={String(recipes.length)} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: space.ms }}>
         {t("w.recovery.nutrition.savedRecipesSub")}
       </Text>
       <ScrollView
@@ -215,7 +214,7 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
         <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
         </View>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking(fs.display), color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.takeover, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking(fs.display), color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
       {/* One tick per step — the method's length, stated by the plate itself.
           NOT the kit's `AStepRail`, and this is the one rail that genuinely
@@ -264,7 +263,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{st.unit}</Text>}
               </Text>
-              <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{st.label}</Text>
+              <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{st.label}</Text>
             </View>
           ))}
         </View>

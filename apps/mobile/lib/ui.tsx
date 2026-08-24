@@ -299,7 +299,48 @@ export const F = {
   reg: "Sohne_400Buch",
   semi: "Sohne_500Kraftig",
   bold: "Sohne_600Halbfett",
-  black: "Sohne_700Dreiviertelfett",
+  /**
+   * `black` IS HALBFETT NOW — the same binary `bold` resolves to, and the
+   * collapse is the correction rather than an accident of mapping.
+   *
+   * It was Dreiviertelfett (700, a 0.16em stem) across 298 call sites, which
+   * made the heaviest cut in the family the app's DEFAULT: more sites than the
+   * regular (258) and the medium (81) combined, with 62 of them at `fs.body` or
+   * below. On a near-black ground light strokes irradiate — they bleed outward
+   * and every weight reads heavier than it measures — so that is a 2.2dp stroke
+   * at reading size with the counters of `a`, `e` and `s` closing up. Heavy type
+   * at reading size is not emphasis, it is mud.
+   *
+   * The type system's rule is now explicit (`weight` in core theme/typography.ts):
+   * ON THIS GROUND, READING TEXT STOPS AT 600. An alias resolving above it would
+   * be 298 call sites quietly contradicting the system they belong to.
+   *
+   * THE COLLAPSE IS THE POINT for the 182 reading-band sites, not a cost being
+   * absorbed. `bold` and `black` pointing at one binary says exactly what the
+   * rule says: in the reading band there is no weight above Halbfett. A site
+   * that was leaning on the step between them was leaning on a distinction the
+   * system does not have THERE — and the honest fix is a named style
+   * (`ty(C, "title")`), not a heavier face. That migration is tracked as
+   * `weight-ladder-migration` in capabilities.ts, with the counts.
+   *
+   * THE DISPLAY BAND KEPT ITS 700, and this alias is not it. Dreiviertelfett
+   * left the app for a day in Aug 2026 and came back as `F.takeover` below,
+   * floored at `fs.display`: irradiation closes counters in proportion to stem
+   * over counter, which falls as the type grows, so the correction that was
+   * right at 14dp was never an argument at 35. `black` stays Halbfett because
+   * its 182 reading-band sites are the ones the correction was for.
+   */
+  black: "Sohne_600Halbfett",
+  /**
+   * THE DISPLAY WEIGHT — Söhne Dreiviertelfett, legal at `fs.display` (28) and
+   * above and NOWHERE else. `design-tokens.test.ts` fails the build on a site
+   * under that floor, because the argument for keeping the heaviest cut off
+   * reading text is a real one (0.16em of stem at 14dp is mud) and the argument
+   * for having no display weight at all was not — see `weight` in core's
+   * theme/typography.ts. Prefer `ty(C, "hero")`, which carries it with the
+   * size that makes it legal.
+   */
+  takeover: "Sohne_700Dreiviertelfett",
   mono: "SohneMono_400Buch",
   monoMed: "SohneMono_500Kraftig",
   monoBold: "SohneMono_600Halbfett",
@@ -351,22 +392,22 @@ export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
 /**
  * THE SAME SIX FACES, UNDER THE NAMES CORE TEXT KNOWS THEM BY.
  *
- * `F` holds ALIASES, not font names. `useFonts({ Archivo_700Bold })` hands
+ * `F` holds ALIASES, not font names. `useFonts({ Sohne_600Halbfett })` hands
  * expo-font the key as a *family alias* and expo-font makes it work by
  * SWIZZLING `UIFont.fontNames(forFamilyName:)` — React Native's text path asks
  * that method, gets the alias resolved to the font's real PostScript name, and
- * draws Archivo. Nothing else on the system asks that method.
+ * draws Söhne. Nothing else on the system asks that method.
  *
  * SwiftUI does not. `@expo/ui`'s `font({ family })` modifier ends in
  * `Font.custom(family, size:)`, which goes to Core Text directly — and Core
- * Text has never heard of "Archivo_700Bold" (the binary's PostScript name is
- * `Archivo-Bold`; the alias only ever existed in expo-font's own dictionary).
+ * Text has never heard of "Sohne_600Halbfett" (the binary's PostScript name is
+ * `TestSohne-Halbfett`; the alias only ever existed in expo-font's own dictionary).
  * An unresolvable name in `Font.custom` does not throw and does not warn: it
  * QUIETLY DRAWS SAN FRANCISCO. So every native leaf in swiftui.tsx that was
  * "given the caller's own face" — the nutrition head's meal switcher
  * ("Breakfast ⌄"), the logger's timer capsule, its set-type menu, the
  * satellite's word, the quick-sport stepper — has been rendering the SYSTEM
- * font next to Archivo everywhere else on the same screen. The prop was passed,
+ * font next to Söhne everywhere else on the same screen. The prop was passed,
  * the screenshots kept showing the wrong face, and nothing in the codebase
  * disagreed, because the failure is a silent fallback three layers down.
  *
@@ -377,7 +418,7 @@ export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
  *
  * THEY SAY `TestSohne` BECAUSE THAT IS WHAT THE BINARIES SAY. The evaluation
  * cuts carry that PostScript name; the retail files will carry `Sohne-*`, and
- * swapping them means editing these seven strings and nothing else. The guard
+ * swapping them means editing these six strings and nothing else. The guard
  * reads the name out of the file, so getting it wrong fails the build rather
  * than drawing San Francisco on a native leaf.
  */
@@ -385,10 +426,10 @@ export const F_POSTSCRIPT: Record<string, string> = {
   [F.reg]: "TestSohne-Buch",
   [F.semi]: "TestSohne-Kraftig",
   [F.bold]: "TestSohne-Halbfett",
-  [F.black]: "TestSohne-Dreiviertelfett",
   [F.mono]: "TestSohneMono-Buch",
   [F.monoMed]: "TestSohneMono-Kraftig",
   [F.monoBold]: "TestSohneMono-Halbfett",
+  [F.takeover]: "TestSohne-Dreiviertelfett",
 };
 
 /**

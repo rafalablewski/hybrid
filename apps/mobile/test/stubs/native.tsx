@@ -63,6 +63,12 @@ export class File {
 export const isAvailableAsync = async () => false;
 export const shareAsync = async () => {};
 
+/* ── react-native-view-shot (the share-card capture) ─────────────────────── */
+/** Reached by IMPORT alone: History's weeks view renders the shareable recap
+ *  card, which pulls lib/share, whose captureRef is native. Never called in
+ *  the gate — isAvailableAsync above already reports no share target. */
+export const captureRef = async () => "file:///capture.png";
+
 /* ── expo-secure-store (the Supabase session store) ──────────────────────── */
 const secure = new Map<string, string>();
 export const getItemAsync = async (k: string) => secure.get(k) ?? null;

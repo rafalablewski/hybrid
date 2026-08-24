@@ -6,15 +6,15 @@ import { MONO_ADVANCE_EM } from "@hybrid/core";
 /**
  * THE NATIVE FACE GUARD.
  *
- * `F` holds expo-font ALIASES ("Archivo_700Bold"). React Native resolves them
+ * `F` holds expo-font ALIASES ("Sohne_600Halbfett"). React Native resolves them
  * because expo-font swizzles `UIFont.fontNames(forFamilyName:)`; SwiftUI does
  * not take that path — `@expo/ui`'s `font({ family })` ends in
  * `Font.custom(family, size:)`, straight into Core Text, which knows the face
- * only by the PostScript name in the binary ("Archivo-Bold").
+ * only by the PostScript name in the binary ("TestSohne-Halbfett").
  *
  * The failure mode is the reason this file exists: `Font.custom` with a name
  * nothing resolves does not throw and does not warn — it draws San Francisco.
- * So a native leaf handed `F.bold` renders the SYSTEM font beside Archivo on
+ * So a native leaf handed `F.bold` renders the SYSTEM font beside Söhne on
  * the same row, the prop looks correct in the diff, and the only evidence is a
  * screenshot. That is exactly how the nutrition head's "Breakfast ⌄" kept
  * coming back off-face after being "fixed".
@@ -94,8 +94,16 @@ function postScriptNameOf(file: string): string {
 function fontFile(alias: string): string | null {
   const [family, weightAndCut] = alias.split("_");
   const cut = weightAndCut.replace(/^\d+/, "");
-  const p = join(ROOT, "assets", "fonts", `${family}-${cut}.otf`);
-  return existsSync(p) ? p : null;
+  // BOTH CONTAINER FORMATS. Söhne arrives as CFF `.otf`; the `.ttf` arm is kept
+  // for the next face that does not (the retired serif was TrueType), and costs
+  // one `existsSync`. The alias still mirrors the filename exactly
+  // (`600Halbfett` -> `-Halbfett`), which is what makes this lookup a check
+  // rather than a guess — rename one and the test fails.
+  for (const ext of [".otf", ".ttf"]) {
+    const p = join(ROOT, "assets", "fonts", `${family}-${cut}${ext}`);
+    if (existsSync(p)) return p;
+  }
+  return null;
 }
 
 /** `head.unitsPerEm` and `hhea.advanceWidthMax` — for a monospaced face the max
@@ -126,7 +134,7 @@ describe("the mono advance the layout arithmetic depends on", () => {
   // the app's biggest card silently picks the wrong rung and either ellipsises
   // or leaves a third of its cell empty.
   //
-  // The migration plan predicted Söhne Mono would be narrower than JetBrains
+  // The migration plan predicted Söhne Mono would be narrower than the mono cut
   // Mono and that everything computing a width from a character count would
   // need recalculating. MEASURED, THEY ARE IDENTICAL: both are exactly 0.600 em
   // on a 1000 upem. So the constant did not move — and the reason to write this
@@ -145,23 +153,68 @@ describe("native face map", () => {
   const F = aliases();
   const PS = postscript();
 
+  /**
+   * TWO ALIASES MAY SHARE ONE BINARY, so the map is checked per BINARY rather
+   * than per alias key. `F.bold` and `F.black` both resolve to
+   * `Sohne_600Halbfett` since Aug 2026 — deliberately, because on a near-black
+   * ground the READING band stops at 600 and an alias resolving above it would
+   * be 182 call sites contradicting the type system (the argument is on `F` in
+   * ui.tsx; `F.takeover` carries the 700 for the display band, under a size
+   * floor design-tokens.test.ts checks). A TypeScript object literal cannot carry the same computed key
+   * twice, so `F_POSTSCRIPT` names each binary once and this resolves through
+   * the alias.
+   *
+   * WHAT MUST STILL HOLD, and it is the thing the guard was written for: every
+   * binary the app can name has a PostScript entry. A missing one does not
+   * throw — SwiftUI's `Font.custom` silently draws San Francisco.
+   */
+  const psFor = (alias: string) => {
+    const key = Object.keys(F).find((k) => F[k] === alias && PS[k] !== undefined);
+    return key === undefined ? undefined : PS[key];
+  };
+
   it("covers every face the app loads", () => {
-    expect(Object.keys(PS).sort()).toEqual(Object.keys(F).sort());
+    const unmapped = [...new Set(Object.values(F))].filter((alias) => psFor(alias) === undefined);
+    expect(unmapped, `no PostScript name for:\n  ${unmapped.join("\n  ")}`).toEqual([]);
+    // ...and nothing in the map points at a face `F` cannot name, which is the
+    // other direction of the same rule: a stale entry is a face that was removed
+    // from the app and left behind here.
+    for (const key of Object.keys(PS)) expect(Object.keys(F), `F_POSTSCRIPT names ${key}`).toContain(key);
   });
 
-  for (const [key, alias] of Object.entries(aliases())) {
-    it(`F.${key} maps to the PostScript name in ${alias}.ttf`, () => {
+  for (const alias of [...new Set(Object.values(aliases()))]) {
+    it(`${alias} maps to the PostScript name in its bundled binary`, () => {
       const file = fontFile(alias);
       // A missing binary is a broken bundle, not a passing test.
       expect(file, `no .otf bundled for ${alias}`).toBeTruthy();
-      expect(PS[key]).toBe(postScriptNameOf(file!));
+      expect(psFor(alias)).toBe(postScriptNameOf(file!));
     });
   }
 
   it("the alias is never the PostScript name (the bug this map fixes)", () => {
     // If these ever coincide the map is a no-op and the guard below is the
     // only thing left holding the rule up — worth knowing.
-    for (const [key, alias] of Object.entries(F)) expect(PS[key]).not.toBe(alias);
+    for (const alias of Object.values(F)) expect(psFor(alias)).not.toBe(alias);
+  });
+
+  it("HARD — the 700 alias exists, is bundled, and `black` is not it", () => {
+    // Dreiviertelfett left the bundle with `weight.bold` and came back a day
+    // later as `F.takeover`, floored at `fs.display`. The two halves of that
+    // are both worth pinning, because the first is what makes the second safe:
+    //
+    //   `black` STAYS at 600. Its 182 reading-band sites are the ones the
+    //     correction was for — a 0.16em stem at 14dp closes the counters of a,
+    //     e and s on this ground, and that finding does not expire.
+    //   `takeover` IS the 700, and it resolves to a binary that ships. An alias
+    //     naming a face the app does not load is the failure this whole file
+    //     exists for: RN falls back to the system face and nothing errors.
+    const takeover = F["takeover"]!;
+    expect(takeover).toContain("700");
+    expect(fontFile(takeover), "the 700 binary must be bundled").not.toBeNull();
+    expect(F["black"]).toBe(F["bold"]);
+    expect(F["black"]).toContain("600");
+    // …and 700 is the only alias above Halbfett, in either cut.
+    expect(Object.entries(F).filter(([, a]) => a.includes("700")).map(([k]) => k)).toEqual(["takeover"]);
   });
 });
 

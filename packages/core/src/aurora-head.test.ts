@@ -152,10 +152,28 @@ describe("the screen-head guard — no head opts out of its rung", () => {
 });
 
 describe("the rung a head resolves to", () => {
-  it("is the hero's own title ramp — which is why 28 was wrong", () => {
+  it("is the hero's own title ramp — which is why a typed 28 was wrong", () => {
     // Train typed 28. Performance and Feed resolve to this.
     expect(heroTitleType("Start training", "title").size).toBe(fs.display);
-    expect(fs.display).toBe(26);
+    // THE LITERAL THAT USED TO BE HERE WAS `expect(fs.display).toBe(26)`, and
+    // deleting it is the point rather than a concession. The rung's VALUE is
+    // scale.test.ts's business; restating it here made this test fail when the
+    // ladder was regenerated in Aug 2026, for a reason that has nothing to do
+    // with what it is actually about — which is that a head resolves through the
+    // ramp instead of pinning a size.
+    //
+    // The coincidence is worth naming so nobody reads it as vindication:
+    // `fs.display` is 28 now, the very number Train had typed. That does not
+    // make the typing right — it was wrong because it was a size chosen at a
+    // call site, and it would have gone on reading 28 while every rung around it
+    // moved. Which is exactly what happened to the literal that used to be here.
+    //
+    // What IS worth asserting is the relationship, which survives any rung move:
+    // the ramp puts a screen title below the masthead rung and above the section
+    // one, wherever the ladder happens to sit.
+    const size = heroTitleType("Start training", "title").size;
+    expect(size).toBeLessThan(fs.hero);
+    expect(size).toBeGreaterThan(fs.title);
   });
 
   it("steps a long title down — the behaviour a pinned fontSize destroyed", () => {

@@ -3,6 +3,8 @@ import { ActivityIndicator, ScrollView, Share, Text, TextInput, View, useWindowD
 import Svg, { SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NUTRITION_FAVS_KEY, NUTRITION_RECENT_KEY, LABEL_GAP } from "@hybrid/core";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -433,8 +435,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [recent, setRecent] = useState<QuickFood[]>([]);
   const [favorites, setFavorites] = useState<QuickFood[]>([]);
   useEffect(() => {
-    AsyncStorage.getItem("hybrid.nutrition.recent").then((r) => { if (r) try { setRecent(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
-    AsyncStorage.getItem("hybrid.nutrition.favorites").then((r) => { if (r) try { setFavorites(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
+    setRecent(getPref<QuickFood[]>(NUTRITION_RECENT_KEY, []));
+    setFavorites(getPref<QuickFood[]>(NUTRITION_FAVS_KEY, []));
   }, []);
   // Every log STAMPS the entry, carrying forward the hours it was already
   // logged at, so the picker can open on what this athlete eats at this time
@@ -446,11 +448,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // copy of the entry), and stamping that would drop a log.
     const stamped = { ...q, logs: recordLog(prev?.logs ?? q.logs, Date.now()) };
     const next = [stamped, ...xs.filter((x) => x.key !== q.key)].slice(0, 20);
-    AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+    setPref(NUTRITION_RECENT_KEY, next);
     return next;
   });
   const isFavorite = (key: string) => favorites.some((x) => x.key === key);
-  const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; AsyncStorage.setItem("hybrid.nutrition.favorites", JSON.stringify(next)).catch(() => {}); return next; });
+  const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; setPref(NUTRITION_FAVS_KEY, next); return next; });
   /**
    * FORGET A RECENT. The MRU is written on every log and could never be edited,
    * so one mistyped quick entry sat at the top of the picker for the next twenty
@@ -467,7 +469,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // the moment the athlete caused, which is where motion does its actual job.
     listMotion(() => setRecent((xs) => {
       const next = xs.filter((x) => x.key !== key);
-      AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+      setPref(NUTRITION_RECENT_KEY, next);
       return next;
     }));
     haptic.warning();
@@ -2078,7 +2080,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     {src ? <MarkPlate C={C} src={src} height={24} /> : null}
                     <View style={{ flex: 1 }}>
                       <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.publishedBy")}</Text>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{portion.verified!.sourceName}</Text>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP }}>{portion.verified!.sourceName}</Text>
                     </View>
                     <Glyph name="chevron" size={16} color={C.ash} />
                   </Pressable>
@@ -2177,7 +2179,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
               <Pressable onPress={() => stepPortion(-1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), color: txt(C, C.lime) }}>–</Text></Pressable>
               <View style={{ alignItems: "center" }}>
-                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, lineHeight: leading(30, "flush"), letterSpacing: trackFigure(30), color: C.chalk, padding: 0 }} />
+                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.takeover, fontSize: 30, lineHeight: leading(30, "flush"), letterSpacing: trackFigure(30), color: C.chalk, padding: 0 }} />
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={ty(C, "overline")}>{portionUnitLabel(portionUnitActive)}</Text>
               </View>
               <Pressable onPress={() => stepPortion(1)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
@@ -2239,7 +2241,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               <RollingNumber
                 value={String(sc(portion.kcal))}
                 align="center"
-                style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}
+                style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}
               />
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
             </View>
@@ -2464,7 +2466,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <GlassSelectMenu
               label={partLabel(mealType)}
               // THE HERO SYSTEM'S INLINE TITLE, not a hand-rolled one. Both
-              // branches of this switcher drew Archivo BLACK at 19 — a face and
+              // branches of this switcher drew the display face's heaviest cut at 19 — a face and
               // a size that appear on no other screen head in the app, so the
               // picker's title sat 3pt above every title it pushes from. The
               // rank owns the type (reference/hero-system.md §2).
@@ -2638,7 +2640,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
+                <Text style={{ ...ty(C, "caption"), paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
               ) : meals.map((m) => (
                 <FoodRow
                   key={m.id} C={C}
@@ -2652,7 +2654,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 />
               ))
             ) : foods.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
+              <Text style={{ ...ty(C, "caption"), paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
             ) : foodTab === "recent" && usuals.length ? (
               /* THE HOUR. The app knows the clock and the meal, so Recent
                  opens on what this athlete actually eats around now — and
@@ -2736,8 +2738,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color }}>{label}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 8 }}>
           {fixed != null
-            ? <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fixed}</Text>
-            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, padding: 0 }} />}
+            ? <Text style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fixed}</Text>
+            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>g</Text>
         </View>
       </View>
@@ -2778,8 +2780,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             the meal is built from products these show the summed total. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 24 }}>
           {fromComps
-            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{compTotals.kcal}</Text>
-            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0 }} />}
+            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{compTotals.kcal}</Text>
+            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, letterSpacing: tracking(fs.body, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
         </View>
         <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.calorie")}</Text>
@@ -2986,7 +2988,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <TextInput value={compQuery} onChangeText={setCompQuery} placeholder={t("w.recovery.nutrition.searchProducts")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.searchProducts")} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, padding: 0 }} />
           </View>
           {products.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.noProductsYet")}</Text>
+            <Text style={{ ...ty(C, "caption"), paddingVertical: 16 }}>{t("w.recovery.nutrition.noProductsYet")}</Text>
           ) : compList.length === 0 ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
           ) : compList.map((p) => {
@@ -3061,7 +3063,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <MarkPlate C={C} src={src} height={26} />
             <View style={{ flex: 1 }}>
               <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.publishedBy")}</Text>
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{src.name}</Text>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP }}>{src.name}</Text>
             </View>
             <Glyph name="chevron" size={17} color={C.ash} />
           </Pressable>
@@ -3070,12 +3072,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* ONE name. The operator's own-language name is a search alias only —
             printing it under the English name put a second name on screen for a
             food we had already named, which read as clutter, not help. */}
-        <Text style={{ fontFamily: F.black, fontSize: 32, letterSpacing: trackFigure(32), lineHeight: leading(32, "flush"), color: C.chalk, marginTop: 24 }}>{f.name}</Text>
+        <Text style={{ fontFamily: F.takeover, fontSize: 32, letterSpacing: trackFigure(32), lineHeight: leading(32, "flush"), color: C.chalk, marginTop: 24 }}>{f.name}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</Text>
 
         {/* Energy hero — both units, because a label states both and we finally can. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 20 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{f.facts.kcal}</Text>
+          <Text style={{ fontFamily: F.takeover, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{f.facts.kcal}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
           <View style={{ flex: 1 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{kj(f.facts.kcal)} kJ</Text>
@@ -3116,13 +3118,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {f.ingredients ? (
               <View style={f.packSize ? { marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line } : null}>
                 <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.ingredients")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body, "relaxed") }}>{f.ingredients}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP, lineHeight: leading(fs.body, "relaxed") }}>{f.ingredients}</Text>
               </View>
             ) : null}
             {f.mayContain ? (
               <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.mayContain")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body, "relaxed") }}>{f.mayContain}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP, lineHeight: leading(fs.body, "relaxed") }}>{f.mayContain}</Text>
               </View>
             ) : null}
             {/* Say out loud that this is OUR translation of someone else's pack —
@@ -3139,14 +3141,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <VerifiedMark C={C} size={15} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, lineHeight: leading(fs.nano, "relaxed") }}>
+              <Text style={{ ...ty(C, "caption"), marginTop: 4 }}>
                 {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
               </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, lineHeight: leading(fs.nano, "relaxed") }}>{f.provenance}</Text>
+              <Text style={{ ...ty(C, "caption"), marginTop: 8 }}>{f.provenance}</Text>
               {/* A stale item KEEPS its tick — the numbers were true when we
                   checked. It says out loud that it is due another look. */}
               {fresh.stale ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber), marginTop: 8, lineHeight: leading(fs.nano, "relaxed") }}>{t("w.recovery.nutrition.verifiedStale")}</Text>
+                <Text style={{ ...ty(C, "caption", txt(C, C.amber)), marginTop: 8 }}>{t("w.recovery.nutrition.verifiedStale")}</Text>
               ) : null}
             </View>
           </View>
@@ -3263,7 +3265,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           {([[t("w.recovery.nutrition.itemsChecked"), String(items.length)], [t("w.recovery.nutrition.lastChecked"), checked ?? "—"]] as const).map(([lab, val]) => (
             <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 12 }}>
               <Text style={ty(C, "kicker")}>{lab}</Text>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk, marginTop: 5 }}>{val}</Text>
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk, marginTop: LABEL_GAP }}>{val}</Text>
             </View>
           ))}
         </View>
@@ -3285,11 +3287,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </Pressable>
         ))}
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 20, lineHeight: leading(fs.nano, "relaxed"), opacity: 0.85 }}>{src.trademark}</Text>
+        <Text style={{ ...ty(C, "caption"), marginTop: 20, opacity: 0.85 }}>{src.trademark}</Text>
         {/* Where the artwork came from — sourceMarkCredits() had no surface at
             all until now. */}
         {src.mark ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano, "relaxed"), opacity: 0.7, marginTop: 8, marginBottom: 20 }}>
+          <Text style={{ ...ty(C, "caption"), opacity: 0.7, marginTop: 8, marginBottom: 20 }}>
             {t("w.recovery.nutrition.markCredit")} {src.mark.credit}
           </Text>
         ) : <View style={{ marginBottom: 20 }} />}
@@ -3675,7 +3677,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <Glyph name="target" size={20} color={C.ash} />
           <View>
             <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.goalLabel")}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: 2 }}>{goalName(goal)}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: LABEL_GAP }}>{goalName(goal)}</Text>
           </View>
         </View>
         <Glyph name="chevron" size={16} color={C.ash} />
@@ -3747,7 +3749,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                       // the two land on ONE spec: the `fs.stat` rung and
                       // `trackFigure(fs.stat)`, in place of a hand-set 44/-1 that
                       // existed nowhere else.
-                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: tracking(fs.stat), color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
+                      // `trackFigure`, NOT `tracking` — the comment above has
+                      // said so since this landed and the code did not do it.
+                      // The text bands hand a 46dp figure -0.02em; every other
+                      // `fs.stat` hero in the app (exercise 1RM, learned, load
+                      // sheet, the picker's own day header four hundred lines
+                      // up) takes trackFigure's -0.035em. This one number, on
+                      // the most-looked-at screen in the product, sat 0.7dp
+                      // looser than every other number of its size.
+                      // `leading` joins it for the same reason: a figure takes
+                      // a flush line box, and this was inheriting a default.
+                      style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
                     />
                     <Text style={ty(C, "kicker")}>{figureText(heroFigures.kcal.have, heroFigures.kcal.want)}</Text>
                   </View>
@@ -3808,7 +3820,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
           {/* Today's meals — Breakfast / Lunch / Dinner / Snacks. Each opens the
               picker attributed to that meal; the kcal already logged is shown. */}
-          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginHorizontal: 2 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: space.xxl }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.recovery.nutrition.todaysMeals")}</Text>
             <Pressable onPress={() => setView("diary")}><CtaLabel label={`${t("w.recovery.nutrition.menuDiary")} →`} color={C.ash} fontSize={fs.micro} font={F.mono} style={{ letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase" }} /></Pressable>
           </View>
@@ -4281,7 +4293,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                   </View>
                 ))}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano, "relaxed") }}>
+            <Text style={{ ...ty(C, "caption"), marginTop: 12 }}>
               {t("w.recovery.nutrition.facts.dayPartial")} {t("w.recovery.nutrition.facts.referenceNote")}
             </Text>
           </View>
@@ -4318,7 +4330,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
           ) : null}
         </View>
-        {dayLogs.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano, "relaxed") }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
+        {dayLogs.length === 0 ? <Text style={{ ...ty(C, "caption"), marginTop: 12 }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
       </ACard>
       </>
       ); })()}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { fmtKm, pacePerKm, mmss, STATE_OPACITY } from "@hybrid/core";
+import { fmtKm, pacePerKm, mmss, STATE_OPACITY, LABEL_GAP } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
@@ -127,7 +127,7 @@ function Stat({ label, value, color, C }: { label: string; value: string; color:
   return (
     <View style={{ flex: 1 }}>
       <Text style={ty(C, "kicker")}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color, marginTop: LABEL_GAP }}>{value}</Text>
     </View>
   );
 }

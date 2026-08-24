@@ -1,5 +1,5 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, sanitizeVolumeProfile, type HeatProtocol, type AthleteVolumeProfile } from "@hybrid/core";
+import type { DeclaredEvent, TrainingKind, TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, StreamSummary, StreamKind, SportSegmentBest } from "@hybrid/core";
+import { sanitizeDeclaredEvents, sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, sanitizeVolumeProfile, type HeatProtocol, type AthleteVolumeProfile } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -171,6 +171,55 @@ export async function fetchSessionRecordings(): Promise<SessionRecording[]> {
     return Array.isArray(data.recordings) ? data.recordings : [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * THE RECORDING UNDER A SESSION — the second-by-second data the summary's
+ * intensity read is drawn from.
+ *
+ * The phone has POSTed this since the streams work landed (`putSessionStreams`
+ * below) and nothing has ever read it back, which is why the summary showed a
+ * heart-rate average and never the shape it came from. The endpoint has been
+ * complete the whole time: it returns the streams, the laps, and — derived on
+ * READ rather than stored, because its denominator moves as the athlete's
+ * measured max goes up — the seconds spent in each zone, alongside the max HR
+ * those zones are relative to, so the client can say what they are measured
+ * against instead of presenting them as physiology.
+ *
+ * `kind` narrows it. The arrays are the largest thing the API returns and a
+ * caller that wants a heart rate does not want a GPS route with it.
+ *
+ * Empty on any failure: a summary whose recording will not load is the summary
+ * as it shipped before this, not an error the panel has to render.
+ */
+export interface SessionStreamsRead {
+  streams: (SessionStream & StreamSummary)[];
+  laps: SessionLap[];
+  /** seconds in Z1..Z5, or null when the recording carries no heart rate */
+  hrZoneSec: number[] | null;
+  /** the max HR the zones were computed against — measured, never 220-minus-age */
+  maxHrUsed: number | null;
+}
+
+export async function fetchSessionStreams(
+  id: string,
+  kinds?: StreamKind[],
+): Promise<SessionStreamsRead> {
+  const empty: SessionStreamsRead = { streams: [], laps: [], hrZoneSec: null, maxHrUsed: null };
+  try {
+    const q = kinds?.length ? `?kind=${encodeURIComponent(kinds.join(","))}` : "";
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}/streams${q}`, { headers: await authHeaders() });
+    if (!res.ok) return empty;
+    const d = (await res.json()) as Partial<SessionStreamsRead>;
+    return {
+      streams: Array.isArray(d.streams) ? d.streams : [],
+      laps: Array.isArray(d.laps) ? d.laps : [],
+      hrZoneSec: Array.isArray(d.hrZoneSec) ? d.hrZoneSec : null,
+      maxHrUsed: typeof d.maxHrUsed === "number" ? d.maxHrUsed : null,
+    };
+  } catch {
+    return empty;
   }
 }
 
@@ -446,6 +495,47 @@ export async function logWater(ml: number, ts = new Date().toISOString()): Promi
 /** One recorded sitting as the client holds it, with both row ids so it can be
  *  removed as a unit. */
 export type HeatLog = { ids: string[]; minutes: number; tempC: number; protocol: HeatProtocol; ts: string };
+
+/**
+ * THE ATHLETE'S DECLARED RACES, MEETS AND TESTS — the half of "what's on
+ * tomorrow" no log can answer, and the only training-intent signal the app
+ * collects other than "not today?".
+ *
+ * SOFT on read: a missing events list must never fail the Dashboard, and the
+ * band simply goes back to taking tomorrow from a detected fixture and the
+ * plan. The WRITE is not soft — see `createDayEvent`.
+ */
+export async function fetchDayEvents(): Promise<DeclaredEvent[]> {
+  try {
+    const data = await fetchJson<{ events?: unknown }>("/api/day-events");
+    // Through core's own sanitizer, so a row the app cannot name never reaches
+    // the largest type on the screen.
+    return sanitizeDeclaredEvents(data.events);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Declare one. THROWS, deliberately: every other write on this screen has a
+ * client-side cache standing behind it, and this one does not — an event the
+ * athlete believes they entered and that silently went nowhere is the app
+ * losing the only thing it ever asked them for.
+ */
+export async function createDayEvent(input: { date: string; kind: TrainingKind; label?: string | null }): Promise<DeclaredEvent | null> {
+  const data = await fetchJson<{ event?: unknown }>("/api/day-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: input.date, kind: input.kind, label: input.label ?? null }),
+  });
+  return sanitizeDeclaredEvents([data.event])[0] ?? null;
+}
+
+/** Delete one — how a declared event is corrected. It is never dismissed: the
+ *  band's "not today?" withdraws an INFERENCE, and this is not one. */
+export async function deleteDayEvent(id: string): Promise<void> {
+  await fetchJson(`/api/day-events?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+}
 
 /** Every sauna row this athlete owns, filtered server-side by kind so an
  *  unrelated stream (the food log writes up to eight rows per meal) can never
@@ -815,6 +905,38 @@ export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: Nu
     });
   } catch {
     /* best-effort — the client keeps its local cache */
+  }
+}
+
+/* ── SYNCED PREFERENCES ────────────────────────────────────────────────────
+   The settings that follow the ACCOUNT rather than this handset. Both calls
+   degrade to a no-op: before reference/sql-user-prefs.sql is applied the route
+   answers {} / 503, and lib/synced-prefs.ts simply keeps using its local cache,
+   so the app behaves exactly as it did when these settings were device-only. */
+export async function getSyncedPrefs(): Promise<Record<string, unknown>> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/prefs`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    return ((await res.json()) as { prefs?: Record<string, unknown> }).prefs ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/** Merge a patch server-side. A key sent as `null` is forgotten. Returns
+ *  whether it actually persisted, so the caller can keep the write pending
+ *  rather than believing a 503. */
+export async function putSyncedPrefs(patch: Record<string, unknown>): Promise<boolean> {
+  if (Object.keys(patch).length === 0) return true;
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/prefs`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ patch }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 

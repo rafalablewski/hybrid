@@ -1,20 +1,33 @@
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <!-- HYBRID — Plan-day card redesign study. Standalone preview.
      10 distinct treatments of the "Soviet 8-Week Peaking" plan-day card.
-     Grounded in packages/core/src/theme/tokens.ts (Archivo / JetBrains Mono,
+     Grounded in packages/core/src/theme/tokens.ts (Sohne / SohneMono,
      ink #0c0d0c, chartreuse #c6f84f, Aurora spectrum). -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — plan-day card, 10 redesigns</title>
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Sohne+Narrow:wght@600;700&display=swap");
 
   /* ---- app tokens (fixed — the mock cards render in the product's palette) ---- */
   :root{
     --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
     --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
     --teal:#3c787e; --violet:#c9a9f0; --sand:#d0cd94; --clay:#d56f3e;
-    --disp:"Archivo","Archivo Narrow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --disp:"Sohne","Sohne Narrow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"SohneMono",ui-monospace,"SF Mono",Menlo,monospace;
 
     /* ---- page chrome (theme-aware) ---- */
     --bg:#0a0b0a; --bg2:#0e100e; --panel:#121412; --frame:#22251f;
@@ -282,11 +295,11 @@
   <h1>Ten ways to open a <em>training day</em>.</h1>
   <p class="lede">One card, ten treatments. Each is the same plan-day surface from the app —
      <b>Soviet 8-Week Peaking, day 5 of 37</b> — reworked into a distinct direction, all built on the real brand
-     tokens (Archivo · JetBrains Mono · chartreuse over ink, plus the Aurora spectrum).</p>
+     tokens (Sohne · SohneMono · chartreuse over ink, plus the Aurora spectrum).</p>
   <div class="meta">
     <span><b>Source</b> plan-day card</span>
     <span><b>Palette</b> #0c0d0c · #c6f84f · teal/sand/terracotta/violet</span>
-    <span><b>Type</b> Archivo 900 / JetBrains Mono</span>
+    <span><b>Type</b> Sohne 900 / SohneMono</span>
     <span><b>Content</b> real — 5 lifts, live progress</span>
   </div>
 

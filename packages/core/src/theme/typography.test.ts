@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { fs, lh, tracking, trackFigure } from "../scale";
+import { fs, lh, leading, tracking, trackFigure, STEP, promote, type TypeRole } from "../scale";
+import { FACE_LINE, FIGURE_INK, NATURAL_LINE_EM, lineBoxFloor } from "./face-metrics";
 import { fonts } from "./tokens";
 import { formatClock } from "../duration";
-import { cut, weight, text, resolveText, unitFor, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
+import { cut, weight, text, resolveText, unitFor, measureFor, DESKTOP_PROMOTION, WEIGHT_STEM_EM, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
 
 const TOKENS = Object.keys(text) as TextToken[];
 
@@ -17,22 +18,36 @@ describe("the named type styles", () => {
       expect(Object.keys(lh), `${t}.leading`).toContain(s.leading);
       // A style either names one of the two uppercase voices, names the figure
       // tightening, or names nothing — in which case the SIZE decides, which is
-      // the whole point of the band table. Anything else is a forked ladder.
+      // the whole point of the optical curve. Anything else is a forked ladder.
       if (s.tracking !== undefined) expect(["text", "label", "caps", "figure"], `${t}.tracking`).toContain(s.tracking);
       expect(Object.values(weight), `${t}.weight`).toContain(s.weight);
     }
   });
 
   it("HARD — the cut set matches the faces the app actually loads", () => {
-    // TWO cuts, because two faces are loaded. The spec's third (Söhne Schmal,
-    // takeover titles at 34 and above) is deliberately absent until the face
-    // ships — see the note on `cut`. This guard is not decoration: `condensed`
-    // was deleted from tokens.ts once for existing as a name with no binary
-    // behind it, and the failure mode was invisible (the phone drew one face,
-    // the admin panel another). If you are adding the third cut, you are also
-    // loading it, and this number moves in the same change.
+    // TWO cuts, because two faces are loaded — Söhne and Söhne Mono. ITC
+    // Garamond Book was a third until Aug 2026 and its deletion moved this list
+    // in the same change, which is the guard working in the outward direction.
+    // Söhne Schmal (takeover titles at 34 and above) is still deliberately
+    // absent until the face ships — see the note on `cut`. This
+    // guard is not decoration: `condensed` was deleted from tokens.ts once for
+    // existing as a name with no binary behind it, and the failure mode was
+    // invisible (the phone drew one face, the admin panel another). If you are
+    // adding a cut, you are also loading it, and this list moves in the same
+    // change.
     expect(Object.keys(cut).sort()).toEqual(["mono", "sans"]);
     for (const c of Object.values(cut)) expect(Object.values(fonts)).toContain(c);
+  });
+
+  it("HARD — no style names a rung the ladder does not carry", () => {
+    // This used to guard `fs.editorial` (33) — the serif's own rung, off the
+    // ladder, and forbidden to any cut but `serif`, because a 33dp sans heading
+    // would have sat two dp off `hero` for a reason nobody could name. The face
+    // went in Aug 2026 and the rung went with it; what the guard protects now is
+    // the property underneath it: every size a token names is a rung, so moving
+    // a rung moves the app and nothing sits between two of them.
+    const bad = TOKENS.filter((t) => !(text[t] as TextStyle).size || !(Object.keys(fs) as string[]).includes((text[t] as TextStyle).size));
+    expect(bad, `every size must be a rung:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — mono never goes above 600", () => {
@@ -42,10 +57,29 @@ describe("the named type styles", () => {
     expect(bad, `mono is capped at semibold:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  it("HARD — bold is display-only", () => {
-    // Rule 02/20. 700 below `display` (26) is volume, not hierarchy.
-    const bad = TOKENS.filter((t) => (text[t] as TextStyle).weight === weight.bold && fs[(text[t] as TextStyle).size] < fs.display);
-    expect(bad, `700 is for 26dp and up:\n  ${bad.join("\n  ")}`).toEqual([]);
+  it("HARD — the 700 is floored at the display band, not banned outright", () => {
+    // THE RULE THIS REPLACED, and why it moved. `weight.bold` survived the
+    // rebuild for one style — the Wrapped's cover titles — on the reasoning
+    // that a LIT surface wants a heavier cut, and the premise was false
+    // (HERO_TAKEOVER_INK is #0a0b09, darker than `ink`). The cut was then
+    // deleted from the product, which answered "is that surface lit?" and
+    // settled "does the top of the hierarchy need a weight step?" by accident:
+    // `hero` went 34/700 → 35/600 in the same change that grew the reading band
+    // 8-12%, so the masthead got quieter as the text under it got louder.
+    //
+    // Irradiation closes counters in proportion to STEM OVER COUNTER and that
+    // ratio falls as type grows, so the floor is a size and not a surface —
+    // which is also the difference between a rule this test can check and a
+    // claim about a colour three files away.
+    expect(Object.values(weight)).toEqual([400, 500, 600, 700]);
+    const heavy = TOKENS.filter((t) => (text[t] as TextStyle).weight > weight.semibold);
+    for (const t of heavy) {
+      const st = text[t] as TextStyle;
+      expect(fs[st.size], `${t} takes 700 at ${st.size}`).toBeGreaterThanOrEqual(fs.display);
+      expect(st.cut, `${t} takes 700 in ${st.cut}`).toBe("sans");
+    }
+    // …and it is not a weight the reading band can reach by accident.
+    expect(heavy).toEqual(["hero"]);
   });
 
   it("HARD — uppercase is mono only, and only at the two smallest rungs", () => {
@@ -108,11 +142,11 @@ describe("the eyebrow pair, resolved", () => {
   });
 
   it("declares the line box the inline shapes were leaving to the platform", () => {
-    // The old objects set no lineHeight, so the eyebrow took JetBrains Mono's
-    // own metrics: (ascent - descent + lineGap) / upem = 1.320em, i.e. 13.2dp
-    // at fs.nano. `lh.snug` gives 13. The 0.2dp difference is sub-pixel on any
-    // real screen, which is why declaring it is safe — and declaring it is what
-    // lets Dynamic Type carry the leading up with the size.
+    // The old objects set no lineHeight, so the eyebrow took the mono face's own
+    // metrics — 1.326em for Söhne Mono (hhea 1.037 + 0.289), i.e. 13.3dp at
+    // fs.nano. `lh.snug` gives 13. The 0.3dp difference is sub-pixel on any real
+    // screen, which is why declaring it is safe — and declaring it is what lets
+    // Dynamic Type carry the leading up with the size.
     expect(resolveText("kicker").lineHeight).toBe(13);
     expect(resolveText("kicker", 2).lineHeight).toBe(26);
   });
@@ -129,12 +163,27 @@ describe("resolveText", () => {
     expect(at2.lineHeight / at2.fontSize).toBeCloseTo(at1.lineHeight / at1.fontSize, 1);
   });
 
-  it("sets a standalone figure solid", () => {
+  it("sets a standalone figure as tight as the platform allows, and NOT tighter", () => {
     const m = resolveText("metric");
     expect(m.fontSize).toBe(fs.stat);
-    expect(m.lineHeight).toBe(fs.stat); // lh.flush — no line box a figure cannot use
     expect(m.fontFamily).toBe(cut.mono);
     expect(m.tabular).toBe(true);
+    // THE REGRESSION THIS PINS. `lh.flush` was briefly 0.90 — the figure set's
+    // measured ink span plus a guessed headroom — and every figure in the app
+    // shipped with the top of its digits cut off, because a line box does not
+    // crop the ink: React Native declares min = max line height and TextKit
+    // takes the shortfall out of the ASCENT, keeping the font's descent against
+    // the bottom of the fragment. So the room above the baseline is
+    // `box − descent`, and the floor is `inkTop + descent` (lineBoxFloor in
+    // theme/face-metrics.ts) whatever the string holds.
+    expect(m.lineHeight).toBe(leading(fs.stat, "flush"));
+    expect(m.lineHeight).toBeGreaterThanOrEqual(fs.stat * lineBoxFloor(FIGURE_INK.top));
+    // The digit tops clear the box, WITH the reserved descent under them —
+    // this is the arithmetic the screenshot of a sliced `12.24 km` failed.
+    expect(m.lineHeight - fs.stat * FACE_LINE.descent).toBeGreaterThanOrEqual(fs.stat * FIGURE_INK.top);
+    // …and it is still far tighter than the font's own box, which is the
+    // entire reason the rung exists.
+    expect(m.lineHeight).toBeLessThan(fs.stat * NATURAL_LINE_EM);
   });
 
   it("tracks figures proportionally and text absolutely", () => {
@@ -204,5 +253,125 @@ describe("figure formats", () => {
     // different alphabet doing an impression of an operator.
     expect(TIMES).toBe("×");
     expect(TIMES).not.toBe("x");
+  });
+});
+
+/**
+ * THE RULES THE Aug 2026 REBUILD ADDED. Each one is a defect that was found by
+ * measuring the shipped binaries rather than by looking at a screen, which is
+ * why each one needs a guard: none of them looks broken in isolation.
+ */
+describe("the weight ladder on a dark ground", () => {
+  it("the ladder is a ladder in INK, which is the thing being reasoned about", () => {
+    // Söhne draws all four cuts on one skeleton, so a weight is its stem and
+    // nothing else. If that stopped being true the irradiation argument above
+    // would need re-making rather than re-reading.
+    const stems = [weight.regular, weight.medium, weight.semibold, weight.bold].map((w) => WEIGHT_STEM_EM[w]!);
+    for (let i = 1; i < stems.length; i++) expect(stems[i]!).toBeGreaterThan(stems[i - 1]!);
+    expect(WEIGHT_STEM_EM[weight.semibold]! / WEIGHT_STEM_EM[weight.regular]!).toBeCloseTo(1.56, 2);
+  });
+
+  it("gives the heading band a weight step, not just a size step", () => {
+    // Four consecutive heading rungs at one weight is hierarchy by size alone —
+    // a third of the available signal left unused.
+    expect(resolveText("title").fontWeight).toBeGreaterThan(resolveText("subtitle").fontWeight);
+    expect(resolveText("subtitle").fontWeight).toBeGreaterThan(resolveText("body").fontWeight);
+  });
+});
+
+describe("the editorial voice", () => {
+  it("HARD — the conclusion outranks the utility styles it was mistaken for", () => {
+    // THE WHOLE POINT OF THE TOKEN, and it is the part that survived the face.
+    // The two consumers (the week verdict's lead, the nutrition nudge) were set
+    // in `subtitle` and `body` — a heading style and a help-text style — which
+    // is what "reads as a caption for something else" meant. The serif carried
+    // the rank from Aug 2026 until the face was deleted; SIZE carries it now, so
+    // the one thing that must not drift back is the rung.
+    expect(resolveText("editorial").fontSize).toBeGreaterThan(resolveText("subtitle").fontSize);
+    expect(resolveText("editorial").fontSize).toBeGreaterThan(resolveText("body").fontSize);
+  });
+
+  it("HARD — it is PROSE, so it never takes a heading's weight", () => {
+    // The other half of the distinction, and the reason a bigger `subtitle` is
+    // not the same token. `title` and `subtitle` are set in medium; a sentence
+    // that concludes something is regular, and the weight is what keeps the
+    // headings around it legible as headings.
+    expect(resolveText("editorial").fontWeight).toBe(weight.regular);
+    expect(resolveText("editorial").fontWeight).toBeLessThan(resolveText("title").fontWeight);
+  });
+
+  it("no longer sets a conclusion at a pull quote's line box", () => {
+    // The defect the serif's own leading was derived to fix: `fs.editorial` was
+    // inflated 18.6% so ITC Garamond's x-height landed where Söhne's did, and a
+    // leading RATIO multiplies that inflated em — so `snug` was really 1.53x the
+    // APPARENT size, i.e. body leading on a display-size quote. On one face the
+    // em and the apparent size are the same thing again, and `snug` is what a
+    // one-to-two-line sentence takes.
+    expect(resolveText("editorial").lineHeight).toBe(leading(fs.title, "snug"));
+    expect(resolveText("editorial").lineHeight / resolveText("editorial").fontSize).toBeLessThan(1.5);
+  });
+});
+
+describe("controls", () => {
+  it("names the sizes APill already draws, so adopting it is a refactor", () => {
+    // The first cut of these tokens was designed against the specification and
+    // not against the app — `bodyLg` and `caption`, where APill had long since
+    // settled on `subtitle` for a full-width control and `bodyLg` for a compact
+    // one. Wiring that would have shrunk every button in the product by a rung.
+    expect(resolveText("button").fontSize).toBe(fs.subtitle);
+    expect(resolveText("buttonSm").fontSize).toBe(fs.bodyLg);
+    expect(resolveText("button").fontWeight).toBe(weight.semibold);
+    expect(resolveText("buttonSm").fontWeight).toBe(weight.semibold);
+    // PRIMARY ink: a control meant to be pressed cannot be set in the colour
+    // reserved for things that are merely true. (APill overrides it per variant
+    // — a pill's ink is its variant's business — but the token's default is the
+    // one a bare control gets.)
+    expect(resolveText("button").ink).toBe("primary");
+  });
+});
+
+describe("measure", () => {
+  it("answers in characters, so the number is a reading decision", () => {
+    // 66 characters, turned into a width by the face's own average advance.
+    for (const t of ["body", "prose", "bodyLg"] as TextToken[]) {
+      expect(measureFor(t)).toBe(measureFor(t, 66));
+      expect(measureFor(t, 45)).toBeLessThan(measureFor(t, 75));
+    }
+    // A bigger rung needs a wider column to hold the same count — which is the
+    // whole reason a hand-typed max-width goes wrong the moment a size moves.
+    expect(measureFor("prose")).toBeLessThan(measureFor("headline"));
+  });
+});
+
+describe("the desktop scale", () => {
+  it("HARD — promoting by one step maps every rung ONTO the next rung", () => {
+    // The claim that lets desktop and mobile share one ladder instead of
+    // forking, which is the drift scale.ts exists to prevent. It holds as an
+    // IDENTITY rather than an approximation, because the ladder is generated by
+    // this very ratio — so it is worth asserting rung by rung.
+    const LADDER: TypeRole[] = ["nano", "micro", "caption", "body", "bodyLg", "subtitle", "title", "headline"];
+    for (let i = 0; i < LADDER.length - 1; i++) {
+      expect(promote(LADDER[i]!, DESKTOP_PROMOTION), `${LADDER[i]} promoted`).toBe(fs[LADDER[i + 1]!]);
+    }
+    expect(DESKTOP_PROMOTION).toBe(1);
+    // AND THE ARITHMETIC THAT LOOKS EQUIVALENT AND IS NOT — the bug this API
+    // shape exists to prevent. Rounding a rung and then multiplying loses the
+    // half dp the exact ladder carries, so `micro` promoted by multiplication
+    // lands on 12, which is not a rung at all.
+    expect(Math.round(fs.micro * STEP)).toBe(12);
+    expect(promote("micro")).toBe(fs.caption);
+    expect(Object.values(fs)).not.toContain(12);
+  });
+
+  it("carries leading and tracking up with the size, not just the size", () => {
+    const m = resolveText("body");
+    const d = resolveText("body", 1, DESKTOP_PROMOTION);
+    expect(d.fontSize).toBe(fs.bodyLg);
+    // Leading is a ratio, so it follows for free.
+    expect(d.lineHeight / d.fontSize).toBeCloseTo(m.lineHeight / m.fontSize, 1);
+    // Tracking is a function of the RENDERED size, so the promoted rung gets the
+    // correction its new size deserves rather than carrying the old one up —
+    // which is the whole reason the band table had to become a curve.
+    expect(d.letterSpacing).toBe(tracking(fs.bodyLg));
   });
 });

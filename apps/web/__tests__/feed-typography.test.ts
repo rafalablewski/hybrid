@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
  *  1. THE PROSE FACE. React Native has no font inheritance outside a Text
  *     tree, so every prose Text names the face (`F.reg`). The feed declared
  *     none, so its captions, comments and empty states drew in the PLATFORM UI
- *     font while every other tab drew in Archivo.
+ *     font while every other tab drew in the display face.
  *
  *  2. THE TITLE FACE. Headings read the app's display face at its heading
  *     weights (`F.black` / `F.bold`). A post's headline is a heading, so it

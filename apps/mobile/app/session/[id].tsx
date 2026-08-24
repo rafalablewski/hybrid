@@ -17,7 +17,6 @@ import {
   setTypeBadge,
   fmtWeight,
   fmtTonnage,
-  displayLoad,
   kgToUnit,
   type WeightUnit,
   paceSeries,
@@ -38,6 +37,7 @@ import {
   type E1rmPoint,
   type PacePoint,
 
+  setLoadText,
   ALPHA, FEEDBACK } from "@hybrid/core";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -216,7 +216,15 @@ export default function SessionDetail() {
                   return (
                   <View key={j} style={{ flexDirection: "row", gap: space.md, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
                     <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
-                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load ? `${displayLoad(s.load, units)} ${units}` : "–"} × {s.reps || "–"}{stTag}</Mono>
+                    {/* THE LOAD A SET ACTUALLY MOVED, bodyweight included. A
+                        raw `s.load` is empty for a pull-up, so five sets of a
+                        75 kg PR printed "– × 7" directly under a header reading
+                        75 kg — the athlete's own weight is known here (bwHere)
+                        and already spent on the header two lines up. Assisted
+                        and weighted variants resolve through the same core
+                        helper the tonnage does, so the rows and the totals can
+                        never disagree about what was lifted. */}
+                    <Mono color={C.chalk} style={{ flex: 1 }}>{setLoadText(b.name, s.load, bwHere, units) ?? "–"} × {s.reps || "–"}{stTag}</Mono>
                     {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("w.train.blocks.rest")}</Mono> : null}
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}

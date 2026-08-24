@@ -37,7 +37,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { track } from "../../lib/track";
 import { useExercises } from "../../lib/queries";
-import { F, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
 import { ASearch , RADIUS} from "./kit";
 import { AuroraIcon } from "./icons";
 import { SETTINGS_ROUTES } from "./settings";
@@ -368,7 +368,7 @@ export default function AuroraSideMenu({
                 style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10, paddingVertical: 12, paddingHorizontal: 4 }}
               >
                 <View style={{ width: 24, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.headline, lineHeight: 22, color: C.ash }}>{toolsOpen ? "−" : "＋"}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.headline, lineHeight: leading(fs.headline, "flush"), color: C.ash }}>{toolsOpen ? "−" : "＋"}</Text>
                 </View>
                 <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.ash }}>{t("nav.allTools")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{toolCount}</Text>

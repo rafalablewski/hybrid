@@ -13,6 +13,10 @@ import {
   MAX_LAPS,
   STREAM_MAX_SAMPLES,
   type SessionStream,
+  secondsAbove,
+  hrDriftPct,
+  hrFallLastMinute,
+  routePoints,
 } from "./session-streams";
 
 const stream = (over: Partial<SessionStream> = {}): SessionStream => ({
@@ -373,5 +377,93 @@ describe("deriveSessionLaps", () => {
 
   it("derives nothing without a distance series", () => {
     expect(deriveSessionLaps([stream()], [], { splitKm: 1, rungsKm: [5] })).toEqual([]);
+  });
+});
+
+describe("the readings a single average cannot give", () => {
+  const stream = (offsets: number[], values: number[]) =>
+    ({ kind: "hr", startedAt: "2026-08-19T13:47:00.000Z", offsets, values, provider: "apple", uuid: "u" }) as const;
+
+  it("secondsAbove weights by TIME, not by sample count", () => {
+    // Three samples over 160 — but each owns the gap that FOLLOWS it, and the
+    // third owns a full minute. Counting samples would report "3".
+    const s = stream([0, 1, 2, 62], [170, 170, 170, 150]);
+    expect(secondsAbove(s, 160)).toBe(62);
+    // Strictly above: a sample exactly at the threshold is not over it.
+    expect(secondsAbove(stream([0, 10, 20], [160, 160, 160]), 160)).toBe(0);
+  });
+
+  it("secondsAbove refuses a stream that is not a heart rate", () => {
+    const power = { ...stream([0, 10], [200, 210]), kind: "power" as const };
+    expect(secondsAbove(power, 160)).toBeNull();
+  });
+
+  it("hrDrift splits by the CLOCK, not by the sample index", () => {
+    // Dense sampling early: by index the midpoint would land at 20 s and put
+    // three low samples in the "second half".
+    const s = stream([0, 5, 10, 15, 20, 120], [130, 130, 130, 130, 130, 160]);
+    // Midpoint is 60 s, so everything but the last sample is the first half.
+    expect(hrDriftPct(s)).toBeCloseTo(23.1, 1);
+  });
+
+  it("hrDrift is null when one side of the split is empty", () => {
+    expect(hrDriftPct(stream([0, 1, 2], [130, 131, 132]))).toBeNull();
+  });
+
+  it("the last minute's fall measures from the window's peak", () => {
+    const s = stream([0, 60, 90, 120], [120, 170, 160, 130]);
+    // Window is 60–120 s; peak inside it is 170, final sample 130.
+    expect(hrFallLastMinute(s)).toBe(40);
+  });
+
+  it("the fall is null when the recording is shorter than its own window", () => {
+    expect(hrFallLastMinute(stream([0, 20, 40], [150, 160, 140]))).toBeNull();
+  });
+
+  it("the fall is null when the heart rate did not come down", () => {
+    expect(hrFallLastMinute(stream([0, 60, 120], [120, 130, 150]))).toBeNull();
+  });
+
+  it("routePoints preserves aspect and corrects longitude for latitude", () => {
+    // A box one degree tall and one degree wide at 60°N is HALF as wide on the
+    // ground as it is tall. Uncorrected it would render square.
+    const route = {
+      kind: "route" as const,
+      startedAt: "2026-08-19T13:47:00.000Z",
+      offsets: [0, 1, 2, 3],
+      values: [60, 61, 61, 60],
+      valuesB: [10, 10, 11, 11],
+      provider: "apple",
+      uuid: "u",
+    };
+    const pts = routePoints(route);
+    expect(pts).toHaveLength(4);
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    const w = Math.max(...xs) - Math.min(...xs);
+    const h = Math.max(...ys) - Math.min(...ys);
+    // Latitude fills the box; longitude occupies about half of it.
+    expect(h).toBeCloseTo(1, 2);
+    expect(w).toBeCloseTo(0.5, 1);
+    // Every point stays inside the unit box, and the shorter axis is centred.
+    for (const p of pts) {
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x).toBeLessThanOrEqual(1);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeLessThanOrEqual(1);
+    }
+    expect(Math.min(...xs)).toBeCloseTo(1 - Math.max(...xs), 2);
+  });
+
+  it("routePoints needs both axes", () => {
+    const noLng = {
+      kind: "route" as const,
+      startedAt: "2026-08-19T13:47:00.000Z",
+      offsets: [0, 1],
+      values: [60, 61],
+      provider: "apple",
+      uuid: "u",
+    };
+    expect(routePoints(noLng)).toEqual([]);
   });
 });

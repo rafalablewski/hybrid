@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalLabel, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA, FEEDBACK } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalLabel, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA, FEEDBACK, LABEL_GAP } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -157,7 +157,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
 
   return (
     <View onLayout={onLayout} style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.ms }}>
         <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{group.category}</Text>
         <Text style={ty(C, "kicker")}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
@@ -335,11 +335,11 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
                 <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: 21, letterSpacing: tracking(fs.headline), color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "flush"), letterSpacing: tracking(fs.headline), color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{s.unit}</Text>}
                       </Text>
-                      <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{s.label}</Text>
+                      <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{s.label}</Text>
                     </View>
                   ))}
                 </View>

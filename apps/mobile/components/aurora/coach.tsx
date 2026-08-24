@@ -11,6 +11,7 @@ import {
   formatStrengthPr,
   ALPHA,
   GOAL_TREE, goalLabel,
+  LABEL_GAP,
 } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
@@ -603,7 +604,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: fs.headline, color }}>{value}</Text>
-      <Text style={{ ...ty(C, "kicker"), marginTop: 2  }}>{label}</Text>
+      <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{label}</Text>
     </View>
   );
 }

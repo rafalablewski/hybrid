@@ -1,3 +1,15 @@
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <title>Train launcher — 5 redesign ideas</title>
 <style>
   :root{
@@ -7,7 +19,7 @@
     --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
     --blue:#4f97a0; --violet:#c9a9f0;
     --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
-    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --mono:"SF Mono",ui-monospace,"SohneMono",Menlo,Consolas,monospace;
     --page:#070806;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -202,7 +214,7 @@
 <div class="page-head">
   <div class="kicker">Hybrid · Mobile</div>
   <h1>The middle button, reimagined <em>— 5 directions for the Train launcher</em></h1>
-  <p>The Train launcher is the app's single most-tapped surface — the screen behind the lime dumbbell. Today it's one giant lime hero, a locked AI billboard, and a scatter of loosely related cards. Each concept below keeps the brand (chartreuse on near-black, mono labels, Archivo weights) but rethinks <b>hierarchy, density, and how the empty state feels</b>. Every screen is rendered on real tokens.</p>
+  <p>The Train launcher is the app's single most-tapped surface — the screen behind the lime dumbbell. Today it's one giant lime hero, a locked AI billboard, and a scatter of loosely related cards. Each concept below keeps the brand (chartreuse on near-black, mono labels, Sohne weights) but rethinks <b>hierarchy, density, and how the empty state feels</b>. Every screen is rendered on real tokens.</p>
   <div class="brief">
     <span class="tag"><b>lime</b> #c6f84f</span>
     <span class="tag"><b>ink</b> #0c0d0c</span>

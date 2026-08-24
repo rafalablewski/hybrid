@@ -160,7 +160,7 @@ function Only({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
             big figure at the head of an explainer sheet. freshness-sheet's
             twin still carries a grandfathered 44 and is 2dp shy; aligning it
             is its own change, not this one's to make. */}
-        <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: paintOf(C, explain) }}>{explain.value}</Text>
+        <Text style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: paintOf(C, explain) }}>{explain.value}</Text>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(explain.unitKey)}</Text>
       </View>
 

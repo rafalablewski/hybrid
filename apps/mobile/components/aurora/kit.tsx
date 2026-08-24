@@ -21,7 +21,7 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
  * mobile Figma design — big corner radii, pill buttons, a floating-card feel —
- * but built on the HYBRID brand tokens (lime accent, ink surfaces, Archivo type)
+ * but built on the HYBRID brand tokens (lime accent, ink surfaces, Söhne type)
  * via the shared theme palette, so the new look stays on-brand and theme-aware.
  */
 /**
@@ -970,7 +970,7 @@ export function APill({
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
           numberOfLines={1}
-          style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}
+          style={[ty(palette, compact ? "buttonSm" : "button"), { color: fg }]}
         >
           {label}
         </Text>
@@ -988,7 +988,7 @@ export function APill({
         >
           {state === "saving" && <ActivityIndicator size="small" color={fg} />}
           {state === "saved" && <AuroraIcon name="check" size={compact ? 14 : 17} color={fg} />}
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={[ty(palette, compact ? "buttonSm" : "button"), { color: fg }]}>
             {stateLabel}
           </Text>
         </Animated.View>
@@ -1123,11 +1123,11 @@ const chipLabel = (label: string, count: number | undefined, color: string) => (
  * reference/dock-rail-design.html.
  *
  * NOT `AChip`, which mobile History used to borrow. AChip is an IN-CONTENT
- * filter — it lives in the content column, in the content face (Archivo bold),
+ * filter — it lives in the content column, in the content face (display bold),
  * and 37 other call sites want it exactly as it is. A rail is CHROME: it sits
  * in the same band as the hero's eyebrow, meta line and accessory, all of which
  * speak the app's mono voice. Borrowing the content chip for the rail is why
- * mobile History drew Archivo 13 while all three other rails drew mono 12.
+ * mobile History drew the display face at 13 while all three other rails drew mono 12.
  *
  * FULL-BLEED is the rail's own job, per the house rule: the scaffolds' rail
  * slots reach the true screen edge and add NO padding, and this supplies the
@@ -1598,12 +1598,40 @@ export function AMeter({
 
 export function ASection({
   title,
+  lead,
+  sub,
   meta,
   action,
   titleStyle,
   style,
 }: {
   title: string;
+  /**
+   * THIS HEAD OPENS ITS CONTAINER — there is no preceding section to seam
+   * against, so it takes no top margin.
+   *
+   * The seam below (`space.xxl`) is the gap BETWEEN two sections of a screen.
+   * A card already pays its own `CARD_PAD`, so a head that is the card's first
+   * child stacked the two: 20 of card pad plus 24 of seam put the title 44dp
+   * from the top edge against 20dp at the sides, and every such card read as
+   * sagging. Five did — three on Performance, one on the volume screen, and
+   * the week verdict's comparison page — and `questionnaire.tsx` had already
+   * worked around it with a local `marginTop: 0`, which is the tell that the
+   * standard could not express the case and each caller was re-deriving it.
+   */
+  lead?: boolean;
+  /** A DESCRIPTOR under the title — "Find a coach for your goal" — for a head
+   *  whose subject needs a sentence rather than a value. It is NOT the meta
+   *  slot in a second position: meta is a VALUE (a count, a window, "Free") and
+   *  sits on the title's own row; a descriptor is prose, it would collide with
+   *  the title on a phone at PL/DE lengths, and it belongs on its own line.
+   *
+   *  It lives here because three screens had already worked that out separately
+   *  — Today's coach rail, the saved-recipes rail and the nutrition goal picker
+   *  each drew title-plus-sentence by hand, and each picked its own gap under
+   *  the title (3, 6 and 10). A variant the standard cannot express is a
+   *  variant every caller re-derives. */
+  sub?: string;
   /** Small mono uppercase, right-aligned on the title's row. A NODE is allowed
    *  (a chip, an icon + count) — the meta slot is a slot, not a string field. */
   meta?: ReactNode;
@@ -1632,8 +1660,12 @@ export function ASection({
     ) : (
       meta
     );
-  return (
-    <View style={[{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginTop: space.xxl, marginBottom: space.ms }, style]}>
+  // THE RHYTHM, and it is stated once: `space.xxl` above the head, `space.ms`
+  // under it. Both are the SEAM tokens the section tier owns — a head that
+  // wants its own numbers is a head that has left the tier.
+  const rhythm: ViewStyle = { marginTop: lead ? 0 : space.xxl, marginBottom: space.ms };
+  const row = (
+    <>
       <Text
         accessibilityRole="header"
         maxFontSizeMultiplier={MAX_FONT_SCALE}
@@ -1648,6 +1680,23 @@ export function ASection({
       ) : (
         metaText
       )}
+    </>
+  );
+  const rowStyle: ViewStyle = { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md };
+
+  // With no descriptor the head IS the row, and `style` reaches it directly —
+  // the shape three callers already lean on to centre or re-flow the row.
+  if (sub == null) return <View style={[rowStyle, rhythm, style]}>{row}</View>;
+
+  return (
+    <View style={[rhythm, style]}>
+      <View style={rowStyle}>{row}</View>
+      <Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: palette.ash, marginTop: space.xxs }}
+      >
+        {sub}
+      </Text>
     </View>
   );
 }
@@ -1738,7 +1787,7 @@ export function AStat({
         {typeof value === "string" || typeof value === "number" ? (
           <RollingNumber
             value={String(value)}
-            style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
+            style={{ ...TABULAR, fontFamily: F.takeover, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
           />
         ) : (
           value
@@ -1914,7 +1963,7 @@ const SCRUB_TRAVEL = 14;
  * WHAT AN EMPTY FIGURE READS AS — an EN dash, and exported so the guard that
  * asserts a field looks empty cannot drift from the glyph that makes it so.
  *
- * Deliberately not an em dash: at `fs.hero` in Archivo's 900 weight an em dash
+ * Deliberately not an em dash: at `fs.hero` in the display face's heaviest weight an em dash
  * draws a bar as wide as the type is tall, which reads as a horizontal RULE
  * across the field rather than as a field waiting to be filled.
  */
@@ -2168,7 +2217,7 @@ export function AScrubField({
       >
         <RollingNumber
           value={show}
-          style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero) }}
+          style={{ fontFamily: F.takeover, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero) }}
         />
         {suffix ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>

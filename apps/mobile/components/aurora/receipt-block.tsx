@@ -74,7 +74,7 @@ export default function ReceiptBlock({
         <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
           <Text
             maxFontSizeMultiplier={MAX_FONT_SCALE}
-            style={{ fontFamily: F.black, fontSize: 42, lineHeight: leading(42, "flush"), letterSpacing: trackFigure(42), color: C.chalk, fontVariant: ["tabular-nums"] }}
+            style={{ fontFamily: F.takeover, fontSize: 42, lineHeight: leading(42, "flush"), letterSpacing: trackFigure(42), color: C.chalk, fontVariant: ["tabular-nums"] }}
           >
             {hero.figure}
           </Text>

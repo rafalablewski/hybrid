@@ -1,51 +1,28 @@
-import { useSyncExternalStore } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_LOGGER_PREFS, normalizeLoggerPrefs, type LoggerPrefs } from "@hybrid/core";
+import { DEFAULT_LOGGER_PREFS, LOGGER_PREFS_KEY, normalizeLoggerPrefs, type LoggerPrefs } from "@hybrid/core";
+import { getPref, setPref, useSyncedPref } from "./synced-prefs";
 
-// Per-device workout-logger preferences (the configurable logger). Hydrated once
-// from AsyncStorage; the live workout + settings screen read it through the hook.
-const KEY = "hybrid.loggerPrefs";
-
-let prefs: LoggerPrefs = DEFAULT_LOGGER_PREFS;
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
-
-AsyncStorage.getItem(KEY)
-  .then((v) => {
-    if (v) {
-      try {
-        prefs = normalizeLoggerPrefs(JSON.parse(v));
-        emit();
-      } catch {
-        /* keep defaults */
-      }
-    }
-  })
-  .catch(() => {});
+// Workout-logger preferences (units, and how the live logger behaves).
+//
+// SYNCED, NOT PER-DEVICE, since Aug 2026 (lib/synced-prefs.ts → /api/prefs).
+// Units are the clearest case in the whole set: an athlete who lifts in pounds
+// lifts in pounds on every device they own, and having to re-choose that on a
+// new phone was the app forgetting something it had been told.
+//
+// The device still holds a cache, so the logger paints the right units on the
+// first frame and works with no signal.
 
 /** Update one preference and persist it. */
 export function setLoggerPref<K extends keyof LoggerPrefs>(key: K, value: LoggerPrefs[K]): void {
-  prefs = normalizeLoggerPrefs({ ...prefs, [key]: value });
-  AsyncStorage.setItem(KEY, JSON.stringify(prefs)).catch(() => {});
-  emit();
-}
-
-function subscribe(l: () => void): () => void {
-  listeners.add(l);
-  return () => listeners.delete(l);
+  setPref(LOGGER_PREFS_KEY, normalizeLoggerPrefs({ ...getLoggerPrefs(), [key]: value }));
 }
 
 /** The current logger preferences (defaults until hydrated). */
 export function useLoggerPrefs(): LoggerPrefs {
-  return useSyncExternalStore(
-    subscribe,
-    () => prefs,
-    () => prefs,
-  );
+  return useSyncedPref(LOGGER_PREFS_KEY, normalizeLoggerPrefs);
 }
 
 /** The current preferences, outside React. For imperative call sites (a haptic
  *  fired from an event handler) that must not re-render anything to read a flag. */
 export function getLoggerPrefs(): LoggerPrefs {
-  return prefs;
+  return normalizeLoggerPrefs(getPref<unknown>(LOGGER_PREFS_KEY, DEFAULT_LOGGER_PREFS));
 }

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { View, Text } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE, MONTH_SEGMENT_ID,
   activityMonths, activityRangeSegIndex, activityRangeSegments, activityRangeSpanEnd,
   activityRangeTitleKey, resolveActivityRange,
   type ActivityRange, type LoggedSession,
+  space,
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
@@ -14,6 +14,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import { RADIUS } from "./kit";
 
 /**
@@ -39,7 +40,8 @@ import { RADIUS } from "./kit";
  * alone would leave two mounted controls disagreeing until the next launch —
  * the worse half of the bug, since the disagreeing card is a scroll away and
  * nothing on screen admits it. So the choice lives in a module store the hook
- * subscribes to, and AsyncStorage is only where it is kept between visits.
+ * subscribes to, and the synced-prefs cache is only where it is kept between
+ * visits — the ACCOUNT is where it is kept between devices.
  */
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -98,15 +100,21 @@ export function useActivityRange(storeKey: string): {
     useCallback(() => readChoice(storeKey), [storeKey]),
   );
 
+  // THE CHOSEN PERIOD FOLLOWS THE ACCOUNT (lib/synced-prefs.ts → /api/prefs),
+  // so the window you were reading on the phone is the window the next device
+  // opens on. The read still happens once per key rather than once per mounted
+  // control; it just reads the synced cache instead of raw storage, which is
+  // already populated by the time any control mounts.
   useEffect(() => {
     if (hydrated.has(storeKey)) return;
     hydrated.add(storeKey);
-    AsyncStorage.getItem(storeKey).then((v) => { if (v) writeChoice(storeKey, v); }).catch(() => {});
+    const stored = getPref<string | null>(storeKey, null);
+    if (stored) writeChoice(storeKey, stored);
   }, [storeKey]);
 
   const pick = useCallback((id: string) => {
     writeChoice(storeKey, id);
-    AsyncStorage.setItem(storeKey, id).catch(() => {});
+    setPref(storeKey, id);
   }, [storeKey]);
 
   const range = useMemo(() => resolveActivityRange(rangeId, Date.now()), [rangeId, today]);
@@ -131,12 +139,24 @@ export function useRangeLabels(range: ActivityRange): RangeLabels {
   };
 }
 
-/** The Explore-standard head a period-scoped block opens with: display-face
- *  title left, the span as mono meta right. */
+/**
+ * The Explore-standard head a period-scoped block opens with: display-face
+ * title left, the span as mono meta right.
+ *
+ * NO CONSUMER SINCE AUG 2026, and kept deliberately — the section-seam rule.
+ * Its one caller was the Today verdict card, which lost it when the period
+ * control moved up to the Progress cluster's headline: with a lit `30D`
+ * segment one row above, a display-face "Last 30 days" was the period said
+ * twice, so the title was dropped and the span went to the GroupMark's right
+ * slot. That is an argument about a block sitting UNDER a cluster control, not
+ * about this head. A period-scoped block on a screen that has no such control
+ * — the obvious next one is Endurance — still wants exactly this shape, and
+ * should take it as it is rather than draw a ninth variation of a section head.
+ */
 export function RangeHead({ title, meta }: { title: string; meta: string }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md, marginBottom: space.ms }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{meta}</Text>
     </View>
@@ -267,7 +287,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
   const { palette: C } = useTheme();
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ ...ty(C, "kicker"), marginHorizontal: 4, marginBottom: 6  }}>
+      <Text style={{ ...ty(C, "kicker"), marginBottom: space.xs }}>
         {label}
       </Text>
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, overflow: "hidden" }}>

@@ -4,6 +4,8 @@ import {
   FOOD_ROLES, pantryShelves, pantryStats, roleCounts,
   type FoodRole, type PantryFood,
   ALPHA,
+  space,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { F, PressScale as Pressable, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -68,11 +70,11 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
        the whole box was the kit spelled out. Only the leading gap is passed. */
     <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{stats.count}</Text>
+        <Text style={{ fontFamily: F.takeover, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
           {stats.lead ? (
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: 3 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: LABEL_GAP }}>
               {t("w.recovery.nutrition.pn.mostly").replace("{v}", roleLabel(stats.lead, t).toLowerCase())}
             </Text>
           ) : null}
@@ -250,7 +252,7 @@ export function PantryScreen<T extends PantryFood>({
           </View>
 
           {matches === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 24, marginHorizontal: 2, lineHeight: leading(fs.caption, "relaxed") }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: space.xxl, lineHeight: leading(fs.caption, "relaxed") }}>
               {q ? t("w.recovery.nutrition.pn.noMatch").replace("{v}", q) : t("w.recovery.nutrition.pn.noneOnShelf")}
             </Text>
           ) : (
@@ -296,7 +298,7 @@ export function PantryScreen<T extends PantryFood>({
           the end of the list, in the meta voice; not on every row, and not in
           the picker, which shows the same foods a tab away. */}
       {matches > 0 ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 16, marginHorizontal: 2, lineHeight: leading(fs.nano) }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: space.lg, lineHeight: leading(fs.nano) }}>
           {t("w.recovery.nutrition.hold.hint")}
         </Text>
       ) : null}

@@ -21,7 +21,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Svg, { Path, Line, Circle, Rect } from "react-native-svg";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
@@ -33,6 +32,7 @@ import {
   type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
   goalLabel, hpiWeightsFor,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -42,6 +42,8 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
+import { SPORT_STORE_KEY } from "@hybrid/core";
+import { getPref } from "../../lib/synced-prefs";
 import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -133,14 +135,11 @@ function Full({ top }: { top?: ReactNode }) {
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
 
   useEffect(() => {
-    AsyncStorage.getItem("hybrid.sport").then((raw) => {
-      if (!raw) return;
-      const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
-      if (s?.sport && SPORTS[s.sport]) {
-        const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
-        setSport({ sport: s.sport, levelIdx: lvl });
-      }
-    }).catch(() => {});
+    const s = getPref<{ sport?: string; levelIdx?: number } | null>(SPORT_STORE_KEY, null);
+    if (s?.sport && SPORTS[s.sport]) {
+      const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
+      setSport({ sport: s.sport, levelIdx: lvl });
+    }
   }, []);
 
   const today = useToday();
@@ -252,7 +251,7 @@ function Full({ top }: { top?: ReactNode }) {
           does not collapse margins and CSS does, so a block that kept its own
           would sit 16 lower here than on web. */}
       <ACard solid>
-        <ASection title={t("w.home.cockpit.stateTitle")} />
+        <ASection lead title={t("w.home.cockpit.stateTitle")} />
         {/* THE VERDICT — freshness, then the tissue worth watching. It used to
             sit at the top of the screen as the head's subtitle; the hub head has
             no sub slot, and this sentence reads better beside the number it
@@ -269,12 +268,12 @@ function Full({ top }: { top?: ReactNode }) {
                 the band word itself was the raw engine identifier, English on
                 every locale. Now: label, reading, provenance. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-              <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+              <Text style={{ fontFamily: F.takeover, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={ty(C, "kicker")}>
                   {t("w.home.cockpit.freshness")}
                 </Text>
-                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: LABEL_GAP }}>
                   {t(hpiBandKey(state.hpi.band))}
                 </Text>
                 {/* The wearable rides the headline as the signed adjustment it
@@ -413,6 +412,7 @@ function Full({ top }: { top?: ReactNode }) {
           the week once instead of restating it as a percentage. */}
       <ACard solid style={{ marginTop: 16 }}>
         <ASection
+          lead
           title={!macroRead.settled ? " " : macro ? goalLabel(macro.goalOrSport) : t("w.home.cockpit.setUp")}
           meta={macro && phaseBlock ? phaseBlock.label : undefined}
         />
@@ -446,7 +446,7 @@ function Full({ top }: { top?: ReactNode }) {
       {/* 7 · GO DEEPER — the exits. Every row carries a live value, because a
           door that tells you what is behind it is the only kind worth a row. */}
       <ACard solid style={{ marginTop: 16 }}>
-        <ASection title={t("w.home.cockpit.deeper")} />
+        <ASection lead title={t("w.home.cockpit.deeper")} />
         <Mod C={C} label={t("w.home.cockpit.trends")} value={trendsValue(weeks, prefs.units, t) ?? t("w.home.cockpit.last7")} onPress={() => router.push("/trends")} />
         <Mod
           C={C}
@@ -581,7 +581,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
       accessibilityLabel={`${label} ${value} – ${explainLabel}`}
       style={{ flex: 1, alignItems: "center" }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display) }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display) }}>{value}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
         <Text style={ty(C, "kicker")}>{label}</Text>
         {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
@@ -645,12 +645,12 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
       {hasData && (
         <ACard solid>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+            <Text style={{ fontFamily: F.takeover, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
               <Text style={ty(C, "kicker")}>
                 {t("w.home.cockpit.freshness")}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: LABEL_GAP }}>
                 {t(hpiBandKey(state.hpi.band))}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.teaseYours")}</Text>

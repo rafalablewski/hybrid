@@ -250,13 +250,13 @@ export default function AuroraVolume({ onOpenModel }: {
     .join(", ");
   return (
     <ACard solid>
-      <ASection title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
+      <ASection lead title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
       {summary.empty ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(46, "flush"), letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
+            <Text style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(46, "flush"), letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
           </View>

@@ -786,6 +786,16 @@ describe("heatDayRows", () => {
     expect(heatDayRows([], lateNight, { day: Date.parse("2026-08-13T09:00:00.000Z") })).toHaveLength(1);
   });
 
+  it("gives back a day whose ONLY entry is a sauna — no workout required", () => {
+    // The rest-day sitting. The floor above this used to read a session-less
+    // day as an empty day and draw its invitation instead of the list, so the
+    // one thing the athlete DID do that day appeared nowhere the day is named.
+    // Nothing here ever needed a session to place a sitting; the reading did.
+    const rows = heatDayRows([], sat(at("18:00")), { day });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.kind === "heat" && rows[0]!.under).toBeNull();
+  });
+
   it("is exactly the session list when there is no heat to place", () => {
     expect(heatDayRows([swim, gym], [], { day })).toEqual([
       { kind: "session", session: swim },

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SPORT_STORE_KEY } from "@hybrid/core";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import {
   LEVELS,
   heroMetaLine,
@@ -21,7 +23,6 @@ import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../
 import { APill, AuroraScreen, RADIUS } from "./kit";
 import { withAlpha } from "./field";
 
-const STORE_KEY = "hybrid.sport";
 /** The handoff the live logger reads when the transfer session is started. */
 const PENDING_KEY = "hybrid.pendingSportSession";
 
@@ -84,18 +85,14 @@ export default function AuroraSportStrength() {
   // level is picked here. One store, read by whichever screen is in front.
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      AsyncStorage.getItem(STORE_KEY)
-        .then((rawStore) => {
-          if (!active || !rawStore) return;
-          const s = JSON.parse(rawStore) as SportStore | null;
-          if (s && typeof s === "object") {
-            setStore(s);
-            if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-          }
-        })
-        .catch(() => {});
-      return () => { active = false; };
+      // Reads the SYNCED store, like the sport page — the two screens write
+      // one object, so they must also read one. Leaving this on raw storage
+      // while the page moved would have let them drift apart silently.
+      const s = getPref<SportStore | null>(SPORT_STORE_KEY, null);
+      if (s && typeof s === "object") {
+        setStore(s);
+        if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+      }
     }, []),
   );
 
@@ -112,7 +109,7 @@ export default function AuroraSportStrength() {
     setLevelIdx(i);
     const next: SportStore = { ...(store ?? {}), sport: name, levelIdx: i };
     setStore(next);
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify(next)).catch(() => {});
+    setPref(SPORT_STORE_KEY, next);
   };
 
   const startTransfer = async () => {

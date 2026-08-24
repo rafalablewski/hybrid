@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { View, Text, TextInput } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   LEVELS,
   SPORT_PAGE_WEEKS,
@@ -30,7 +29,7 @@ import {
   type SportStore,
   type SportWeek,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { fetchSessionBests, fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -42,9 +41,10 @@ import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import SportRecordsSheet from "./sport-records-sheet";
 import { DoorRow } from "./week-verdict";
+import { SPORT_STORE_KEY } from "@hybrid/core";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import { withAlpha } from "./field";
 
-const STORE_KEY = "hybrid.sport";
 
 /**
  * THE SPORT PAGE (mobile). There is no web twin any more — the user-facing web
@@ -112,18 +112,14 @@ export default function AuroraSportPage() {
   // the old level over the new one, silently reverting it.
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      AsyncStorage.getItem(STORE_KEY)
-        .then((rawStore) => {
-          if (!active || !rawStore) return;
-          const s = JSON.parse(rawStore) as SportStore | null;
-          if (s && typeof s === "object") {
-            setStore(s);
-            if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-          }
-        })
-        .catch(() => {});
-      return () => { active = false; };
+      // The synced cache answers synchronously, so there is no await to race
+      // and no `active` flag to keep: the read cannot land after the screen
+      // has gone.
+      const s = getPref<SportStore | null>(SPORT_STORE_KEY, null);
+      if (s && typeof s === "object") {
+        setStore(s);
+        if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+      }
     }, []),
   );
 
@@ -142,7 +138,7 @@ export default function AuroraSportPage() {
 
   const persist = (next: SportStore) => {
     setStore(next);
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify(next)).catch(() => {});
+    setPref(SPORT_STORE_KEY, next);
   };
   const saveMarker = (value: string) => {
     persist(recordMarker(store, name, value, new Date().toISOString()));
@@ -338,7 +334,12 @@ export default function AuroraSportPage() {
       {/* ── THE REST OF THE LADDER — the rungs the headline is not ── */}
       {m.records.filter((r) => !r.promoted).map((r) => (
         <View key={r.km} style={{ flexDirection: "row", alignItems: "baseline", gap: space.md, paddingVertical: space.md, ...dividerTop }}>
-          <Text numberOfLines={1} style={{ ...label(), width: 78 }}>{rungLabel(r)}</Text>
+          {/* 86, not 78. German "Halbmarathon" is twelve characters of Söhne
+              Mono at `fs.micro` — 12 × 11 × 0.6 = 79.2dp — so the column cut
+              the one rung name long enough to need it. Thirteen characters
+              reserved: mono, so the width IS the length, and a column sized to
+              its exact worst case has no room for the next long word. */}
+          <Text numberOfLines={1} style={{ ...label(), width: 86 }}>{rungLabel(r)}</Text>
           {r.time ? (
             <>
               {/* The time leads and the pace gives way: on a narrow phone a
@@ -596,10 +597,11 @@ function VolumeBars({ weeks, avg, C, accent, held, bind, readout }: { weeks: Spo
             borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
-            // Full strength / ALPHA.line is the shared HistoryStrip's own pair,
-            // so a sport's weeks read identically here and in the rail on Today
-            // that opened this page. (The unlit rung was ALPHA.rim, a BORDER
-            // rung, on a surface.)
+            // FULL STRENGTH FOR THE ANSWER, ALPHA.line for the rest: a SURFACE
+            // rung, not ALPHA.rim, which is a border rung and was what this
+            // used before. The pair came from the shared 24dp history strip the
+            // Today rail drew; that strip has since been retired with the bars
+            // it fed, so the convention is stated here rather than borrowed.
             backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? accent : withAlpha(accent, ALPHA.line),
           }}
         />
@@ -706,7 +708,7 @@ function EffortLegend({ split, labels }: {
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{b.k}</Text>
+            <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{b.k}</Text>
           </View>
         ))}
       </View>

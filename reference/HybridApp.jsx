@@ -18,11 +18,11 @@ const BLUE = "#7fd4e8";
 const VIOLET = "#c9a9f0";
 const AMBER = "#f0b45e";   // sport accent
 
-const F = `@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');`;
-const disp = { fontFamily: "'Archivo', sans-serif" };
-const cond = { fontFamily: "'Archivo Narrow', sans-serif" };
-const mono = { fontFamily: "'JetBrains Mono', monospace" };
-const body = { fontFamily: "'Archivo', sans-serif" };
+const F = `@import url('https://fonts.googleapis.com/css2?family=Sohne+Narrow:wght@500;600;700&display=swap');`;
+const disp = { fontFamily: "'Sohne', sans-serif" };
+const cond = { fontFamily: "'Sohne Narrow', sans-serif" };
+const mono = { fontFamily: "'SohneMono', monospace" };
+const body = { fontFamily: "'Sohne', sans-serif" };
 
 const e1rm = (l, r) => (r <= 0 ? 0 : l * (1 + r / 30));
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;

@@ -10,7 +10,7 @@ import { Mark } from "../components/aurora/mark";
 import { withAlpha } from "../components/aurora/field";
 import { RADIUS } from "../components/aurora/kit";
 
-const MUSCLE_LABEL: Record<string, string> = {
+export const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
   glutes: "Glutes",
   posterior: "Posterior chain",
@@ -500,10 +500,60 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
     .join("\n");
 }
 
+/** ONE PAGE of the week summary, as the branded card that leaves the app. The
+ *  week pager (aurora/week-recap.tsx) renders whichever page the athlete is
+ *  LOOKING at into this off-screen card, so what is shared is exactly what was
+ *  chosen — the session summary's grammar, applied to the week. */
+export type WeekSharePage = {
+  /** Small mono tag beside the brand — WHICH page of the week this is. */
+  tag: string;
+  stats: { label: string; value: string }[];
+  /** Named results under the figures (PR lifts, cardio records). */
+  rows?: { name: string; value: string; pr?: boolean }[];
+  /** One quiet closing fact (top muscle, delta vs last week). */
+  note?: string | null;
+};
+
+export const WeekPageShareCard = forwardRef<View, { page: WeekSharePage; t: (k: string) => string }>(
+  ({ page, t }, ref) => (
+    <View
+      ref={ref}
+      collapsable={false}
+      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), borderRadius: RADIUS.field, padding: 20 }}
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, letterSpacing: -1 }}>
+          {brand.name}
+          <Text style={{ color: C.lime }}>.</Text>
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.lime, letterSpacing: 2 }}>{page.tag.toUpperCase()}</Text>
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
+        {page.stats.map((s) => <Stat key={s.label} label={s.label} value={s.value} />)}
+      </View>
+      {!!page.rows?.length && (
+        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+          {page.rows.slice(0, 4).map((r) => (
+            <View key={r.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
+                {r.pr ? <Glyph name="trophy" size={fs.bodyLg} color={C.lime} label={t("w.train.logger.newPr")} /> : null}
+                <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{r.name}</Text>
+              </View>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: r.pr ? C.lime : C.chalk }}>{r.value}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {!!page.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12 }}>{page.note}</Text>}
+    </View>
+  ),
+);
+WeekPageShareCard.displayName = "WeekPageShareCard";
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color: C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
@@ -597,7 +647,7 @@ export const RecipeShareCard = forwardRef<View, { recipe: Recipe; labels: Recipe
         <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: 2, textTransform: "uppercase", color: accent }}>
           {labels.eyebrow}
         </Text>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.hero, color: C.chalk, letterSpacing: -1.2, marginTop: 10 }}>
+        <Text numberOfLines={2} style={{ fontFamily: F.takeover, fontSize: fs.hero, color: C.chalk, letterSpacing: -1.2, marginTop: 10 }}>
           {recipe.name}
         </Text>
         <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8 }}>

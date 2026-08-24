@@ -7,8 +7,8 @@
     --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
     --chalk: #2b2a26; --ash: #6f6b5e;
     --lime-text: #3c4f43; --blue-text: #4f5c3a; --amber-text: #885c00; --red-text: #a3442f;
-    --sans: "Archivo", "Archivo Narrow", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "Sohne", "Sohne Narrow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "SohneMono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --pad: clamp(18px, 4vw, 40px);
   }
   @media (prefers-color-scheme: dark) {
@@ -491,7 +491,19 @@
     const card = document.createElement("div");
     card.className = "opt";
     card.innerHTML =
-      '<header><h3><span style="font-family:var(--mono);font-weight:400;color:var(--ash)">' + key + '</span> ' + opt.name + "</h3></header>" +
+      '<header>
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style><h3><span style="font-family:var(--mono);font-weight:400;color:var(--ash)">' + key + '</span> ' + opt.name + "</h3></header>" +
       '<div class="tag lbl">' + opt.tag + "</div>" +
       '<div class="days"></div>' +
       '<div class="verdict-row ' + opt.verdict[0] + '">' + (opt.verdict[0] === "ok" ? "&#10003;" : "&#10007;") + " " + opt.verdict[1] + "</div>" +

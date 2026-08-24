@@ -13,6 +13,7 @@ import {
   cardioDiscipline,
   type LoggedSession,
   type OlympicSport,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
@@ -142,7 +143,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
             <SportMark sport={name} size={fs.display} color={C.chalk} />
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
-            <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{t("w.home.today.w.tapLog")}</Text>
+            <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
       </View>

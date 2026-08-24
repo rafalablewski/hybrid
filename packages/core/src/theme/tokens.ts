@@ -244,24 +244,24 @@ export type ColorToken = keyof typeof colors;
  * app loads the matching expo-google-fonts packages. Names kept identical.
  *
  * TWO FACES, AND THAT IS THE WHOLE IDENTITY:
- *   `display` — Archivo, in four weights. Headings, titles, body, big figures.
- *   `mono`    — JetBrains Mono, in two. Numbers, and every uppercase eyebrow.
+ *   `display` — Söhne, in four weights. Headings, titles, body, big figures.
+ *   `mono`    — Söhne Mono, in three. Numbers, and every uppercase eyebrow.
  *
- * RETIRED — `condensed` (Archivo Narrow), Aug 2026. The brief specified three
+ * RETIRED — `condensed` (a narrow cut of the display face), Aug 2026. The brief specified three
  * faces and the token declared the third, but the PRODUCT is the mobile app and
  * the mobile app never loaded it: `app/_layout.tsx` calls `useFonts` with four
- * Archivo weights and two JetBrains Mono weights, and there is no
- * `@expo-google-fonts/archivo-narrow` in its package.json. So the third face
+ * sans weights and two mono weights, and there is no
+ * no package for it in package.json. So the third face
  * existed as a name in the tokens and a webfont in the browser, and nowhere in
  * the thing that ships.
  *
  * It was not unused on web — `cond` had ~30 call sites, all inside `/admin`,
  * all on the same small uppercase tracked chip/button. Which is exactly why
  * this had to be resolved rather than left: the project rule is that the two
- * admin consoles stay in step, and those chips were drawing in Archivo Narrow
- * on web and Archivo on the phone, because the phone had no other option.
+ * admin consoles stay in step, and those chips were drawing in the narrow cut
+ * on web and the standard cut on the phone, because the phone had no other option.
  *
- * The tie-break was which face is doing the condensed face's JOB. Archivo
+ * The tie-break was which face is doing the condensed face's JOB. The display face
  * Narrow was declared for "labels / chips" — but the app's actual label voice
  * is the mono uppercase tracked eyebrow (the `label` tracking alone holds 216 call
  * sites), and that voice was never Narrow. A third face bought nothing but a
@@ -269,7 +269,7 @@ export type ColorToken = keyof typeof colors;
  *
  * TO REVISIT IT: an argument for a genuinely condensed face has to start on
  * mobile — load it in `_layout.tsx`, give it a name in `F`, and name the job it
- * does that neither Archivo nor mono already does. Re-declaring it here without
+ * does that neither the display face nor mono already does. Re-declaring it here without
  * that just recreates the dead token.
  */
 export const fonts = {
@@ -284,7 +284,7 @@ export const fonts = {
  *  @font-face blocks live in `apps/web/app/globals.css` against woff2 in
  *  `apps/web/public/fonts`. The constant stays so a caller that imported it
  *  gets an empty string rather than a missing export, and so this note has a
- *  home — a `@import` reappearing here would silently pull Archivo back. */
+ *  home — a `@import` reappearing here would silently pull a public face back. */
 export const fontImportUrl = "";
 
 /** Product surface labels. */

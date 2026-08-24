@@ -56,7 +56,7 @@ import { ALPHA, SATELLITE } from "@hybrid/core";
  * TYPE RULE: every `font({ family })` in this file passes the family through
  * `nativeFace()`. Callers keep handing these components `F.bold` / `F.mono`
  * like any RN `<Text>`; the translation to the name Core Text knows
- * ("Archivo-Bold") happens HERE, once, because SwiftUI does not go through the
+ * ("TestSohne-Halbfett") happens HERE, once, because SwiftUI does not go through the
  * `UIFont.fontNames(forFamilyName:)` swizzle that makes expo-font's aliases
  * work — and an unresolvable name in `Font.custom` silently draws San
  * Francisco. `lib/ui.tsx` carries the map and the full story;
@@ -699,7 +699,7 @@ export function GlassWheel<T extends string>({
  * popover is the platform's, everyone already knows how to drive it, and it is
  * the one control an app has nothing to add to. (Contrast
  * `ContentUnavailableView`, which is a fine grammar but styles its own type —
- * SF Pro in the middle of a card set in Archivo. That one we follow rather than
+ * SF Pro in the middle of a card set in the app's face. That one we follow rather than
  * mount; see `aurora/empty-day.tsx`.)
  *
  * Off-iOS the caller keeps its own field: this returns null, like every leaf

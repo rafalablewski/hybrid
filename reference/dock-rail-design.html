@@ -40,7 +40,7 @@
   --bydesign:  #566b53;
 
   --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --mono: ui-monospace, "SF Mono", "SohneMono", Menlo, Consolas, monospace;
 
   --measure: 68ch;
   --pad: clamp(20px, 5vw, 56px);
@@ -339,6 +339,19 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
 <div class="wrap">
 
 <header class="top">
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
   <div class="kicker">
     <span class="label">HYBRID — Aurora design sheet</span>
     <span class="label">branch claude/sticky-tab-menu-design-09tved</span>
@@ -417,7 +430,7 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
       </div>
       <div class="measure">
         <span><b>fill</b> lime @16%</span><span><b>text</b> lime</span>
-        <span><b>face</b> Archivo bold 13</span><span><b>pad</b> —×16</span>
+        <span><b>face</b> Sohne bold 13</span><span><b>pad</b> —×16</span>
         <span><b>hit</b> 44px</span><span><b>weight</b> constant</span>
       </div>
     </div>
@@ -520,7 +533,7 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
         </tr>
         <tr>
           <td class="k">Chip face</td>
-          <td class="m">mono 12</td><td class="m">Archivo bold 13</td><td class="m">mono 12</td><td class="m">mono 12</td>
+          <td class="m">mono 12</td><td class="m">Sohne bold 13</td><td class="m">mono 12</td><td class="m">mono 12</td>
           <td><span class="tag d">defect</span></td>
         </tr>
         <tr>
@@ -971,7 +984,7 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
         <tr>
           <td class="k">Which face wins?</td>
           <td class="m">mono 12</td>
-          <td>A rail is chrome — same band as the hero's eyebrow, meta and accessory, all mono. Three of four rails were already mono; mobile History was Archivo only because it borrowed <code>AChip</code>, which is an in-content filter and stays as it is for its 37 other sites.</td>
+          <td>A rail is chrome — same band as the hero's eyebrow, meta and accessory, all mono. Three of four rails were already mono; mobile History was Sohne only because it borrowed <code>AChip</code>, which is an in-content filter and stays as it is for its 37 other sites.</td>
         </tr>
         <tr>
           <td class="k">Tracking?</td>
@@ -1034,7 +1047,7 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
 
 <footer>
   <div class="foot">
-    <span class="mono">Specimens use system faces — the Artifact CSP blocks font CDNs, so Archivo and JetBrains Mono fall back to the nearest grotesque and mono stacks. Sizes, spacing and colour are exact.</span>
+    <span class="mono">Specimens use system faces — the Artifact CSP blocks font CDNs, so Sohne and SohneMono fall back to the nearest grotesque and mono stacks. Sizes, spacing and colour are exact.</span>
   </div>
   <div class="foot" style="margin-top:12px">
     <span class="mono">Colour reads live tokens — switch your OS theme to check this sheet against Kyoto Hour.</span>

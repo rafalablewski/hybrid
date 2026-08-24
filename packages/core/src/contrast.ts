@@ -39,6 +39,34 @@ export function meetsContrast(a: string, b: string, level: number = WCAG.AA): bo
   return contrastRatio(a, b) >= level;
 }
 
+/* ── THE S-CURVE ───────────────────────────────────────────────────────────
+ *
+ * The one piece of ramp maths that survived. It shapes the day band's quiet
+ * WASH, which holds its tint where the content is and then dissolves — a linear
+ * ramp drops from the first pixel, and the eye finds the corner.
+ *
+ * A matching set of OKLab mixing helpers was written here to soften the FILLED
+ * band's edge into the page, and then deleted with the thing it was for: no
+ * interpolation makes that transition invisible, because half of Wild Lime and
+ * half of near-black is a dark olive in every colour space. A field ends at an
+ * edge. See day-fold.ts.
+ */
+
+/** The classic S-curve, 0→1 with zero slope at both ends. */
+export const smoothstep = (t: number): number => {
+  const x = t < 0 ? 0 : t > 1 ? 1 : t;
+  return x * x * (3 - 2 * x);
+};
+
+const srgbToLinear = (v: number): number => {
+  const c = v / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+const linearToSrgb = (v: number): number => {
+  const c = v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055;
+  return Math.round(Math.min(255, Math.max(0, c * 255)));
+};
+
 /* ── PERCEPTUAL DISTANCE ───────────────────────────────────────────────────
  *
  * Contrast answers "can this be read against that background". It cannot answer
@@ -157,4 +185,50 @@ export const DISTINCT_ROLE_DE = 18;
 export function inkOn(fill: string, inks: readonly string[]): string {
   if (inks.length === 0) throw new Error("inkOn: no inks to choose from");
   return inks.reduce((best, ink) => (contrastRatio(ink, fill) > contrastRatio(best, fill) ? ink : best));
+}
+
+/** An alpha composite of `fg` over `bg`, as a hex — what the eye actually
+ *  receives when a colour is drawn at less than full strength. Contrast is a
+ *  property of the RESULT, so anything that measures a held-back ink has to
+ *  composite it first. */
+export function blendOver(fg: string, alpha: number, bg: string): string {
+  const a = Math.min(1, Math.max(0, alpha));
+  const f = parseHex(fg);
+  const b = parseHex(bg);
+  const mix = f.map((v, i) => Math.round(a * v + (1 - a) * b[i]!));
+  return `#${mix.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * THE STRONGEST HOLD-BACK A GROUND CAN AFFORD — `inkOn`'s idea, one level down.
+ *
+ * A secondary line is usually the primary ink at reduced strength: it is the
+ * same colour, quieter, which is what stops a component inventing a third tone.
+ * The alpha for that is always typed as a constant, and a constant cannot know
+ * what it is being drawn on.
+ *
+ * IT SHIPPED WRONG, and in the most-used range. The day band draws its sentence
+ * at 0.78 of the fill's ink. On Wild Lime that lands at 7.32:1 and on Fleur De
+ * Lis 5.97:1 — comfortable. On Lyons Blue (`info`, which `readinessRole` returns
+ * for every score from 60 to 79) it lands at **3.46:1**, under AA, on the single
+ * most common reading an athlete gets. No alpha fixes that one: `#2f7893` is the
+ * palette's tightest fill and its best ink only reaches 4.60:1 at FULL strength,
+ * so the honest answer for that ground is no hold-back at all.
+ *
+ * So this measures instead of assuming. It walks `ladder` from the most held
+ * back to the least and returns the first step whose COMPOSITE clears `min`,
+ * falling back to 1 — full strength — when the ground can afford none. A band on
+ * lime keeps its softness; the same band on blue simply separates its lines by
+ * type instead, which it was already doing.
+ */
+export function inkHold(
+  ink: string,
+  on: string,
+  ladder: readonly number[],
+  min: number = WCAG.AA,
+): number {
+  for (const a of [...ladder].sort((x, y) => x - y)) {
+    if (contrastRatio(blendOver(ink, a, on), on) >= min) return a;
+  }
+  return 1;
 }

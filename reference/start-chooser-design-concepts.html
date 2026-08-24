@@ -1,12 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — “How do you want to start?” design concepts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap");
 
   :root {
     /* Aurora tokens — verbatim from packages/core/src/theme/tokens.ts */
@@ -21,9 +34,9 @@
     --sand: #d0cd94;
     --terra-text: #e58a5c;
     --on-accent: #101401;
-    --font-display: "Archivo", system-ui, sans-serif;
+    --font-display: "Sohne", system-ui, sans-serif;
     --font-serif: "Fraunces", Georgia, serif;
-    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --font-mono: "SohneMono", ui-monospace, monospace;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -350,7 +363,7 @@
 
   <footer>
     HYBRID — reference/start-chooser-design-concepts.html<br />
-    Rendered in the live Aurora tokens (tokens.ts) — Archivo, Fraunces, JetBrains Mono.
+    Rendered in the live Aurora tokens (tokens.ts) — Sohne, Fraunces, SohneMono.
   </footer>
 </main>
 

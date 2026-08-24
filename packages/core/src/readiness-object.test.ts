@@ -113,6 +113,32 @@ describe("the one-ring guard — the signature object has exactly one implementa
     }
   });
 
+  it("keeps the day band edgeless, and its ink out of the cool greys", () => {
+    // TWO RULES THAT WILL BE "FIXED" BACK BY SOMEONE ACTING IN GOOD FAITH, which
+    // is exactly what this file is for.
+    //
+    // NO BORDER. A quiet band ramps to a fully transparent last stop and a
+    // filled one resolves inside its foot; both END by arriving at the page
+    // ground. It shipped instead as a flat wash with a 1px rule across the
+    // bottom, which composited to a warm line at roughly three times the
+    // ground's luminance, run edge to edge under the tallest object on the
+    // screen. A hairline separates two surfaces that BOTH continue — here the
+    // surface stops, so the rule had nothing on its far side to belong to. A
+    // band that dissolves can look unfinished to someone who has not read
+    // day-fold.ts, and the first instinct is to draw the line back.
+    //
+    // AND NO `ash`. The numeral used to be drawn in it: a COOL grey on a WARM
+    // ground at low chroma, which is what actually made the band read as dirty.
+    // Every line takes the band's own ink held back by inkHold() now, so a
+    // second tone is a second bug — and `ash` is the app's default reach for a
+    // secondary, which is precisely why it needs a guard rather than a comment.
+    const band = files.find((p) => relative(MOBILE, p).split("\\").join("/") === "components/aurora/day-band.tsx");
+    expect(band, "the day band moved — point this rule at it").toBeTruthy();
+    const src = code(band!);
+    expect(/border[A-Za-z]*Width/.test(src), "the band ends at the ground, never at a rule").toBe(false);
+    expect(/\bC\.ash\b/.test(src), "the band has one ink, held back — not a second grey").toBe(false);
+  });
+
   it("keeps the straightened bar inside the explanation, and nowhere else", () => {
     // THE BAR IS PROOF, AND PROOF NEEDS ITS LEDGER. On the old card face it sat
     // under a hairline with "Kept 64 / Spent 36" beneath its ends: one number

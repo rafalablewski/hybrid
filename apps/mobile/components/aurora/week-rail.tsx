@@ -18,12 +18,13 @@ import {
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, leading, startGlow, tracking, ty} from "../../lib/ui";
-import { RADIUS, ASegment } from "./kit";
+import { RADIUS, ASegment, CARD_PAD } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { useListMotion } from "../../lib/list-motion";
 import { withAlpha } from "./field";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
@@ -70,10 +71,6 @@ const Caret = ({ c, open }: { c: string; open: boolean }) => (
 // Days shown at once, and how many lifts show before the fading disclosure.
 const WINDOW = 7;
 const PEEK = 2;
-/** The card's own inner padding — what the full-bleed hairline inside it bleeds
- *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
- *  card), which is exactly the distinction a bare `-20` could not make. */
-const CARD_PAD = 20;
 
 /** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
  *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */
@@ -158,6 +155,11 @@ export default function AuroraWeekRail({
   const [picked, setPicked] = useState<number | null>(null);
   useEffect(() => { setPicked(null); }, [planId]);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
+  /** The day detail travels between days — see the twin note in
+   *  logbook-rail.tsx. These two rails are one object in two modes, so a
+   *  transition on one and a teleport on the other is exactly the drift the
+   *  shared shape exists to prevent. */
+  const dayMotion = useListMotion();
 
   // The receipt behind a done day — built from the logged session that
   // fulfilled it, so every figure is real (and untrustworthy ones are dropped).
@@ -214,7 +216,7 @@ export default function AuroraWeekRail({
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         {windowDays.map((d) => (
-          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
+          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => dayMotion(() => { setPicked(d.index); onSelectDay?.(d); })} t={t} />
         ))}
       </View>
 

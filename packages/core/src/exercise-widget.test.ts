@@ -6,7 +6,7 @@ import {
   movementsTrained,
   exercisePageModel,
   weeklySessionCounts,
-  exerciseCardReading,
+  exerciseCardFigure,
   exerciseSlideGeometry,
   exerciseSlideReading,
 } from "./exercise-widget";
@@ -264,7 +264,7 @@ describe("movementsTrained — the Exercises head's coverage denominator (M1)", 
   });
 });
 
-describe("holding an exercise chart", () => {
+describe("the card's figure and its baseline", () => {
   it("dates a widget card's strip by what its points ARE — sessions here", () => {
     const sessions = [
       lift(70, [{ load: "180", reps: "5" }]),
@@ -275,11 +275,6 @@ describe("holding an exercise chart", () => {
     expect(c.sparkBy).toBe("session");
     expect(c.sparkAt).toHaveLength(c.spark.length);
     expect(c.sparkAt[1]).toBe(sessions[2]!.startedAt);
-    const held = exerciseCardReading(c, 1, "kg")!;
-    expect(held.value).toBe("195");
-    expect(held.unit).toBe("kg");
-    expect(held.best).toBe(true);
-    expect(held.weekStart).toBe(sessions[2]!.startedAt);
   });
 
   it("dates a WEEKLY strip by its bucket, and says so", () => {
@@ -287,18 +282,114 @@ describe("holding an exercise chart", () => {
     expect(c.metric).toBe("time");
     expect(c.sparkBy).toBe("week");
     expect(c.sparkAt).toHaveLength(c.spark.length);
-    const held = exerciseCardReading(c, c.spark.length - 1, "kg")!;
-    expect(held.value).toBe("40");
-    expect(held.unit).toBe("min");
   });
 
-  it("reads a PACE card at the clock, and calls the fastest point the best", () => {
+  it("formats the headline and its baseline through the SAME unit", () => {
+    // The whole point of one formatter: the card prints these two beside each
+    // other, so a card that ever showed them in different units would be worse
+    // than one printing no baseline at all.
+    const c = exerciseWidgetCard([cond(3, 40), cond(10, 25)], "Assault Bike", now)!;
+    const head = exerciseCardFigure(c, c.value, "kg");
+    const base = exerciseCardFigure(c, c.prevValue ?? 0, "kg");
+    expect(head.unit).toBe("min");
+    expect(base.unit).toBe(head.unit);
+  });
+
+  it("reads a pace at the clock", () => {
     const c = exerciseWidgetCard([run(20, 5, 25), run(6, 5, 24)], "Run", now)!;
     expect(c.metric).toBe("pace");
-    expect(exerciseCardReading(c, 0, "kg")!.value).toBe("5:00");
-    expect(exerciseCardReading(c, 0, "kg")!.best).toBe(false);
-    expect(exerciseCardReading(c, 1, "kg")!.value).toBe("4:48");
-    expect(exerciseCardReading(c, 1, "kg")!.best).toBe(true);
+    expect(exerciseCardFigure(c, 300, "kg").value).toBe("5:00");
+    expect(exerciseCardFigure(c, 288, "kg").value).toBe("4:48");
+  });
+
+  it("prints a rate in its OWN discipline's unit, never a hard-coded /km", () => {
+    // The defect this replaced: the held readout showed a swimmer "38:36 /km"
+    // while the lane below printed the same rate as "3:52 /100m". Survivable
+    // under a held finger; not survivable now the baseline is always on screen.
+    const swim = { metric: "pace", discipline: "swimming" } as const;
+    const road = { metric: "pace", discipline: "running" } as const;
+    const none = { metric: "pace" } as const;
+    expect(exerciseCardFigure(swim, 2316, "kg").unit).toBe("/100m");
+    expect(exerciseCardFigure(road, 288, "kg").unit).toBe("/km");
+    // No resolved discipline keeps the /km fallback — which is what the
+    // canonical value already is, not a guess.
+    expect(exerciseCardFigure(none, 288, "kg")).toEqual({ value: "4:48", unit: "/km" });
+  });
+
+  it("SPEAKS TO A NEW ATHLETE — a baseline inside the window when there is no window before it", () => {
+    // THE BUG THIS PINS, and it shipped: the baseline was the previous 8-week
+    // window and nothing else, so a three-week-old account climbing 60 → 65 →
+    // 70 kg printed "Heaviest — 8 weeks" and no change at all. The card it
+    // replaced, minus a chart. Sixteen weeks of history is not a precondition
+    // for having something to say.
+    const c = exerciseWidgetCard(
+      [
+        lift(20, [{ load: "60", reps: "5" }]),
+        lift(13, [{ load: "65", reps: "5" }]),
+        lift(6, [{ load: "70", reps: "5" }]),
+      ],
+      "Deadlift",
+      now,
+    )!;
+    expect(c.value).toBe(70);
+    expect(c.prevValue).toBe(60);       // the window's own opening point
+    expect(c.deltaPct).toBe(16.7);      // ...and the change measured from IT
+    expect(c.prevAt).toBeTruthy();      // dated, because it is a real session
+  });
+
+  it("prefers the previous WINDOW over the spark, and dates only the spark", () => {
+    // The previous window is the better comparison and stays first. It is a
+    // PERIOD, not a day, so it carries no date — the card must not name a
+    // Tuesday it did not measure.
+    const c = exerciseWidgetCard(
+      [lift(70, [{ load: "100", reps: "5" }]), lift(5, [{ load: "110", reps: "5" }])],
+      "Deadlift",
+      now,
+    )!;
+    expect(c.prevValue).toBe(100);
+    expect(c.prevAt).toBeNull();
+  });
+
+  it("still says nothing when there is genuinely nothing to compare", () => {
+    const c = exerciseWidgetCard([lift(5, [{ load: "110", reps: "5" }])], "Deadlift", now)!;
+    expect(c.prevValue).toBeNull();
+    expect(c.deltaPct).toBeNull();
+    expect(c.prevAt).toBeNull();
+  });
+
+  it("THE INVARIANT — a delta and its baseline are null together", () => {
+    // The card prints both. If one could exist without the other it would
+    // either show a percentage nobody can check, or a baseline measuring
+    // nothing. Every branch of the builder is exercised here.
+    const cards = [
+      exerciseWidgetCard([lift(5, [{ load: "180", reps: "5" }])], "Deadlift", now), // strength, no prior window
+      exerciseWidgetCard(
+        [lift(70, [{ load: "170", reps: "5" }]), lift(5, [{ load: "195", reps: "5" }])],
+        "Deadlift", now,
+      ), // strength, with one
+      exerciseWidgetCard([cond(3, 40)], "Assault Bike", now),                        // time, no prior window
+      exerciseWidgetCard([cond(3, 40), cond(70, 25)], "Assault Bike", now),           // time, with one
+      exerciseWidgetCard([run(6, 5, 24)], "Run", now),                                // pace, no prior window
+      exerciseWidgetCard([run(70, 5, 25), run(6, 5, 24)], "Run", now),                // pace, with one
+    ].filter(Boolean);
+    expect(cards.length).toBe(6);
+    for (const c of cards) {
+      expect(
+        (c!.deltaPct == null) === (c!.prevValue == null),
+        `${c!.name}/${c!.metric}: deltaPct=${c!.deltaPct} prevValue=${c!.prevValue}`,
+      ).toBe(true);
+    }
+  });
+
+  it("the printed percentage is the printed baseline's own — checkable by hand", () => {
+    const c = exerciseWidgetCard(
+      [lift(70, [{ load: "100", reps: "5" }]), lift(5, [{ load: "110", reps: "5" }])],
+      "Deadlift", now,
+    )!;
+    expect(c.prevValue).toBe(100);
+    expect(c.value).toBe(110);
+    // 100 → 110 is +10%, and that is exactly what the card prints beside it.
+    expect(c.deltaPct).toBe(10);
   });
 
   it("offers geometry only for the slides that ARE a series", () => {

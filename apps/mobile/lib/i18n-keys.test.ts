@@ -62,6 +62,36 @@ const TEMPLATED: string[] = [
   "workout.exercises.one",
   "workout.exercises.few",
   "workout.exercises.many",
+  // declare-event.tsx (the kind picker) and calendar.tsx (an unnamed event's
+  // fallback name) — `w.home.band.noun.${kind}` over TRAINING_KINDS. The band
+  // itself builds the same keys inside core, where this guard cannot see them,
+  // which is the other half of why they are enumerated here.
+  "w.home.band.noun.gym",
+  "w.home.band.noun.running",
+  "w.home.band.noun.cycling",
+  "w.home.band.noun.swimming",
+  "w.home.band.noun.rowing",
+  "w.home.band.noun.skiing",
+  "w.home.band.noun.walking",
+  "w.home.band.noun.sport",
+  "w.home.band.noun.other",
+  // records-board.tsx — readSentence(): `w.home.rb.read.${kind}` over
+  // RecordReadKind, with the three directional kinds taking a pace variant so
+  // a run is never told it has been "building".
+  "w.home.rb.read.none",
+  "w.home.rb.read.thin",
+  "w.home.rb.read.first",
+  "w.home.rb.read.atBest",
+  "w.home.rb.read.climbing",
+  "w.home.rb.read.holding",
+  "w.home.rb.read.slipping",
+  "w.home.rb.read.paceClimbing",
+  "w.home.rb.read.paceHolding",
+  "w.home.rb.read.paceSlipping",
+  // records-board.tsx — the fold's evidence line, through pluralForm().
+  "w.home.rb.sessN.one",
+  "w.home.rb.sessN.few",
+  "w.home.rb.sessN.many",
 ];
 
 describe("i18n keys", () => {

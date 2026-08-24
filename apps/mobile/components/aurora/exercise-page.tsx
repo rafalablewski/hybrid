@@ -17,6 +17,8 @@ import {
   type ScrubMode,
   type WeightUnit,
   colors,
+  space,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -481,7 +483,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "kicker"), marginTop: 3  }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>
@@ -620,7 +622,7 @@ export default function AuroraExercisePage() {
   // rather than a page that re-fetches. `hidden` masks the real text only while
   // the clone is inbound; every degraded path (no provider, failed measurement,
   // Reduce Motion) returns false and shows it immediately.
-  const heroStyle = { fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.takeover, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk } as const;
   const heroShared = useSharedElementTarget(SHARED_ELEMENTS.exerciseHero, hero.v, heroStyle);
 
   useEffect(() => {
@@ -689,7 +691,7 @@ export default function AuroraExercisePage() {
       </View>
 
       {/* HERO — one number, paired with the visible chart */}
-      <Animated.View style={{ marginTop: 16, marginHorizontal: 2, minHeight: 84, opacity: heroOpacity }}>
+      <Animated.View style={{ marginTop: space.lg, minHeight: 84, opacity: heroOpacity }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
           <Text ref={heroShared.ref} style={[heroStyle, heroShared.hidden ? { opacity: 0 } : null]}>{hero.v}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash }}>{hero.u}</Text>
@@ -748,7 +750,7 @@ export default function AuroraExercisePage() {
       </Pressable>
 
       {/* quiet substats — typography over one hairline */}
-      <View style={{ flexDirection: "row", marginTop: 20, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+      <View style={{ flexDirection: "row", marginTop: space.xl, paddingTop: space.lg, borderTopWidth: 1, borderTopColor: C.line }}>
         {substats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
@@ -760,7 +762,7 @@ export default function AuroraExercisePage() {
       {/* BEST SET + velocity — quiet typography over one hairline (the rest of
           the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
-        <View style={{ marginTop: 16, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ marginTop: space.lg, paddingTop: space.lg, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>

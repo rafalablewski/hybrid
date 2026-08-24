@@ -163,11 +163,12 @@ A standalone `·` used as content (e.g. an empty-avatar placeholder glyph) is no
 a separator — leave those.
 
 ## RULE: screen-level sliders run FULL-BLEED — no gap at the screen edge (always)
-Every horizontal slider/rail that sits directly on a screen (Today's exercise
-widgets and "Train your way", Explore's "Follow a coach", …) must let its cards
+Every horizontal slider/rail that sits directly on a screen (Today's "Train your
+way", its "Follow a coach" rail, …) must let its cards
 slide under the physical screen edge — never clip at the content column with
 the screen gutter showing beside a cut card. The **golden standard is the
-exercise-widget rail** (`aurora/exercise-widget.tsx`, both clients): negative
+exercise-widget rail** (`aurora/exercise-widget.tsx` — the rail left Today in
+Aug 2026 and the file is kept as this rule's reference implementation): negative
 horizontal margins the width of the screen gutter pull the scroll clip to the
 true edge (mobile `marginHorizontal: -12` against AuroraScreen's 12dp gutter —
 the kit's `GUTTER`; web `margin: 0 calc(-1 * var(--page-pad-x, 12px))`, the
@@ -237,3 +238,38 @@ Expander counts and labels are **ash, never chartreuse** — the accent is the
 "go" colour, and an expander never goes anywhere. Stacked rows separate by
 whitespace, not a rule: a hairline under a GroupMark is the label-plus-rule
 divider the cluster markers deliberately retired.
+
+## RULE: a state the USER caused must travel, never teleport (always)
+When a tap changes what a surface CONTAINS or how tall it is — a card swapping
+between its states, a row arriving or leaving, a list re-filtering, a block
+whose actions disappear — the change is animated. Not decoration: motion is the
+only thing that says *what* changed, and without it the app is correct,
+type-safe, fully tested and feels cheap in a way nobody can point at. It is
+also the one class of bug no gate here can catch by running the code, which is
+why both guards for it (`apps/mobile/lib/list-motion.test.ts`) read the source
+as TEXT.
+
+The mechanism is `useListMotion()` / `animateListChange(reduced)` from
+`apps/mobile/lib/list-motion.ts` — the shared `springs.slide` curve, armed
+IMMEDIATELY BEFORE the state update:
+
+    const motion = useListMotion();
+    onPress={() => motion(() => setThing(next))}
+
+Three things that are easy to get wrong:
+- **Arm next to the commit, never across an `await`.** `configureNext` decorates
+  whatever layout lands next, so arming before a round-trip animates some other
+  commit. Compute the next state locally, animate, apply, then persist
+  best-effort (see `onDeclareRest` in `apps/mobile/components/aurora/home.tsx`).
+- **Reduce Motion is not "a shorter animation".** For a LAYOUT change the
+  correct substitution is NO motion — there is no position left to
+  cross-dissolve — and `useListMotion` already reads it.
+- **Not every write.** A per-keystroke field write, or a value changing inside
+  a row that stays put, must NOT animate; `list-motion.test.ts`'s `EXEMPT` list
+  names each such path with its reason, and the next one added has to say which
+  kind it is.
+
+Known platform limit, worth stating rather than rediscovering: LayoutAnimation
+is ON for iOS + Fabric and OFF for Android + Fabric in the installed RN. The
+product ships to the App Store, so this is a note, not a blocker — just do not
+describe list motion as cross-platform until it is.

@@ -71,7 +71,18 @@ export default function SessionBody({
 
   // The neglect line reads off DRIVER appearances only (core/muscleCoverage):
   // assisting somebody else's press is not training a muscle.
-  const stale = coverage.filter((c) => c.daysSince != null && c.daysSince >= NEGLECT_DAYS);
+  //
+  // AND IT NEVER NAMES A MUSCLE THIS SESSION JUST TRAINED. `coverage` is
+  // anchored BEFORE this session — correctly, since a session cannot be part of
+  // its own history — but rendered raw that reads as a flat contradiction:
+  // "UNTOUCHED 18 DAYS — BICEPS, LATS" printed directly under "LATS — DRIVER
+  // 3,229 kg". Worse, it inverts the line's whole job. This is the one thing on
+  // the summary that says what to train TOMORROW, so it must name what is still
+  // waiting, never what the athlete has just finished doing.
+  const trained = new Set(map.muscles.map((m) => m.muscle));
+  const stale = coverage.filter(
+    (c) => c.daysSince != null && c.daysSince >= NEGLECT_DAYS && !trained.has(c.muscle),
+  );
   const neglect = stale.slice(0, NEGLECT_NAMES);
   const neglectDays = neglect[0]?.daysSince ?? null;
 
@@ -80,7 +91,7 @@ export default function SessionBody({
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.md }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
+          style={{ fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
         >
           {shown.pct}
           <Text style={{ fontSize: fs.headline, color: C.ash }}>%</Text>

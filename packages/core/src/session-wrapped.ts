@@ -22,13 +22,13 @@
  */
 import type { LoggedSession, SessionBlock, CardioBlock, CardioDiscipline } from "./engines/session";
 import { blockBestE1rm, e1rmSeries, cardioDiscipline, formatSportPace, isCardio } from "./engines/session";
-import { volumeByMuscle } from "./engines/records";
 import { bwAt, type BodyweightInput } from "./bodyweight";
 import { doneReceipt } from "./done-receipt";
 import { orderFigures } from "./figure-order";
 import { fmtWeight, fmtTonnage, type WeightUnit } from "./units";
 import { formatSportDistance } from "./olympic-sports";
 import { sessionEnergy, type EnergyEstimate } from "./energy";
+import { SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM } from "./theme/face-metrics";
 
 /** A free basic stat — unit lives in the value, label is an i18n key. */
 export interface WrappedStat {
@@ -43,6 +43,16 @@ export interface WrappedFact {
   labelKey: string;
   value: string;
   tone?: "up" | "down" | "neutral";
+  /**
+   * WHAT THE FIGURE IS ABOUT, when the label alone does not say. An e1RM and
+   * its trend belong to ONE lift, and `topLift` picks the lift with the highest
+   * estimated max — which is routinely NOT the lift the rest of the summary
+   * leads with. A pull-up session that opens on "75 kg — Pull-Up" then showed
+   * "EST. 1RM 98 kg / TREND −16 kg" with no name on either, and both figures
+   * were the trap-bar deadlift's. Unlabelled, a red −16 reads as this session
+   * going backwards. The name is plain text (an exercise, never translated).
+   */
+  qualifier?: string;
 }
 
 /**
@@ -87,29 +97,28 @@ export interface SessionWrapped {
  * beside it.
  *
  * A CHARACTER COUNT WON'T DO. "11.3 t" and "1500 m" are both six characters and
- * measure 66px and 85px in the tile — the dot and the space are a third the
- * width of a digit, so counting them equally is off by 30%. The table below is
- * per-glyph advance width in em, measured from Archivo Black (the app's display
- * face) and verified against both slots.
+ * measure differently in the tile — the dot and the space are a third the width
+ * of a digit, so counting them equally is off by 30%. The widths come from
+ * `SOHNE_ADVANCE_EM` in theme/face-metrics.ts, read off the shipped binary.
+ *
+ * THEY USED TO BE MEASURED FROM THE PREVIOUS DISPLAY FACE, and that survived the
+ * font swap as a live defect rather than as a stale comment: the fitter went on
+ * sizing Söhne figures against widths that were 78% too wide for a space and 14%
+ * too narrow for an `m`, so every value carrying a space — most of the endurance
+ * vocabulary this fitter exists for — was shrunk further than it needed to be.
+ * The table lives in face-metrics.ts now, with a test that re-reads it from the
+ * font, so it cannot rot that way twice.
  *
  * Living here rather than in each client is the point: mobile could lean on
  * `adjustsFontSizeToFit` and web has no equivalent, so two implementations
  * would mean two different answers to "how big is this number".
  */
-const CHAR_EM: Record<string, number> = {
-  " ": 0.36, ".": 0.27, ",": 0.27, ":": 0.27, "/": 0.45, "~": 0.64,
-  "+": 0.6, "−": 0.45, "-": 0.45, "%": 0.9, "°": 0.45,
-  m: 0.77, i: 0.27, n: 0.59, k: 0.64, t: 0.32, g: 0.62, s: 0.55, h: 0.6,
-  e: 0.6, r: 0.42, l: 0.27, a: 0.58, o: 0.62, d: 0.62, u: 0.6, c: 0.55, p: 0.62,
-};
-/** A digit — and the fallback for anything not in the table. */
-const DEFAULT_EM = 0.682;
 
 /** Approximate rendered width of a value, in em of its own font size.
  *  `trackingEm` is the slot's letter-spacing (negative tightens). */
 export function textWidthEm(value: string, trackingEm = 0): number {
   let w = 0;
-  for (const ch of value) w += (CHAR_EM[ch] ?? DEFAULT_EM) + trackingEm;
+  for (const ch of value) w += (SOHNE_ADVANCE_EM[ch] ?? ADVANCE_FALLBACK_EM) + trackingEm;
   return Math.max(0, w);
 }
 
@@ -237,8 +246,6 @@ function totalRounds(blocks: SessionBlock[]): number {
   return n;
 }
 
-const MUSCLE_LABEL_KEY = (m: string) => `muscle.${m}`;
-
 /**
  * Build the Wrapped model for a logged session. `all` is the full history (for
  * the e1RM trend); `bw` is the dated bodyweight lookup so tonnage/e1RM/calories
@@ -348,7 +355,7 @@ export function sessionWrapped(
   const facts: WrappedFact[] = [];
   const top = topLift(session, bwHereKg);
   if (top) {
-    facts.push({ labelKey: "session.wrapped.est1rm", value: fmtWeight(top.e1rm, units), tone: "neutral" });
+    facts.push({ labelKey: "session.wrapped.est1rm", value: fmtWeight(top.e1rm, units), tone: "neutral", qualifier: top.name });
     // e1RM trend for the headline lift: gain from first logged to this session.
     const series = e1rmSeries(all, top.name, bw);
     if (series.length > 1) {
@@ -358,6 +365,7 @@ export function sessionWrapped(
           labelKey: "session.wrapped.trend",
           value: `${delta > 0 ? "+" : "−"}${fmtWeight(Math.abs(delta), units)}`,
           tone: delta > 0 ? "up" : "down",
+          qualifier: top.name,
         });
     }
   }
@@ -373,13 +381,13 @@ export function sessionWrapped(
   // discipline (a matched lifting session has a heart rate too).
   if (session.device?.maxHr != null)
     facts.push({ labelKey: "session.device.maxHr", value: `${session.device.maxHr} bpm`, tone: "neutral" });
-  // Muscle split — the session's most-trained muscle and its tonnage
-  // (bodyweight-aware via this session's weight, so dips/pull-ups count).
-  const muscles = volumeByMuscle(session.blocks, false, bwHereKg);
-  if (muscles.length > 0) {
-    const m = muscles[0]!;
-    facts.push({ labelKey: MUSCLE_LABEL_KEY(m.muscle), value: fmtWeight(m.volume, units), tone: "neutral" });
-  }
+  // NO MUSCLE FACT HERE. This used to push the top of `volumeByMuscle` — the
+  // engine's SEVEN COARSE BUCKETS — which put "BACK 7,020 kg" two scrolls under
+  // a muscle ledger reading "LATS 3,229 / UPPER BACK 1,787" from the twenty-name
+  // anatomy model. Two vocabularies for one session's work, disagreeing about
+  // both the name and the number, is the defect the session muscle map was
+  // built to end; it was removed from the details section and left standing
+  // here. The muscle read has ONE home now, and it is the body section.
   // Readiness the athlete logged for the day, when present.
   if (typeof session.readiness === "number") {
     facts.push({ labelKey: "home.readiness", value: `${session.readiness}`, tone: "neutral" });

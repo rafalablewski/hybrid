@@ -57,7 +57,7 @@ export default function AdminSecurity() {
             {/* Posture summary */}
             <ACard accent={scoreColor} style={cardStack}>
               <Kicker>Posture score</Kicker>
-              <Text style={{ fontFamily: F.black, fontSize: 40, color: txt(palette, scoreColor), lineHeight: 44, marginTop: 4 }}>
+              <Text style={{ fontFamily: F.takeover, fontSize: 40, color: txt(palette, scoreColor), lineHeight: 44, marginTop: 4 }}>
                 {d.posture.score}
                 <Text style={{ fontFamily: F.bold, fontSize: fs.headline, color: palette.ash }}>/100</Text>
               </Text>

@@ -1,19 +1,32 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID · "More" tab — 10 redesign mockups</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
 <style>
-  /* HYBRID brand tokens — packages/core/src/brand.ts. Same Archivo + JetBrains Mono. */
+  /* HYBRID brand tokens — packages/core/src/brand.ts. Same Sohne + SohneMono. */
   :root{
     --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
     --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
     --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
-    --disp:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --disp:"Sohne",system-ui,sans-serif; --mono:"SohneMono",ui-monospace,monospace;
     --r-card:24px; --r-field:16px; --r-pill:999px;
     /* accent-as-text (darkened lime so it reads on dark per lib/theme txt()) */
     --lime-t:#d6f56a;
@@ -161,7 +174,7 @@
 <div class="head">
   <div class="mono">HYBRID · MOBILE</div>
   <h1>“More” tab — 10 redesign mockups</h1>
-  <p>Ten directions for the bottom-nav <b>More</b> hub, all built on the HYBRID / Aurora tokens (Archivo · JetBrains Mono · ink surfaces · lime accent) and the rounded Figma look. Pick one to implement.</p>
+  <p>Ten directions for the bottom-nav <b>More</b> hub, all built on the HYBRID / Aurora tokens (Sohne · SohneMono · ink surfaces · lime accent) and the rounded Figma look. Pick one to implement.</p>
   <div class="fix">
     <span>Fix #1 — <b>one text colour</b> (chalk), no rainbow labels</span>
     <span>Fix #2 — <b>reshaped “Unlock Full”</b> (a different treatment per mock)</span>

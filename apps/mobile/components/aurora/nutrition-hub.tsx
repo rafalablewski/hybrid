@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, type LayoutChangeEvent } from "react-native";
 import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
-import { NUTRITION_GLYPHS, nutritionHubChart, type HubSeries, type NutritionGlyphName } from "@hybrid/core";
+import { NUTRITION_GLYPHS, nutritionHubChart, space, type HubSeries, type NutritionGlyphName, LABEL_GAP } from "@hybrid/core";
 import { F, PressScale, fs, tracking, ty} from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -70,8 +70,8 @@ function StatTile({ glyph, tint, value, unit, caption, name, onPress, palette: C
         {value}
         {unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}> {unit}</Text> : null}
       </Text>
-      <Text style={{ ...ty(C, "overline"), marginTop: 1  }} numberOfLines={1}>{caption}</Text>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, marginTop: 7 }} numberOfLines={2}>{name}</Text>
+      <Text style={{ ...ty(C, "overline"), marginTop: LABEL_GAP  }} numberOfLines={1}>{caption}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, marginTop: LABEL_GAP }} numberOfLines={2}>{name}</Text>
     </PressScale>
   );
 }
@@ -135,7 +135,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
 
   return (
     <>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 28, marginBottom: 10, marginHorizontal: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: space.xxl, marginBottom: space.ms }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.recovery.nutrition.hubTitle")}</Text>
       </View>
 

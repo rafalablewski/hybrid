@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Animated, useWindowDimensions, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
@@ -13,8 +12,8 @@ import {
   type VerdictDirection, type WeightUnit, deltaRole, STATE_OPACITY } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
 import ActivityCompare from "./activity-compare";
-import PeriodRecords from "./period-records";
-import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
+import { useActivityRange, useRangeLabels } from "./range-filter";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
@@ -251,7 +250,7 @@ const ROWS_SHOWN = 5;
  * Measure it once, so nobody has to guess again. A 390dp screen gives the card
  * 326dp of content (390 less the 12dp screen gutter each side, less CARD_PAD
  * each side). Four cells with an 8dp gutter are 75dp wide, ~65dp inside their
- * own padding. "6h 52min" is eight glyphs and JetBrains Mono advances 0.6em, so
+ * own padding. "6h 52min" is eight glyphs and Söhne Mono advances 0.6em, so
  * it needs 4.8 × the size: to fit 65dp the figure would have to be 13dp —
  * the app's BODY TEXT size, for the largest figures on Today's largest card.
  * The 17dp the row shrank to (from 20, whenever a fourth metric appeared) was
@@ -310,7 +309,7 @@ const PROMOTED_LADDER = [fs.display, fs.headline, fs.headline] as const;
 const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
 
 /**
- * Render a "{m}"-templated sentence with the metric name in bold.
+ * Render a "{m}"-templated sentence.
  *
  * It reads at `fs.subtitle` on `snug` leading, a rung up from the `fs.bodyLg` it
  * spent its life at. Two things bought the rung. It has the CARD'S WHOLE WIDTH
@@ -321,18 +320,28 @@ const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
  * a lead set at emphasised-body size reads as a caption for something else.
  */
 function Lead({ template, word, color }: { template: string; word: string | null; color: string }) {
-  const style = { fontFamily: F.reg, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "snug"), color };
+  const { palette } = useTheme();
+  // THE RANK IS THE EMPHASIS, so the metric no longer takes a bold run.
+  //
+  // This was `F.reg` at `fs.subtitle`, and the note above this function already
+  // said what was wrong with it: a lead at emphasised-body size "reads as a
+  // caption for something else". It was the quietest thing in a card whose only
+  // job is to carry it, sitting between a mono kicker and a mono receipt grid.
+  //
+  // `editorial` is the app's one interpretive voice — a rung above the heading
+  // styles, set in regular because a conclusion is prose, not a heading — and
+  // this is one of its two call sites. It does not add a sentence; it gives the
+  // sentence that was always here the rank it always had. (It was a SERIF face
+  // from Aug 2026 until the face was deleted; the token kept the rank and lost
+  // the second binary.) The `{m}` split survives because the templates still
+  // carry it, but the metric word is set exactly like the rest of the line: two
+  // emphases in one sentence is neither of them winning.
+  const style = ty(palette, "editorial", color);
   const [before, after] = template.split("{m}");
   if (after === undefined || !word) {
     return <Text style={style}>{template}</Text>;
   }
-  return (
-    <Text style={style}>
-      {before}
-      <Text style={{ fontFamily: F.bold }}>{word}</Text>
-      {after}
-    </Text>
-  );
+  return <Text style={style}>{before}{word}{after}</Text>;
 }
 
 /**
@@ -364,8 +373,14 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} – ${sub}`}
+      // THE SEAM IS `space.lg`, the same 16 a cluster's first block takes.
+      // It was a raw 14 — on no rung of the ladder, and baked into the one
+      // component eleven blocks end with. On Today it is also the FIRST thing
+      // under the Explore headline, so that cluster opened at 14 while every
+      // other cluster on both hub tabs opened at 16: two tabs of one hub,
+      // disagreeing about the same seam, one tap apart.
       style={{
-        flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14,
+        flexDirection: "row", alignItems: "center", gap: space.md, marginTop: space.lg,
         paddingHorizontal: 2, paddingVertical: 4,
       }}
     >
@@ -405,7 +420,14 @@ export default function AuroraWeekVerdict({
 
   // The chosen period, persisted per device under the PROGRESS key — the
   // shared filter owns the reading, the storage and the midnight re-derive.
-  const { range, pick: setRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  //
+  // READ, NEVER WRITTEN HERE. The control that sets it is not in this card any
+  // more: it governs the whole Progress cluster (this card, the Records ledger
+  // and the Sports board), and a control's PLACEMENT is a claim about its
+  // reach — inside a card it claims one card, at the chapter's head it claims
+  // the chapter. Only the second was true, so the control sits on the cluster
+  // now and this card is a pure readout of the period it names.
+  const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
   const { title, span } = useRangeLabels(range);
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
@@ -429,16 +451,21 @@ export default function AuroraWeekVerdict({
   const [hinted, setHinted] = useState(true);
 
   useEffect(() => {
-    AsyncStorage.getItem(HINT_KEY).then((v) => setHinted(v === "1")).catch(() => {});
+    setHinted(getPref<boolean>(HINT_KEY, false));
   }, []);
 
   // A new period is a new breakdown: the open column's group filter and its
   // "show all" must not carry over into a window they were never chosen in.
-  const pick = (id: string) => {
-    setRange(id);
+  //
+  // AN EFFECT, NOT A TAP HANDLER, and the difference is load-bearing now the
+  // control lives on the cluster head rather than on this card. A handler only
+  // fires for a tap THIS card saw; the reset has to answer to the period
+  // itself, however it changed — from the cluster control, from another
+  // mounted surface reading the same store, or from the midnight re-derive.
+  useEffect(() => {
     setGroup(null);
     setAll(false);
-  };
+  }, [range.id]);
 
   // THE PAGER. The card is two pages wide: the verdict, and the comparison.
   // `page` is the settled index (momentum end), `pageW` the content width the
@@ -519,7 +546,7 @@ export default function AuroraWeekVerdict({
     setPage(i);
     if (!hinted) {
       setHinted(true);
-      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+      setPref(HINT_KEY, true);
     }
   };
 
@@ -622,7 +649,7 @@ export default function AuroraWeekVerdict({
     setOpen(m);
     if (!hinted) {
       setHinted(true);
-      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+      setPref(HINT_KEY, true);
     }
   };
 
@@ -644,17 +671,15 @@ export default function AuroraWeekVerdict({
       .replace("{b}", fmt(openFig.metric, openFig.previous))
     : null;
 
+  // NO HEAD, NO FILTER. Both left for the cluster head in Aug 2026 (see the
+  // `range` read above). The head had become the period said twice — a
+  // display-face "Last 30 days" twelve points under a lit 30D segment — and
+  // the span it carried is the one fact of the pair that the segments do not,
+  // so the span went up to the GroupMark's right slot and the title was
+  // dropped rather than moved. The card opens on its verdict now, which is the
+  // only thing on it the filter cannot say.
   return (
-    <View style={{ marginTop: 20 }}>
-      {/* Explore-standard head: display-face title left, mono meta right. The
-          head names the window so no figure below it needs a qualifier. */}
-      <RangeHead title={title} meta={span} />
-
-      {/* ── THE DATE FILTER — the shared control (aurora/range-filter.tsx):
-          neutral pill at rest, clear glass lens on touch/drag, per the iOS 26
-          system control, with the Month segment intercepting to its picker
-          sheet. Shared because the Endurance section carries one too. ────── */}
-      <RangeFilter range={range} sessions={sessions} onPick={pick} />
+    <View>
 
       {/* ACard, not a hand-drawn copy of it. This spelled out ACard's exact
           base style (hairline, ink2, cardShadow, CARD_PAD) with the radius as
@@ -939,9 +964,10 @@ export default function AuroraWeekVerdict({
       </ACard>
 
       {/* ── THE BREAKDOWN, AS A SHEET. It comes up OVER Today rather than
-          unfolding inside the card, so pressing a figure no longer shoves
-          Records, the exercise rail and the whole Endurance cluster off the
-          fold — and it dismisses the way everything else on this screen
+          unfolding inside the card, so pressing a figure moves nothing beneath
+          it — which is what pushed Records, the exercise rail and the whole
+          Endurance cluster off the fold back when Today still carried them —
+          and it dismisses the way everything else on this screen
           dismisses (drag, scrim, tap out), instead of only by finding the
           column that opened it, three hundred points up by then.
 
@@ -1001,22 +1027,6 @@ export default function AuroraWeekVerdict({
           </View>
         )}
       </Sheet>
-
-      {/* RECORDS — the Progress cluster's block (b), which used to be a mono
-          kicker in this card's foot. It is a SECTION of its own now
-          (aurora/period-records.tsx), headed like its neighbours, because
-          Progress reads as three named things: This week, Records, Exercises.
-          It still takes ITS window from this card's filter — a PR belongs to
-          the period it happened in — which is why the range and the window's
-          name are passed down rather than resolved again. */}
-      <PeriodRecords
-        sessions={sessions}
-        range={range}
-        windowName={title}
-        units={units}
-        bw={bw}
-        onSession={onSession}
-      />
 
       {/* The doors moved OUT of this card (wave 3): they are the retrospective's
           single exit now, rendered at the END of the Endurance cluster in

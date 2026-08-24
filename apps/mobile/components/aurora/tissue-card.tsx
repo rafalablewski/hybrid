@@ -8,7 +8,7 @@ import {
   type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
@@ -384,7 +384,15 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
       {rows.map((r) => (
         <View key={r.tissue} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6) }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, width: 62 }}>{t(INJURY_AREA_KEY[r.tissue])}</Text>
+            {/* THE AREA COLUMN IS 88, AND IT WAS 62 — which cut "Hamstrings"
+                in ENGLISH, plus four of the seven areas in Polish and German
+                ("Dwugłowe uda" is 87dp, "Quadrizeps" 69). A table whose first
+                column names the row cannot abbreviate the row's name; that is
+                the one thing the column is for. 88 is the widest label across
+                all three languages at `fs.caption`, measured with the sans
+                advance table rather than estimated — pinned in
+                test/tissue-card.render.test.tsx. */}
+            <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, width: AREA_W }}>{t(INJURY_AREA_KEY[r.tissue])}</Text>
             {/* the row's own bar, on the axis scale, carrying the same flag line */}
             <View style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: withAlpha(C.ash, ALPHA.solid) }}>
               <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: RADIUS.mark, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
@@ -396,7 +404,7 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
           </View>
           {/* the driver prints only where it means something */}
           {r.flagged && r.driver && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, marginLeft: 70 }}>{t(RISK_DRIVER_LABEL_KEY[r.driver])}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, marginLeft: AREA_W + 8 }}>{t(RISK_DRIVER_LABEL_KEY[r.driver])}</Text>
           )}
         </View>
       ))}
@@ -452,7 +460,7 @@ function Receipt({ C, t, explain, onOpen }: {
       style={{ flex: 1, minWidth: 0, paddingVertical: RECEIPT_PAD }}
     >
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: 3  }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>
         {label}
       </Text>
     </Pressable>
@@ -460,4 +468,11 @@ function Receipt({ C, t, explain, onOpen }: {
 }
 
 const head = (C: Palette) => (ty(C, "kicker"));
+/** The area column. The widest area name in any of the three languages at
+ *  `fs.caption` is Polish "Dwugłowe uda" at 87dp; 92 leaves the slack a
+ *  proportional column needs, since unlike the mono ones its content has no
+ *  unit width to round up by. The driver line underneath indents to match, so
+ *  it starts where the bar does. */
+const AREA_W = 92;
+
 const num = (C: Palette, flagged: boolean) => ({ fontFamily: F.mono, fontSize: fs.micro, textAlign: "right" as const, color: flagged ? txt(C, C.red) : C.ash });

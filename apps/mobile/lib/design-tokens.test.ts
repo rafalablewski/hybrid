@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COVER_SCREENS, resolveText, text } from "@hybrid/core";
+import { COVER_SCREENS, fs, lh, resolveText, text } from "@hybrid/core";
 import { FACE, faceFor } from "./faces";
 
 /**
@@ -187,6 +187,139 @@ function hits(pattern: RegExp): string[] {
   return found;
 }
 
+/**
+ * THE EDITORIAL RATCHET — the one style in the system with a quota.
+ *
+ * It guarded a FACE until Aug 2026 (ITC Garamond Book, deleted with the rest of
+ * the serif) and it guards the token that outlived it, for the reason that was
+ * always the real one: `editorial` is not dangerous because it is wrong
+ * somewhere, it is dangerous because it is right in ONE place per screen and
+ * every subsequent designer will find a second. A rank that appears twice is a
+ * rank that means nothing, and that decays by ACCUMULATION — which means the
+ * only guard worth having is a countable one. Four rules, all mechanical.
+ *
+ * The two sanctioned call sites are the week verdict's lead and the nutrition
+ * nudge. Both were chosen the same way: they were already the only interpretive
+ * sentence on their screen, set in a utility style. If a third is ever added, it
+ * is added HERE first, with the same argument written down.
+ */
+/**
+ * PROSE IN THE MEASURING FACE.
+ *
+ * The face map of the shipped app found Söhne Mono carrying 193 of Today's 269
+ * faced text nodes and 75 of Nutrition's 110. The first read of that was "the
+ * labels are the wrong face", and the fix that suggested — move the 423 kicker
+ * and overline sites onto the sans — was WRONG. Strip mono from a tracked
+ * uppercase label and what is left is tracked uppercase grotesque, which is the
+ * house style of every sports brand since 2012 and the thing the type spec bans
+ * everywhere else.
+ *
+ * Classifying the nodes said something more useful. Of Today's 193, sixty-six
+ * are figures and eighty-seven are day names in the calendar band — both
+ * legitimate. What is not legitimate is the remainder: SENTENCES set in the
+ * measuring face. "Add your first food". "Both numbers are yours — nothing was
+ * changed for you." Empty states, provenance notes, hints.
+ *
+ * AND THE LEADING GIVES THEM AWAY, which is what makes this mechanical rather
+ * than a matter of taste. Every mono style in the token file takes `flush` or
+ * `snug`, because a figure and a label have no prose to lead. A hand-rolled
+ * `F.mono` carrying `normal` or `relaxed` leading is somebody setting a
+ * paragraph and reaching for the wrong face to do it — the author already knew
+ * it was prose, or they would not have opened up the line height.
+ *
+ * 31 at first measurement. The 12 on the Nutrition family went to
+ * `ty(C, "caption")` in the same change that shipped the serif, because those
+ * are the two screens whose rendering was verified. The rest is a sweep, not a
+ * question.
+ */
+describe("prose never wears the measuring face", () => {
+  const MONO_PROSE = /F\.mono(?:Med|Bold)?[^\n]*leading\([^)]*"(?:relaxed|normal)"\)/g;
+
+  it("BURN-DOWN — mono carrying a prose leading", () => {
+    burnDown(
+      hits(MONO_PROSE),
+      18,
+      "2027-02-28",
+      'prose in the measuring face → ty(C, "caption")',
+    );
+  });
+
+  it("HARD — the Nutrition family stays clean", () => {
+    // The two screens whose rendering was verified. A regression here is visible
+    // in the face map, so it is held at zero rather than counted down.
+    const bad = hits(MONO_PROSE).filter((h) =>
+      /nutrition\.tsx|target-sheet\.tsx/.test(h));
+    expect(bad, `prose in the measuring face:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
+describe("the editorial voice", () => {
+  const SANCTIONED = [
+    "components/aurora/week-verdict.tsx",
+    "components/aurora/nutrition-panels.tsx",
+  ];
+
+  /** Screens the athlete reads DURING training. A conclusion has no business on
+   *  any of them: mid-set the eyes get about four hundred milliseconds and
+   *  everything in that window has to be a measurement. */
+  const DURING_TRAINING = [
+    "app/workout.tsx",
+    "app/interval-timer.tsx",
+    "components/aurora/logger",
+    "components/aurora/session-accessory.tsx",
+  ];
+
+  it("HARD — only the sanctioned call sites reach for it", () => {
+    const sites = hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)
+      .map((h) => h.split(":")[0]!)
+      .filter((f) => !f.endsWith(".test.ts"));
+    const stray = [...new Set(sites)].filter((f) => !SANCTIONED.some((ok) => f.includes(ok)));
+    expect(stray, `the conclusion is one element per screen:\n  ${stray.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — one per file, because one per SCREEN is what the rule means", () => {
+    const perFile = new Map<string, number>();
+    for (const h of hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)) {
+      const f = h.split(":")[0]!;
+      if (f.endsWith(".test.ts")) continue;
+      perFile.set(f, (perFile.get(f) ?? 0) + 1);
+    }
+    const doubled = [...perFile].filter(([, n]) => n > 1).map(([f, n]) => `${f} (${n})`);
+    expect(doubled, `a second editorial line means neither is the conclusion:\n  ${doubled.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — never on a screen used during training", () => {
+    const bad = hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)
+      .map((h) => h.split(":")[0]!)
+      .filter((f) => DURING_TRAINING.some((d) => f.includes(d)));
+    expect(bad, `mid-set the athlete needs measurement, not a conclusion:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — the token carries its own size, so no call site may restyle it", () => {
+    // `ty(C, "editorial")` already holds the size, leading and tracking, and the
+    // SIZE is the entire signal now that the second face is gone — a call site
+    // that spreads a `fontSize` over the top has not restyled the sentence, it
+    // has demoted it back to the utility style the token exists to escape.
+    const bad = FILES.filter(({ path }) => !path.endsWith(".test.ts"))
+      .flatMap(({ path, text }) =>
+        text.split("\n").flatMap((line, i) =>
+          /"editorial"/.test(line) && /fontSize|letterSpacing|lineHeight/.test(line) ? [`${path}:${i + 1}`] : []));
+    expect(bad, `the editorial token is not restyled at the call site:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — it never resolves down into the utility band", () => {
+    // Not a source rule but an arithmetic one, and the successor to the serif's
+    // 24dp floor (which was about where Garamond's joins broke up on `ink`).
+    // What matters now is RANK: at every Dynamic Type step the conclusion has to
+    // stay above the heading style it was mistaken for, because the moment it
+    // ties with `subtitle` the token is decoration.
+    for (const scale of [0.85, 1, 1.4]) {
+      expect(resolveText("editorial", scale).fontSize,
+        `at ${scale}x`).toBeGreaterThan(resolveText("subtitle", scale).fontSize);
+    }
+  });
+});
+
 /** The source line a "path:line" hit points at — for the rules that exempt a
  *  SANCTIONED declaration from their own pattern. */
 function lineAt(site: string): string {
@@ -249,7 +382,7 @@ describe("type scale", () => {
     //
     //   17 → fs.subtitle (16), 17 sites. 17 is not a near-miss of anything in
     //     this system, it is SF PRO'S BODY SIZE — iOS's default — leaking into
-    //     an Archivo one, which is how the same "card title" ended up 17 here
+    //     one of the app's own, which is how the same "card title" ended up 17 here
     //     and 16 (already a rung) three files over. Every one of them is a card,
     //     sheet or section title, which is what `subtitle` is for. 1dp.
     //
@@ -301,13 +434,13 @@ describe("type scale", () => {
     //     but the guard is load-bearing and a rename is not worth weakening it
     //     for. It sits as a raw 22 and is counted here, which is the honest
     //     place for a site that has no rung it is allowed to name.
-    burnDown(hits(/fontSize:\s*\d+/g), 44, "2026-11-30", "raw fontSize → use an fs.* rung");
+    burnDown(hits(/fontSize:\s*\d+/g), 42, "2026-11-30", "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
     // THE FONT BUG THIS RULE EXISTS FOR. `F` names six loaded faces and each is
-    // registered under its OWN family name — "JetBrainsMono_400Regular",
-    // "Archivo_700Bold". So `fontFamily: F.mono` declares a family with exactly
+    // registered under its OWN family name — "SohneMono_400Buch",
+    // "Sohne_600Halbfett". So `fontFamily: F.mono` declares a family with exactly
     // one face in it, and asking that family for 700 asks for a weight it does
     // not have: iOS falls back toward the system face, Android smears a
     // synthetic bold onto the regular. Either way the label stops being our
@@ -425,7 +558,13 @@ describe("leading and tracking", () => {
     // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
     // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
     // leading(fs.body), which is to say it was never a tuning.
-    burnDown(hits(/lineHeight:\s*\d/g), 35, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    //
+    // 33 → 29: the four that were UNDER the clipping floor (see the guard at
+    // the end of this file). This is the argument for the ratchet stated as
+    // evidence rather than as taste — a typed line box is a claim about a
+    // font's descent, every one of these four got it wrong, and three of them
+    // had been drawing clipped glyphs for as long as they had existed.
+    burnDown(hits(/lineHeight:\s*\d/g), 29, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking derives from the size; a raw dp is never the answer", () => {
@@ -494,9 +633,19 @@ describe("named type styles", () => {
     // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
     // label above a card or a figure; `overline` (+0.115em) is a section label,
     // where the label is structure and the extra air is the division.
+    // 164 → 161 with the History + Settings refit: Settings' own Label and
+    //   Section header were each a hand-rolled overline (the very shape this
+    //   rule names as the destination), and History's Trend range toggle
+    //   carried a third inside a hand-rolled segmented control that is the
+    //   kit's ASegment now.
+    // 168 → 166: the Records block stopped setting its SUBJECT as an eyebrow.
+    //   The lift's name — on the quote and in every ledger row — was 10dp mono
+    //   ash uppercase, which is to say the smallest, quietest type in a block
+    //   whose whole point is which lift moved. Both are the reading face at
+    //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      172,
+      161,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -519,7 +668,7 @@ describe("named type styles", () => {
 
   it("HARD — every named style resolves to a face the app actually loads", () => {
     // The weight map in lib/ui.tsx is lossy by design (the system specifies four
-    // weights per cut; the app loads four Archivo and two mono). Lossy is fine;
+    // weights per cut; the app loads four sans and three mono). Lossy is fine;
     // MISSING is not — an unmapped pair falls back to F.reg, which is a silent
     // wrong face, the same failure mode as an unresolvable PostScript name in
     // SwiftUI. This fails the build instead.
@@ -558,6 +707,88 @@ describe("figures", () => {
       });
     }
     expect(bad, `\na figure takes leading(size, "flush") — see lh.flush in scale.ts:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
+/**
+ * ── A LINE BOX SMALLER THAN THE INK IT CARRIES ─────────────────────────────
+ *
+ * The bug this guard was written for shipped to TestFlight and looked like a
+ * font problem: every figure in the app drew with the top of its digits sliced
+ * off — `12.24 km` on the week verdict lost 3.4dp of a 20.1dp digit — and
+ * nothing failed. It cannot fail. A `lineHeight` too small for its `fontSize`
+ * is valid style, valid types, and renders: React Native declares the value as
+ * both the minimum and the maximum line height, and TextKit honours that by
+ * keeping the font's DESCENT against the bottom of the fragment and taking the
+ * shortfall out of the ascent. The glyph is clipped, in silence.
+ *
+ * So the room a box offers above the baseline is `box − 0.289em`, and the floor
+ * for anything with ink at 0.732em is 1.021em — `lh.flush`, which core derives
+ * with `lineBoxFloor` off the shipped binaries. This reads the pairs a source
+ * line states OUTRIGHT — the
+ * token path is guaranteed by `lh.flush` being the floor, which core's own
+ * tests hold — and it is the same arithmetic in the same direction: a typed box
+ * is a claim about a font, and this is the only thing that checks it.
+ */
+/**
+ * ── THE DISPLAY WEIGHT HAS A FLOOR, AND THE FLOOR IS CHECKABLE ─────────────
+ *
+ * `F.takeover` is Söhne Dreiviertelfett — a 0.16em stem, +78% over the regular.
+ * On this ground that is mud at reading size: the rebuild found it on 298 call
+ * sites, 62 of them at `fs.body` or below, and clearing those was right.
+ *
+ * It is not mud at 35dp, and the version of this rule that deleted the cut from
+ * the product could not tell the difference, because it was phrased as an
+ * exception for a SURFACE ("a lit full-bleed cover") — a claim about a colour
+ * constant three files away, which is why it survived being false for a
+ * release. A floor phrased as a SIZE sits in the same style object as the
+ * weight, so it can be read off the source, which is what this does.
+ */
+describe("the display weight stays in the display band", () => {
+  const FS: Record<string, number> = { ...fs };
+
+  it("HARD — `F.takeover` never appears under fs.display", () => {
+    const bad: string[] = [];
+    for (const { path, text: src } of FILES) {
+      src.split("\n").forEach((line, i) => {
+        if (!/F\.takeover/.test(line)) return;
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;      // a comment naming it is not a call site
+        if (path === "lib/ui.tsx") return;                // DECLARES the alias and its PostScript name
+        const m = /fontSize:\s*(fs\.([a-zA-Z]+)|[0-9]+)/.exec(line);
+        if (!m) { bad.push(`${path}:${i + 1} — the display weight with no size on the line`); return; }
+        const px = m[2] ? FS[m[2]] : Number(m[1]);
+        if (!px || px < fs.display) bad.push(`${path}:${i + 1} — ${px}dp is under the ${fs.display}dp floor`);
+      });
+    }
+    expect(bad, `\nthe 700 is display-band only — see F.takeover in lib/ui.tsx:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
+describe("no line box is smaller than the ink it has to carry", () => {
+  // `lh.flush` IS the floor — core derives it as `lineBoxFloor(FIGURE_INK.top)`
+  // off the shipped binaries and asserts that identity, so reading it here keeps
+  // one number in the system rather than a second copy of the arithmetic.
+  const FLOOR = lh.flush;
+  /** `fs.title` or a bare number, on the same style object line as its box. */
+  const SIZED = /fontSize:\s*(fs\.([a-zA-Z]+)|[0-9]+(?:\.[0-9]+)?)/;
+  const BOXED = /lineHeight:\s*([0-9]+(?:\.[0-9]+)?)\b/;
+
+  it("HARD — a typed lineHeight clears the descent the platform reserves", () => {
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        const size = SIZED.exec(line);
+        const box = BOXED.exec(line);
+        if (!size || !box) return;
+        const px = size[2] ? fs[size[2] as keyof typeof fs] : Number(size[1]);
+        if (!px) return;
+        const ratio = Number(box[1]) / px;
+        if (ratio < FLOOR) {
+          bad.push(`${path}:${i + 1} — ${box[1]}dp box on ${px}dp text (${ratio.toFixed(3)}, floor ${FLOOR}) → clips ${((FLOOR - ratio) * px).toFixed(1)}dp off the top`);
+        }
+      });
+    }
+    expect(bad, `\na line box is a floor, not a crop — take leading(size, role):\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 
@@ -628,7 +859,119 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 119, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 116 → 115: the shared 24dp history strip was retired with the bars it
+    //   fed (see exercise-card-then-now), and its one raw radius went with the
+    //   file. Claimed rather than left as headroom, which is what this guard
+    //   asks for — an unspent win is a licence for the next violation.
+    // 115 → 114: Settings' profile header stopped drawing its completeness as
+    //   a raw-radius linear bar under the % that already said it — the reading
+    //   is the kit's Ring around the avatar now, and the bar's radius went
+    //   with the bar.
+    // 114 → 113: History's Trend chart stopped being a bar chart (the summary's
+    //   own no-bars rule, applied to the reading it was written next to) — the
+    //   bars' raw corner went with the bars; the marks that replaced them are
+    //   circles on RADIUS.pill.
+    // 113 → 112: app/statistics.tsx was deleted. It had been promoted onto
+    //   History's trend view a year earlier and never given a door, so it drew
+    //   the same charts off the same engines with nothing pointing at it — and
+    //   one raw radius went with it. Claimed here rather than left as headroom.
+    burnDown(hits(/borderRadius:\s*\d/g), 112, "2027-02-28", "raw borderRadius → RADIUS.*");
+  });
+});
+
+describe("panels", () => {
+  /**
+   * NO PANEL IS HELD OPEN BY A SPACER.
+   *
+   * The session summary ships as full-screen panels again, and the first time
+   * it did, four of its five screens rendered as mostly black ink. The cause
+   * was not the panel format — it was that a panel is a FIXED 844pt screen, so
+   * something has to take up whatever the content does not, and that job was
+   * given to `<View style={{ flex: 1 }} />`. A bare spacer pools all the
+   * leftover height into one hole; an instrument given the same flex draws a
+   * taller chart. The sequence's own written law said "no flex spacer ever
+   * holds a panel open" and the file broke it two screens later, which is
+   * exactly the kind of rule that needs a test rather than a paragraph.
+   *
+   * This is a BUILD FAILURE, not a ratchet: a ratchet would say "no MORE
+   * spacers", which is a budget for the ones that put the holes there.
+   */
+  it("the summary's panels carry instruments, not empty spacers", () => {
+    const PANELLED = [
+      "components/workout-wrapped.tsx",
+      "components/aurora/session-body.tsx",
+      "components/aurora/session-share-card.tsx",
+    ];
+    const bare: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!PANELLED.includes(path)) continue;
+      text.split("\n").forEach((line, i) => {
+        // Prose about a spacer is not a spacer — this guard's own explanation
+        // quotes one, and matched itself the first time it ran.
+        if (/^\s*(?:\*|\/\/)/.test(line)) return;
+        // A self-closing View whose ONLY style is a flex — it holds space and
+        // draws nothing. A flex container WITH children is an instrument zone.
+        if (/<View\s+style=\{\{\s*flex:\s*1\s*\}\}\s*\/>/.test(line)) bare.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      bare,
+      `\na panel is filled by its INSTRUMENT, never by a spacer — give the leftover height to the chart:\n  ${bare.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * NO BARS IN THE SUMMARY'S INSTRUMENTS.
+   *
+   * Four charts on one scroll had converged on the same shape — a row of
+   * rectangles — for four different questions: load per set, a lift's history,
+   * a comparison between exercises, and time in each zone. A bar is the least
+   * specific picture available, because it is a rectangle standing in for a
+   * number and says nothing about what KIND of number it is; four of them read
+   * as filler, which is what they were.
+   *
+   * The forms that replaced them are chosen by the fact (session-instruments):
+   * a TRACE for a continuous quantity, a PATH of marks for discrete events, a
+   * RANGE of dots on one axis for a handful of things compared, and a single
+   * cut RIBBON for parts of one whole. This asserts the rectangles do not creep
+   * back — a build failure, not a ratchet, because "no MORE bars" is a budget
+   * for the ones that were already there.
+   */
+  it("the summary draws no bar charts", () => {
+    const INSTRUMENTS = [
+      "components/aurora/session-instruments.tsx",
+      "components/aurora/session-spine.tsx",
+      "components/aurora/session-trace.tsx",
+      "components/aurora/session-body.tsx",
+    ];
+    const bars: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!INSTRUMENTS.includes(path)) continue;
+      text.split("\n").forEach((line, i) => {
+        if (/^\s*(?:\*|\/\/)/.test(line)) return;
+        // An SVG <Rect> in an instrument is a bar. Nothing else needs one.
+        if (/<Rect[\s/>]/.test(line)) bars.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      bars,
+      `\npick the form from the fact — trace, path, range or ribbon (session-instruments.tsx):\n  ${bars.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * A PANEL EXISTS ONLY WHEN IT CAN FILL A SCREEN. The record panel is the case
+   * that proves it: with fewer than HISTORY_MIN_POINTS sessions behind the lift
+   * there is no history to draw, so the record rides the hero as a strip rather
+   * than taking a screen it cannot fill. If this constant is ever read as
+   * anything but a gate on the panel, the panel can come back empty.
+   */
+  it("the record panel is gated on having a history to draw", () => {
+    const ww = FILES.find((f) => f.path === "components/workout-wrapped.tsx");
+    expect(ww, "workout-wrapped.tsx moved — update this guard").toBeTruthy();
+    expect(ww!.text).toMatch(/hasRecordPanel\s*=\s*recordHistory\.length\s*>=\s*TREND_MIN_POINTS/);
+    // …and the hero carries the fallback strip, so a record is never lost.
+    expect(ww!.text).toMatch(/cel\s*&&\s*!hasRecordPanel/);
   });
 });
 
@@ -812,8 +1155,8 @@ describe("touch targets", () => {
     // filter). It is the RAIL chip, and it is genuinely a different object from
     // AChip rather than a ninth spelling of it: a rail is chrome, so it speaks
     // the hero's mono voice, where AChip lives in the content column and speaks
-    // Archivo. Borrowing AChip for the rail is precisely why mobile History drew
-    // Archivo 13 in a band where the other three rails drew mono 12. It arrived
+    // the display face. Borrowing AChip for the rail is precisely why mobile History drew
+    // display 13 in a band where the other three rails drew mono 12. It arrived
     // by RETIRING four hand-rolled rails (History and Plans, both clients) and
     // it carries a stricter guard of its own than this one —
     // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
@@ -826,13 +1169,16 @@ describe("touch targets", () => {
     //
     // That is not a cosmetic miscount: a ratchet whose floor is the number of
     // canonical components can NEVER reach zero, so it can never graduate to
-    // HARD, which is the entire point of the mechanism. 9 → 5, and the 5 are
+    // HARD, which is the entire point of the mechanism. 9 → 5, and they were
     // real: LaneOrderChip, DayChip (twice — the logbook rail and the week rail
-    // draw the same object separately), MetaPill, PlanDockPill.
+    // draw the same object separately), MetaPill, PlanDockPill. 5 → 4 when the
+    // endurance lanes became a pager: LaneOrderChip went with them, because a
+    // control that sorted three lanes has nothing to sort in a section whose
+    // pages are ordered by the volume in them.
     const SANCTIONED = /\b(?:DockChip|APill|AChip|ActionPill|GlassPillRow)\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    burnDown(decls, 5, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
+    burnDown(decls, 4, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 
@@ -982,7 +1328,10 @@ describe("loading", () => {
     // (leave-plan, and Settings' erase + delete), which is the resize-under-a-
     // resting-finger defect APill's `state` owns. Moving those buttons onto
     // APill deleted the indicator along with the hand-rolled pill.
-    burnDown(hits(/<ActivityIndicator/g), 15, "2026-10-31", "content ActivityIndicator → <Loading />");
+    // 15 → 14: Settings' data export was the last of that same shape — a
+    // spinner swapped in where the download button stood, reflowing the card
+    // mid-export. It rides APill's commit state now.
+    burnDown(hits(/<ActivityIndicator/g), 14, "2026-10-31", "content ActivityIndicator → <Loading />");
   });
 });
 
@@ -1095,7 +1444,16 @@ describe("colour arithmetic", () => {
     // chartreuse — the only stop of a three-density ramp that was neither a rung
     // nor a real gradient. The band is a hue now (the endurance lanes' own
     // easy/steady/hard coding), so the number went with the argument for it.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 104,
+    // 104 → 105 → 104, in one day, and the round trip is the interesting part.
+    // The day band's FOOT briefly added withAlpha(C.ink, 0) — the transparent
+    // end of the gradient that resolves a filled band into the page ground,
+    // which is exactly what this floor exists to allow. Then the foot stopped
+    // being a SCRIM at all: the band became ONE material, a wash of the day's
+    // hue over the page ground with a fully transparent last stop, so there is
+    // no join left to finish and the alpha went with the argument for it. The
+    // wash costs this rule nothing either — its stops come from BAND_WASH,
+    // tokens rather than numbers at the call site.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 103,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
@@ -1485,7 +1843,19 @@ describe("presentation", () => {
     const floor = file("aurora/done-floor.tsx")!;
     expect(floor.text).not.toMatch(/borderStyle:\s*"dashed"/);
 
-    // 2. The rail offers the pair in BOTH day states — logged and empty.
+    // 2. The rail offers the pair in both day states that ASK for something —
+    //    a day that holds training, and an open one — exactly once in each.
+    //    The count is the invariant in both directions: a state that forgot
+    //    its pair is the original bug, a second pair inside one state is the
+    //    duplication beside it.
+    //
+    //    The DECLARED REST day is deliberately not one of them and must stay
+    //    that way. It is the one state that asks for nothing — the athlete has
+    //    already answered — so its only control would have been the undo, and
+    //    a card whose loudest element is the offer to unsettle what it just
+    //    announced is a card arguing with itself. It stays reversible without
+    //    a pill: the block itself takes the tap (see the `resting` branch),
+    //    which is why this count is 2 and not 3.
     const rail = file("aurora/logbook-rail.tsx")!;
     expect(rail.text.match(/<AActionPair/g) ?? []).toHaveLength(2);
 
@@ -1905,6 +2275,332 @@ describe("screens", () => {
     const readers = FILES.filter((f) => /from "\.\/measure-row"/.test(f.text)).map((f) => f.path);
     expect(readers).toContain("components/aurora/volume.tsx");
     expect(readers).toContain("components/aurora/activity-compare.tsx");
+  });
+});
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SPACING — the axis that had every token and no guard.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * The Aug 2026 spacing audit measured what the other rules in this file already
+ * predicted. `space` has been the shared ladder since the scale landed — 4, 6,
+ * 8, 10, 12, 16, 20, 24, 32, 40, one map for both clients — and it is READ 642
+ * times in apps/mobile against 3,183 raw numeric paddings, margins and gaps.
+ * Token adoption on the spacing axis is under a fifth, which is not a system
+ * with drift in it; it is a system that was never adopted.
+ *
+ * Two axes of it were already guarded and it shows: the SIDE gutter, by
+ * apps/web/__tests__/screen-gutter.test.ts (a bleed must name its container),
+ * and the card's inset, by card-surface.test.ts. Nothing watched the VERTICAL
+ * rhythm, and that is where the audit found the damage:
+ *
+ *   • 1,262 raw `marginTop`s across 24 DISTINCT VALUES. The seam between two
+ *     blocks is written 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22,
+ *     24, 26 and 28 — no rule picks between them, so every screen picks again.
+ *   • The section head: `ASection` says space.xxl over / space.ms under. Today
+ *     hand-rolled two heads at 24/12, Explore's at 24/12, nutrition-hub's at
+ *     28/10, the favourites sheet's at 16/10, RangeHead at ?/8 — five spellings
+ *     of one seam, four of them on screens an athlete crosses in one session.
+ *   • An undocumented 2dp inset ("the content column, plus two") on 21 heads,
+ *     subtitles and blocks, so a GroupMark sat 2dp right of the ASection above
+ *     it and of every card below it, down the same scroll.
+ *   • Three constants named `CARD_PAD` holding two values (20 in the kit and in
+ *     the two week rails, which redeclared it rather than importing it; 5 in
+ *     hold-menu, a different object entirely).
+ *   • The two bottom-edge pads `sheetPadBottom` was written to kill, still
+ *     spelled by hand on the logger's cover: a bare 48, and `safe.bottom + 28`
+ *     — 62dp of dead band on a notched iPhone where 34 is the answer.
+ *
+ * All of the above are fixed in the change that added these rules. What follows
+ * is what stops them coming back, and the count of what is left.
+ *
+ * WHY THE LADDER IS THE UNIT OF THE RULE. A `space.md` and a literal 12 render
+ * identically, so a rule that demanded the token and nothing else would be
+ * style policing. The rule is about the VALUE: a 13, a 17, a 28 cannot be any
+ * rung, so it is a number somebody tuned by eye against one screen — and the
+ * next person to touch that screen tunes it again. On-ladder literals are left
+ * alone here deliberately; they are already the right size, and they are the
+ * `space.*` sweep's business rather than this ratchet's.
+ */
+describe("spacing", () => {
+  /** Every property that puts space between or inside things. */
+  const SPACING_PROPS =
+    "padding|paddingTop|paddingBottom|paddingLeft|paddingRight|paddingHorizontal|paddingVertical|" +
+    "margin|marginTop|marginBottom|marginLeft|marginRight|marginHorizontal|marginVertical|" +
+    "gap|rowGap|columnGap";
+
+  /** The `space` ladder, as raw dp. Kept as literals rather than derived from
+   *  the imported map so that MOVING a rung is a visible edit here too — this
+   *  rule's whole claim is that these eleven numbers are the vocabulary. */
+  const LADDER = new Set([0, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40]);
+
+  /** POSITIVE values only. A NEGATIVE margin is never a rhythm rung — it is a
+   *  bleed out of a container's padding or an optical nudge, and the bleed is
+   *  already ruled on, by name, in apps/web/__tests__/screen-gutter.test.ts
+   *  ("every container bleed names what it bleeds"). Counting it here would put
+   *  the same site under two rules with different remedies. */
+  const OFF_LADDER = new RegExp(`\\b(?:${SPACING_PROPS}):\\s*(\\d+(?:\\.\\d+)?)\\b`, "g");
+
+  const offLadder = (where: (path: string) => boolean): string[] => {
+    const found: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!where(path.split("\\").join("/"))) continue;
+      text.split("\n").forEach((line, i) => {
+        const t = line.trimStart();
+        if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
+        for (const m of line.matchAll(OFF_LADDER)) {
+          if (!LADDER.has(Number(m[1]))) found.push(`${path}:${i + 1}`);
+        }
+      });
+    }
+    return found;
+  };
+
+  /** The files a screen COPIES FROM — the kit and the primitives it re-exports.
+   *  Split out and dated first because a number here is not one violation: it
+   *  is the shape every caller inherits, and the search field's 18/17 is the
+   *  reason "what padding does a field take?" has no answer a screen can read
+   *  off the system. */
+  const VOCABULARY =
+    /^components\/aurora\/(?:kit|field|sheet|hero|geometry|group-mark|section-seam|rail-tail|cta-label|nutrition-kit)\.tsx?$/;
+
+  it("BURN-DOWN — the shared vocabulary lands on the ladder first", () => {
+    burnDown(offLadder((p) => VOCABULARY.test(p)), 11, "2026-11-30", "off-ladder spacing in the KIT → a space.* rung", [
+      {
+        where: /gap: 2, (?:height|width)/,
+        why: "a bar chart's inter-bar gap is instrument geometry, not layout rhythm — it is sized against the bar's own width, and moving it to a rung would show as a redrawn chart",
+      },
+    ]);
+  });
+
+  it("BURN-DOWN — and then the screens", () => {
+    // 588 → 587 on the Settings refit branch (the quick-action chips took
+    // their off-ladder padding with them when they became APill compact),
+    // landing against main's seam sweep (588 → 571) as 570 — one shared site
+    // between the two counts.
+    // 570 → 565: the same deletion — five off-ladder paddings inside the
+    // unreachable statistics screen.
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 565, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+  });
+
+  /**
+   * A CONSTANT THAT SHADOWS A KIT TOKEN.
+   *
+   * `CARD_PAD` meant 20 in the kit, 20 again in week-rail and logbook-rail —
+   * which had each written `const CARD_PAD = 20` rather than importing it, so
+   * the kit's token could move and the two rails would not — and 5 in
+   * hold-menu, which is not a content card at all. Three declarations, two
+   * values, one name; a reader who knows what CARD_PAD is knows it wrongly in
+   * two files out of three.
+   *
+   * This is HARD rather than a burn-down because it is not a sweep: a local
+   * constant either names something the kit already names, or it names
+   * something else and should say so. hold-menu's is `MENU_PAD` now, with the
+   * reason at the declaration — importing the kit's 20 there would have moved
+   * every row's corner, since the row radius is derived from it.
+   */
+  it("HARD — no local constant shadows a kit spacing token", () => {
+    // `export` included: the kit's own definitions are excluded BY PATH below,
+    // so an exported shadow anywhere else is still a shadow.
+    const OWNED = /^\s*(?:export )?const (CARD_PAD|GUTTER|SHEET_PAD|CARD_GUTTER)\b/;
+    const shadows: string[] = [];
+    for (const { path, text } of FILES) {
+      const p = path.split("\\").join("/");
+      // The kit's own declarations are the definitions, not shadows of them.
+      if (/^components\/aurora\/(?:kit|geometry)\.tsx?$/.test(p)) continue;
+      text.split("\n").forEach((line, i) => {
+        if (OWNED.test(line)) shadows.push(`${p}:${i + 1}  ${line.trim()}`);
+      });
+    }
+    expect(
+      shadows,
+      "import the token from ./kit — a second declaration is a copy that stops " +
+        "tracking. If it genuinely is not the kit's thing, give it its own name " +
+        `and say why at the declaration (see hold-menu's MENU_PAD):\n${shadows.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * MAX, NEVER PLUS — the arithmetic under a surface that sits on the screen's
+   * bottom edge.
+   *
+   * A sheet's panel, a cover's last row and a dock all sit ON the bottom edge,
+   * so the home-indicator inset is the FLOOR of their pad, not an addition to
+   * it. `sheetPadBottom` in @hybrid/core is that one number for both clients,
+   * and `coverPadBottom` in lib/layout names it for a cover; the doc on each
+   * carries the tally of what `+` cost before they existed.
+   *
+   * The pattern is unmistakable and so is the fix, which is why this is HARD:
+   * `insets.bottom + 28` reserves 62dp where 34 was correct, and it fails
+   * invisibly — as a dead band nobody can point at, on exactly the devices the
+   * developer is not holding.
+   */
+  it("HARD — a bottom-edge pad takes the inset as a floor, never as a term", () => {
+    const sums: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        const t = line.trimStart();
+        if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
+        for (const m of line.matchAll(/paddingBottom:\s*[\w.]*(?:insets?|safe)\w*\.bottom\s*\+\s*([\w.$]+)/g)) {
+          // An ALL-CAPS constant is a NAMED CLEARANCE — something is standing in
+          // that space (a dock, an overlaid rail) and the pad is reserving its
+          // height, which is the one reading under which `+` is correct. A bare
+          // number or a bare rung names nothing, so it is the bug.
+          if (/^[A-Z][A-Z0-9_]*$/.test(m[1]!)) continue;
+          sums.push(`${path.split("\\").join("/")}:${i + 1}  ${m[0].trim()}`);
+        }
+      });
+    }
+    expect(
+      sums,
+      "the safe-area inset is the FLOOR of a bottom-edge pad, not a term in it — " +
+        "use sheetPadBottom (@hybrid/core) or coverPadBottom (lib/layout). If " +
+        "something really is standing in that space, reserve it under a NAMED " +
+        "clearance (see workout-wrapped's DOCK_CLEARANCE / RAIL_CLEARANCE):\n" +
+        sums.join("\n"),
+    ).toEqual([]);
+  });
+
+  /**
+   * THE SECTION SEAM IS ONE PAIR OF NUMBERS.
+   *
+   * `ASection` owns it: `space.xxl` above, `space.ms` below. The audit found
+   * five hand-rolled heads carrying their own pair, which is how the same seam
+   * came to be 24/12 on Today, 24/12 in Explore, 28/10 in the nutrition hub and
+   * 16/10 in the favourites sheet. Convergence onto the component is already a
+   * dated ratchet above ("section-header component → ASection"); this rule
+   * guards the thing that matters even before a head gets there, which is that
+   * the two numbers are not re-picked.
+   *
+   * It reads the SEAM, not the component: a row that carries a section head's
+   * exact anatomy (a black display title with a mono meta opposite) and then
+   * writes its own marginTop/marginBottom is what this catches.
+   */
+  it("HARD — ASection states the section seam, and states it in tokens", () => {
+    const kit = FILES.find((f) => f.path.split("\\").join("/") === "components/aurora/kit.tsx");
+    expect(kit, "kit.tsx not found").toBeTruthy();
+    expect(
+      kit!.text,
+      "the section seam moved out of the tokens — ASection is where both numbers are written",
+    ).toContain("const rhythm: ViewStyle = { marginTop: lead ? 0 : space.xxl, marginBottom: space.ms };");
+  });
+
+  /**
+   * A SEAM SITS BETWEEN THINGS. IT DOES NOT OPEN THEM.
+   *
+   * `ASection`'s `space.xxl` is the gap between two sections of a SCREEN. A
+   * card already pays its own `CARD_PAD`, so a head that is the card's first
+   * child stacks the two: 20 of card pad plus 24 of seam puts the title 44dp
+   * from the top edge against 20dp at the sides, and the card reads as sagging.
+   *
+   * Five did — three on Performance, one on the volume screen, and the week
+   * verdict's comparison page (which reaches its card through a component whose
+   * own root is the head, so a shallow look-back never sees it). A sixth,
+   * `questionnaire.tsx`, had already patched it with a local `marginTop: 0`:
+   * the standard could not express the case, so the caller re-derived it, which
+   * is the same failure the `sub` slot was added to stop.
+   *
+   * The rule the file's other guards could not catch: they check that the seam
+   * is stated in TOKENS, not that it is the RIGHT seam for the container. This
+   * one reads the container.
+   */
+  it("HARD — a head that opens a card takes `lead`", () => {
+    const OPENS = /<(ACard|APressCard)\b/;
+    const SEAMED = /^\{?\s*<(ASection|GroupMark|DoorRow)\b/;
+    const indent = (l: string) => l.length - l.trimStart().length;
+    const skip = (t: string) =>
+      t === "" || t.startsWith("*") || t.startsWith("//") || t.startsWith("/*") || t.startsWith("{/*") || t.startsWith("<>");
+
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      const p = path.split("\\").join("/");
+      if (!/^(components|app)\//.test(p)) continue;
+      const L = text.split("\n");
+      for (let i = 0; i < L.length; i++) {
+        if (!OPENS.test(L[i])) continue;
+        const base = indent(L[i]);
+        for (let j = i + 1; j < Math.min(L.length, i + 14); j++) {
+          const t = L[j].trimStart();
+          if (skip(t)) continue;
+          if (indent(L[j]) <= base) break;
+          if (!t.startsWith("<") && !t.startsWith("{")) continue;
+          if (SEAMED.test(t)) {
+            const block = L.slice(j, j + 8).join(" ");
+            const cancels = /\blead\b/.test(block) || /marginTop:\s*0/.test(block) || /mt=\{0\}/.test(block);
+            if (!cancels) bad.push(`${p}:${j + 1}  ${t.slice(0, 70)}`);
+          }
+          break;
+        }
+      }
+    }
+    expect(
+      bad,
+      "this head OPENS its card, so there is no preceding section to seam against — " +
+        "pass `lead` (ASection) or cancel the top margin explicitly:\n" + bad.join("\n"),
+    ).toEqual([]);
+  });
+
+  /**
+   * THE EYEBROW'S OTHER HALF.
+   *
+   * `ty(C, "kicker")` and `ty(C, "overline")` name the app's dominant label
+   * voice, and the tier shipped without the one measurement that completes it:
+   * how far its value sits beneath it. So every call site decided again, and
+   * the sweep found ONE relationship spelled EIGHT ways across 29 sites — 1, 2,
+   * 3, 4, 5, 6, 7 and 8dp, eighteen of them on no rung at all. Two sat in the
+   * same card on Performance: the freshness band 2dp under its kicker, the
+   * capability line 5dp under its own.
+   *
+   * `LABEL_GAP` (@hybrid/core scale.ts) is that number. This rule is HARD
+   * rather than a burn-down because the class is small, mechanical and now
+   * empty — and because a ninth spelling would cost nothing to add and be
+   * invisible in review, which is exactly the shape a guard is for.
+   *
+   * SCOPE, stated so the number is honest: only a NAMED eyebrow counts. The
+   * ~46 hand-rolled mono-uppercase labels are governed by the existing
+   * "mono uppercase eyebrow → ty(C, …)" burn-down above; converging those onto
+   * the token pulls their gaps onto LABEL_GAP with them, which is why this rule
+   * does not try to reach them with a heuristic it cannot make precise.
+   */
+  it("HARD — a named eyebrow's value takes LABEL_GAP", () => {
+    const NAMED = /ty\(C,\s*"(kicker|overline)"\)/;
+    // The whole OPENING TAG of the element at line j — it routinely wraps, and
+    // reading only the first line was this rule's own first bug: it picked up
+    // the NEXT SIBLING's margin and flagged five sites that are not this class.
+    const openTag = (L: string[], j: number) => {
+      let s = "", depth = 0;
+      for (let k = j; k < Math.min(L.length, j + 8); k++) {
+        s += L[k] + " ";
+        for (const ch of L[k]) { if (ch === "{") depth++; else if (ch === "}") depth--; }
+        if (depth <= 0 && /(?:^|[^{])>\s*$|\/>\s*$|>\s*\{?\s*$/.test(L[k])) break;
+      }
+      return s;
+    };
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      const p = path.split("\\").join("/");
+      if (!/^(components|app)\//.test(p)) continue;
+      const L = text.split("\n");
+      for (let i = 0; i < L.length; i++) {
+        if (!/<Text/.test(L[i]) || !NAMED.test(openTag(L, i))) continue;
+        for (let j = i + 1; j < Math.min(L.length, i + 6); j++) {
+          const t = L[j].trim();
+          if (t === "" || t === ")}" || t === ")" || t === "}" || t.startsWith("{") || t.startsWith("*") || t.startsWith("//")) continue;
+          if (!t.startsWith("<")) continue;
+          if (!/^<Text/.test(t)) break;              // an intervening element — a different relationship
+          const tag = openTag(L, j);
+          if (NAMED.test(tag)) break;                // a second eyebrow, not its value
+          const m = tag.match(/marginTop:\s*(\d+)\b/);
+          if (m) bad.push(`${p}:${j + 1}  marginTop: ${m[1]}`);
+          break;
+        }
+      }
+    }
+    expect(
+      bad,
+      "the gap under an eyebrow is LABEL_GAP (@hybrid/core), not a literal:\n" + bad.join("\n"),
+    ).toEqual([]);
   });
 });
 

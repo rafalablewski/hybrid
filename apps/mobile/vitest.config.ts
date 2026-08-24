@@ -92,6 +92,13 @@ export default defineConfig({
             // arms a layout animation before it commits. A missing one is the
             // quietest bug we can ship — correct code, passing tests, an app
             // that just feels cheap — and it is only visible on a device.
+            // Finds every `accessible` prop in the app and makes its file say
+            // what that view groups. The prop takes the whole subtree out of
+            // the a11y tree, so one on a view containing a button makes that
+            // button unreachable — and neither typecheck nor the render gate
+            // can see it (react-native-web does not collapse the DOM). Reads
+            // source as TEXT, so it stays inside the pure boundary.
+            "lib/a11y-grouping.test.ts",
             "lib/list-motion.test.ts",
             // The recovery reminder's glue: that a second ask is actually
             // scheduled, that a second session REPLACES it rather than stacking
@@ -101,6 +108,14 @@ export default defineConfig({
             // AsyncStorage and nothing else native, which is why those two get
             // aliases below and react-native still does not.
             "lib/recovery-reminder.test.ts",
+            // Every fixed-width text column in the app, against what the
+            // dictionary and the generators can actually put in it. Pure
+            // arithmetic over the font metrics — it has to live here rather
+            // than beside a component, because the fault it catches (a column
+            // that ellipsises its own contents) is invisible to JSDOM, which
+            // truncates nothing, and to an English screenshot, which is the
+            // shortest of the three languages we ship.
+            "lib/column-fit.test.ts",
           ],
         },
         resolve: {
@@ -129,6 +144,7 @@ export default defineConfig({
             "expo-secure-store": stub("native.tsx"),
             "expo-file-system": stub("native.tsx"),
             "expo-sharing": stub("native.tsx"),
+            "react-native-view-shot": stub("native.tsx"),
             "expo-notifications": stub("native.tsx"),
             // LAST: a prefix alias, so every entry above wins over it.
             "react-native": "react-native-web",

@@ -198,12 +198,11 @@ export function UserRecipeShelf({
       <ASection
         title={t("w.recovery.nutrition.myRecipes")}
         meta={recipes.length > 0 ? String(recipes.length) : undefined}
-        style={{ marginHorizontal: 2 }}
       />
 
       {recipes.length === 0 ? (
         emptyNote ? (
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption, "relaxed"), marginHorizontal: 2, marginTop: space.xs }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption, "relaxed"), marginTop: space.xs }}>
             {t("w.recovery.nutrition.myRecipesSub")}
           </Text>
         ) : null

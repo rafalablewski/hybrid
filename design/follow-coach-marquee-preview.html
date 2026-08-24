@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Follow a coach — Marquee, as shipped</title>
 <style>
   :root{
     --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
-    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --mono:"SohneMono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
     --page:#070806;--pchalk:#f3f4ef;--pash:#8b8f86;--plime:#c6f84f;--pcard:#151715;--pline:#242724;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -40,7 +52,7 @@
     --lime:#c6f84f;--blue:#3c787e;--violet:#8296c4;--amber:#d0cd94;
     --lime-text:#c6f84f;--blue-text:#6cb6bd;--violet-text:#8ba0cc;--amber-text:#d0cd94;
     --shadow-card:0 6px 22px -12px rgba(0,0,0,.55);
-    --font-heading:"Archivo",system-ui,sans-serif;--hw:800;
+    --font-heading:"Sohne",system-ui,sans-serif;--hw:800;
   }
   .kyoto{
     --ink:#f6f3ea;--ink2:#faf7ef;--line:#e6e1d2;--chalk:#2b2a26;--ash:#6f6b5e;--gold:#b58a24;

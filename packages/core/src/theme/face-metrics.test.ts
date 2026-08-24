@@ -1,0 +1,359 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { SOHNE, SOHNE_MONO, FACE_LINE, FIGURE_INK, FIGURE_INK_EM, NATURAL_LINE_EM, SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM, inkSpan, lineBoxFloor, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
+import { fs, leading, lh, TYPE_REF } from "../scale";
+
+/**
+ * THE METRICS ARE RE-READ FROM THE BINARIES, NOT TRUSTED.
+ *
+ * `face-metrics.ts` is the one file allowed to state a font measurement, and
+ * every optical constant in the system resolves through it. That makes it
+ * exactly the kind of file that rots invisibly: swap a font, and the numbers go
+ * on describing the font you used to have. There is precedent — the serif
+ * x-height sat at 0.445 in scale.ts against a binary that measures 0.4409, and
+ * nothing noticed, because a pairing that is 1% off does not look broken, it
+ * looks slightly cheap.
+ *
+ * ── HOW IT READS THEM ──────────────────────────────────────────────────────
+ *
+ * The Söhne cuts are CFF (.otf), whose outlines this file will not attempt to
+ * parse — but their OS/2 `sxHeight` and `sCapHeight` are CORRECT (checked
+ * against the outlines with fontTools when the values were taken), so the table
+ * is a faithful source for them. The `glyf` reader that sat beside it was for
+ * the serif, a TrueType file whose OS/2 x-height reported HALF the real one;
+ * both went when the face did (Aug 2026). If a third face ever lands, do not
+ * assume its tables: the serif is the standing evidence that a shipped binary
+ * can state a measurement that is simply false.
+ */
+
+const FONTS = join(__dirname, "..", "..", "..", "..", "apps", "mobile", "assets", "fonts");
+
+interface Tables {
+  buf: Buffer;
+  off: Record<string, number>;
+  upem: number;
+}
+
+function open(file: string): Tables {
+  const buf = readFileSync(join(FONTS, file));
+  const n = buf.readUInt16BE(4);
+  const off: Record<string, number> = {};
+  for (let i = 0; i < n; i++) {
+    const rec = 12 + 16 * i;
+    off[buf.toString("latin1", rec, rec + 4)] = buf.readUInt32BE(rec + 8);
+  }
+  const head = off["head"];
+  if (head === undefined) throw new Error(`${file}: no head table`);
+  return { buf, off, upem: buf.readUInt16BE(head + 18) };
+}
+
+/** OS/2 is a fixed layout; these two live at 86 and 88 and exist from v2 on. */
+const os2 = (t: Tables) => {
+  const o = t.off["OS/2"]!;
+  return {
+    version: t.buf.readUInt16BE(o),
+    weightClass: t.buf.readUInt16BE(o + 4),
+    xHeight: t.buf.readInt16BE(o + 86) / t.upem,
+    capHeight: t.buf.readInt16BE(o + 88) / t.upem,
+    // The two OTHER vertical pairs a platform may lay text out with. Which one
+    // it picks depends on the OS and on fsSelection's USE_TYPO_METRICS bit, so
+    // FACE_LINE is only safe to state as one number because all three agree.
+    typoAscent: t.buf.readInt16BE(o + 68) / t.upem,
+    typoDescent: t.buf.readInt16BE(o + 70) / t.upem,
+    typoLineGap: t.buf.readInt16BE(o + 72) / t.upem,
+    winAscent: t.buf.readUInt16BE(o + 74) / t.upem,
+    winDescent: t.buf.readUInt16BE(o + 76) / t.upem,
+  };
+};
+
+const hhea = (t: Tables) => {
+  const o = t.off["hhea"]!;
+  return {
+    ascent: t.buf.readInt16BE(o + 4) / t.upem,
+    descent: t.buf.readInt16BE(o + 6) / t.upem,
+    lineGap: t.buf.readInt16BE(o + 8) / t.upem,
+    advanceWidthMax: t.buf.readUInt16BE(o + 10) / t.upem,
+  };
+};
+
+/** Unicode → glyph id, cmap format 4 (the only subtable these files carry). */
+function glyphId(t: Tables, ch: string): number {
+  const cmap = t.off["cmap"]!;
+  const n = t.buf.readUInt16BE(cmap + 2);
+  let sub = -1;
+  for (let i = 0; i < n; i++) {
+    const rec = cmap + 4 + 8 * i;
+    const platform = t.buf.readUInt16BE(rec);
+    const encoding = t.buf.readUInt16BE(rec + 2);
+    const o = cmap + t.buf.readUInt32BE(rec + 4);
+    if (t.buf.readUInt16BE(o) === 4 && (platform === 3 || platform === 0) && encoding !== 5) sub = o;
+  }
+  if (sub < 0) throw new Error("no format-4 cmap");
+  const code = ch.codePointAt(0)!;
+  const segX2 = t.buf.readUInt16BE(sub + 6);
+  const ends = sub + 14;
+  const starts = ends + segX2 + 2;
+  const deltas = starts + segX2;
+  const ranges = deltas + segX2;
+  for (let s = 0; s < segX2 / 2; s++) {
+    if (t.buf.readUInt16BE(ends + s * 2) < code) continue;
+    if (t.buf.readUInt16BE(starts + s * 2) > code) return 0;
+    const rangeOffset = t.buf.readUInt16BE(ranges + s * 2);
+    const delta = t.buf.readInt16BE(deltas + s * 2);
+    if (rangeOffset === 0) return (code + delta) & 0xffff;
+    const at = ranges + s * 2 + rangeOffset + (code - t.buf.readUInt16BE(starts + s * 2)) * 2;
+    const g = t.buf.readUInt16BE(at);
+    return g === 0 ? 0 : (g + delta) & 0xffff;
+  }
+  return 0;
+}
+
+/**
+ * A glyph's bounding box, straight out of its `glyf` record — TrueType stores
+ * xMin/yMin/xMax/yMax in the glyph header, so no outline interpretation is
+ * needed. Returns null for an empty glyph (space).
+ */
+function bbox(t: Tables, ch: string): { yMin: number; yMax: number; xMin: number; xMax: number } | null {
+  const gid = glyphId(t, ch);
+  const long = t.buf.readInt16BE(t.off["head"]! + 50) === 1;
+  const loca = t.off["loca"]!;
+  const start = long ? t.buf.readUInt32BE(loca + gid * 4) : t.buf.readUInt16BE(loca + gid * 2) * 2;
+  const end = long ? t.buf.readUInt32BE(loca + (gid + 1) * 4) : t.buf.readUInt16BE(loca + (gid + 1) * 2) * 2;
+  if (end <= start) return null;
+  const g = t.off["glyf"]! + start;
+  return {
+    xMin: t.buf.readInt16BE(g + 2) / t.upem,
+    yMin: t.buf.readInt16BE(g + 4) / t.upem,
+    xMax: t.buf.readInt16BE(g + 6) / t.upem,
+    yMax: t.buf.readInt16BE(g + 8) / t.upem,
+  };
+}
+
+const SANS_CUTS: Array<[string, FaceMetrics, number]> = [
+  ["buch", SOHNE.buch, 400],
+  ["kraftig", SOHNE.kraftig, 500],
+  ["halbfett", SOHNE.halbfett, 600],
+];
+const MONO_CUTS: Array<[string, FaceMetrics, number]> = [
+  ["buch", SOHNE_MONO.buch, 400],
+  ["kraftig", SOHNE_MONO.kraftig, 500],
+  ["halbfett", SOHNE_MONO.halbfett, 600],
+];
+
+describe("the sans, against the shipped binaries", () => {
+  for (const [cut, m, weightClass] of [...SANS_CUTS, ...MONO_CUTS]) {
+    it(`${m.file} measures what face-metrics says it does`, () => {
+      const t = open(m.file);
+      expect(t.upem, "unitsPerEm").toBe(m.unitsPerEm);
+      const o = os2(t);
+      expect(o.version, "OS/2 must be v2+ for sxHeight to exist").toBeGreaterThanOrEqual(2);
+      expect(o.xHeight, `${cut} x-height`).toBeCloseTo(m.xHeight, 4);
+      expect(o.capHeight, `${cut} cap-height`).toBeCloseTo(m.capHeight, 4);
+      // The weight class is what the FACE claims about itself, and the type
+      // system's weight roles are mapped onto it — a binary swapped for a
+      // different cut under the same filename would land silently otherwise.
+      expect(o.weightClass, `${cut} usWeightClass`).toBe(weightClass);
+    });
+  }
+
+  it("draws every weight on ONE skeleton — only the stem moves", () => {
+    // The property the weight ladder in typography.ts is reasoned about with:
+    // Söhne's cuts share an x-height to within 0.004em and a cap-height
+    // exactly, so a weight change is a change of stem and nothing else. If a
+    // future cut broke that, the ladder's "a heavier weight is the same letter
+    // with more ink" argument would stop holding.
+    const xs = SANS_CUTS.map(([, m]) => m.xHeight);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(0.005);
+    expect(new Set(SANS_CUTS.map(([, m]) => m.capHeight)).size).toBe(1);
+    // ...and the stems ascend, which is what makes them a ladder at all.
+    const stems = SANS_CUTS.map(([, m]) => m.stem);
+    for (let i = 1; i < stems.length; i++) expect(stems[i]!).toBeGreaterThan(stems[i - 1]!);
+  });
+
+  it("advances every mono glyph at exactly 0.600em", () => {
+    // For a monospaced face the maximum advance IS the advance, so this reads
+    // the whole face rather than sampling it. `fitMonoFigure` is a
+    // multiplication over this number; if it is wrong, the biggest figure on
+    // the app's biggest card silently picks the wrong rung.
+    for (const [, m] of MONO_CUTS) {
+      expect(hhea(open(m.file)).advanceWidthMax, m.file).toBeCloseTo(m.advanceN, 4);
+      expect(m.advanceN).toBe(0.6);
+    }
+  });
+
+  it("carries a line box far taller than its ink, which is why `flush` exists", () => {
+    // Söhne's natural line box is 1.326em (hhea 1.037 + 0.289) against real ink
+    // of 0.898em. That 0.428em of built-in slack is invisible in a paragraph and
+    // very visible under a row of stat tiles — it is the band of nothing `flush`
+    // was cut to reduce, and `lh.flush` staying under it is the whole point.
+    const h = hhea(open(SOHNE.buch.file));
+    expect(h.ascent - h.descent + h.lineGap).toBeCloseTo(NATURAL_LINE_EM, 3);
+    expect(inkSpan(SOHNE.buch)).toBeCloseTo(0.898, 3);
+    expect(lh.flush).toBeLessThan(h.ascent - h.descent);
+  });
+
+  it("HARD — every cut declares the SAME line metrics, in all three tables", () => {
+    // FACE_LINE states one ascent and one descent for the whole app, and a
+    // single number is only defensible because nothing disagrees: hhea, OS/2's
+    // typo pair and OS/2's win pair carry identical values in all six binaries,
+    // so it does not matter which table iOS, Android or a browser prefers.
+    //
+    // THE DESCENT IS THE LOAD-BEARING ONE. It is reserved under every line
+    // whether a glyph uses it or not (a figure's deepest is `/` at -0.072em),
+    // and React Native takes a short `lineHeight` out of the ASCENT — which is
+    // how `lh.flush` at 0.90 sliced the top off every figure in the product.
+    for (const [, m] of [...SANS_CUTS, ...MONO_CUTS]) {
+      const t = open(m.file);
+      const h = hhea(t);
+      const o = os2(t);
+      expect(h.ascent, `${m.file} hhea ascent`).toBeCloseTo(FACE_LINE.ascent, 4);
+      expect(-h.descent, `${m.file} hhea descent`).toBeCloseTo(FACE_LINE.descent, 4);
+      expect(h.lineGap, `${m.file} hhea lineGap`).toBeCloseTo(FACE_LINE.lineGap, 4);
+      expect(o.typoAscent, `${m.file} typo ascent`).toBeCloseTo(FACE_LINE.ascent, 4);
+      expect(-o.typoDescent, `${m.file} typo descent`).toBeCloseTo(FACE_LINE.descent, 4);
+      expect(o.winAscent, `${m.file} win ascent`).toBeCloseTo(FACE_LINE.ascent, 4);
+      expect(o.winDescent, `${m.file} win descent`).toBeCloseTo(FACE_LINE.descent, 4);
+    }
+  });
+
+  it("HARD — `flush` clears the figure ink WITH the reserved descent under it", () => {
+    // The arithmetic the shipped 0.90 got wrong, stated against the binaries
+    // rather than against a comment. A box offers `box − descent` above the
+    // baseline; the tallest figure ink is `/` at 0.732em. Anything less and the
+    // clipping is silent — no error, no ellipsis, just a flat-topped digit.
+    const h = hhea(open(SOHNE_MONO.buch.file));
+    expect(lh.flush + h.descent).toBeGreaterThanOrEqual(FIGURE_INK.top);
+    expect(lh.flush).toBe(lineBoxFloor(FIGURE_INK.top));
+    // And the rung is a FLOOR at every size in use, which is why `leading()`
+    // rounds this one role up: `fs.headline` × 1.021 is 22.46, and a rounded-
+    // down 22 is a fifth of a dp of clipping bought for nothing.
+    for (const size of Object.values(fs)) {
+      expect(leading(size, "flush") + size * h.descent, `${size}dp`).toBeGreaterThanOrEqual(size * FIGURE_INK.top);
+    }
+  });
+});
+
+describe("what the binaries cannot do, stated as constraints", () => {
+  it("HARD — the sans ships NO OpenType features, so `tnum` is not the mechanism", () => {
+    // The claim that broke when the face changed: the system used to document a
+    // tabular numeral set it could switch on. These files have no GSUB table at
+    // all, so `font-variant-numeric: tabular-nums` activates nothing. Column
+    // alignment rests on the MONO CUT's uniform advance and on nothing else,
+    // which is why typography.ts requires every measured value to be `mono`.
+    for (const [, m] of SANS_CUTS) {
+      const t = open(m.file);
+      expect(t.off["GSUB"] === undefined || t.buf.readUInt32BE(t.off["GSUB"]!) === 0x00010000, m.file).toBe(true);
+    }
+    expect(FACE_LIMITS.sansHasNoOpenTypeFeatures).toBe(true);
+    expect(FACE_LIMITS.sansDigitsAreProportional).toBe(true);
+  });
+
+  it("HARD — the sans cannot set German; `ß` is absent from every cut", () => {
+    // A constraint on the `vocabulary-pl-de` capability, not a curiosity. The
+    // shipped cuts are 121-glyph trial files extended by reference/sohne-extend.py,
+    // and the extension added punctuation and diacritics, not letters.
+    for (const [, m] of SANS_CUTS) expect(glyphId(open(m.file), "ß"), `${m.file} has ß`).toBe(0);
+    // Polish, by contrast, the sans CAN set — and since the serif was deleted
+    // in Aug 2026, `ß` is the only alphabet hole left in the shipped set.
+    for (const ch of "ąęśżźćńł") expect(glyphId(open(SOHNE.buch.file), ch), `sans is missing ${ch}`).not.toBe(0);
+    expect(FACE_LIMITS.sansMissingEszett).toBe(true);
+  });
+});
+
+describe("what the scale derives from all this", () => {
+  it("the reference size is the size the sans is fitted for", () => {
+    // The one number the ladder and the tracking curve share. It is not a rung
+    // that happens to be round; it is the origin of both axes.
+    expect(TYPE_REF).toBe(16);
+    expect(fs.bodyLg).toBe(TYPE_REF);
+  });
+});
+
+describe("the proportional advance table", () => {
+  /** Advance of a character, in em, straight out of `hmtx`. */
+  const advance = (t: ReturnType<typeof open>, ch: string) => {
+    const gid = glyphId(t, ch);
+    if (gid === 0) return null;
+    const hhea = t.off["hhea"]!;
+    const numH = t.buf.readUInt16BE(hhea + 34);
+    const hmtx = t.off["hmtx"]!;
+    const i = Math.min(gid, numH - 1);
+    return t.buf.readUInt16BE(hmtx + i * 4) / t.upem;
+  };
+
+  it("HARD — every listed width is the shipped binary's", () => {
+    // The defect this exists for was NOT a stale comment. `session-wrapped.ts`
+    // sized the Wrapped's hero and stat figures from a table measured on the
+    // PREVIOUS display face, and went on doing it through the font swap — a
+    // space 78% too wide, an `m` 14% too narrow, one constant for ten digits
+    // that span 59%. Nothing failed, the figures just shrank more than they had
+    // to. A table of measurements needs a test or it is a rumour.
+    const t = open(SOHNE.halbfett.file);
+    for (const [ch, em] of Object.entries(SOHNE_ADVANCE_EM)) {
+      const real = advance(t, ch);
+      expect(real, `${JSON.stringify(ch)} is not in the face`).not.toBeNull();
+      expect(real!, `advance of ${JSON.stringify(ch)}`).toBeCloseTo(em, 3);
+    }
+  });
+
+  it("HARD — it is Halbfett's, because that is what F.black draws", () => {
+    // The Wrapped's figures use `F.black`, which resolves to Halbfett since the
+    // weight ladder was capped at 600. If the alias ever moves, this table moves
+    // with it — a lighter cut's advances differ by enough to matter at 96px.
+    expect(advance(open(SOHNE.halbfett.file), "m")).toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
+    expect(advance(open(SOHNE.kraftig.file), "m")).not.toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
+  });
+
+  it("HARD — `~` really is absent, so the fallback is load-bearing", () => {
+    // The Wrapped prefixes an estimate with a tilde. The extended trial cuts do
+    // not draw one, so it renders in the platform fallback and is fitted at
+    // ADVANCE_FALLBACK_EM. Listed as a known hole rather than found as a
+    // wrapped tile on somebody's phone.
+    expect(glyphId(open(SOHNE.halbfett.file), "~")).toBe(0);
+    expect(SOHNE_ADVANCE_EM["~"]).toBeUndefined();
+    expect(ADVANCE_FALLBACK_EM).toBe(0.6);
+  });
+
+  it("carries every LETTER, in both cases — the hole a caps-only rule fell into", () => {
+    // The table was built for the Wrapped's figures, so it held the lowercase
+    // those values contain and nothing else. `nameplateLines` UPPERCASES its
+    // input before measuring, so every glyph it looked up missed and it was
+    // really computing `length × 0.6` — a character count with a decimal
+    // point, which is the exact mistake that rule exists to avoid.
+    for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+      expect(SOHNE_ADVANCE_EM[ch], ch).toBeDefined();
+    }
+    // ...and the three languages' accents, since two of them are the ones with
+    // the long names.
+    for (const ch of "ĄĆĘŁŃÓŚŻŹÄÖÜąćęłńóśżźäöü") expect(SOHNE_ADVANCE_EM[ch], ch).toBeDefined();
+  });
+
+  it("HARD — the capitals really do spread 3.5×, which is why a constant failed", () => {
+    const f = open(SOHNE.halbfett.file);
+    // `advance` returns null for a glyph the face does not carry, which is a
+    // real answer for `~` and a FAILURE for a capital letter. Narrowing it
+    // here rather than at each call keeps the arithmetic below readable and
+    // makes a missing glyph fail loudly instead of poisoning a sum with null.
+    const em = (ch: string): number => {
+      const a = advance(f, ch);
+      if (a === null) throw new Error(`Söhne Halbfett has no glyph for ${JSON.stringify(ch)}`);
+      return a;
+    };
+    expect(em("W")).toBeCloseTo(0.943, 3);
+    expect(em("I")).toBeCloseTo(0.272, 3);
+    expect(em("W") / em("I")).toBeGreaterThan(3.4);
+    // The German name that decided it: nine capitals, assumed 5.40em under the
+    // fallback, actually 6.27 — against a 5.4em nameplate line.
+    let real = 0;
+    for (const ch of "SCHWIMMEN") real += em(ch);
+    expect(real).toBeCloseTo(6.27, 2);
+    expect("SCHWIMMEN".length * ADVANCE_FALLBACK_EM).toBeCloseTo(5.4, 5);
+  });
+
+  it("carries every digit, because one digit constant cannot serve ten", () => {
+    for (const d of "0123456789") expect(SOHNE_ADVANCE_EM[d], d).toBeDefined();
+    const digits = [..."0123456789"].map((d) => SOHNE_ADVANCE_EM[d]!);
+    expect(Math.max(...digits) / Math.min(...digits)).toBeGreaterThan(1.5);
+  });
+});

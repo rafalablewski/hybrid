@@ -13,7 +13,7 @@ import {
   readNoteKey,
   FEEL_READ_KEY,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
@@ -153,7 +153,7 @@ export function FeelPrompt({
       ) : (
         <Text style={ty(C, "overline")}>{t("session.feel.q")}</Text>
       )}
-      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: tracking(compact ? 18 : 21), lineHeight: compact ? 22 : 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
+      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: tracking(compact ? 18 : 21), lineHeight: compact ? 22 : 25, marginTop: LABEL_GAP }}>{t("session.feel.lead")}</Text>
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
@@ -183,7 +183,7 @@ export function FeelPrompt({
 
       {load != null && (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
+          <Text style={{ fontFamily: F.takeover, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(LOAD_BAND_KEY[loadBand(load)])}</Text>

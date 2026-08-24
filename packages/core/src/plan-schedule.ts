@@ -1,7 +1,7 @@
 import { programCalendarDays, type PlanProgramTodayRow, type PlanDaySession } from "./plan-day";
 import { localDayKey, localMidnightMs, addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
-import type { PlanDiscipline } from "./plan-program";
+import type { PlanDayKind, PlanDiscipline } from "./plan-program";
 
 // ============================================================
 //  Plan schedule — the date-anchored week rail.
@@ -71,6 +71,19 @@ export interface ScheduledDay {
   monthShort: string; // "Jul"
   isToday: boolean;
   isRest: boolean;
+  /**
+   * THE PROGRAM DAY'S OWN KIND, carried through rather than flattened.
+   *
+   * `kindLabel` has always been here, and a label is not a fact: "Race day" is
+   * whatever `peakLabel` happens to say, in whatever language the program was
+   * authored in, and nothing downstream can branch on it. The day BAND needs to
+   * branch on it — a `competition` day is an EVENT, which is the one thing a
+   * plan day can be that the band's protect rung was waiting for (day-events.ts)
+   * — and it needs to do it BEFORE `isRest` swallows the distinction: a
+   * competition day prescribes no session, so it arrives here with
+   * `isRest: true` and is otherwise indistinguishable from a Sunday off.
+   */
+  kind: PlanDayKind;
   status: PlanDayStatus;
   /** 1-based number among TRAINING days (the "11" in "day 11 / 37"); null for rest. */
   trainingDayNumber: number | null;
@@ -94,6 +107,10 @@ export interface ScheduledDay {
 export interface PlanScheduleResult {
   planId: string;
   planName: string;
+  /** The program's discipline. Carried so a caller can name a day the day's own
+   *  blocks cannot name — a prose run arrives as a `conditioning` block called
+   *  "Tempo", which no keyword will ever resolve to running (day-events.ts). */
+  discipline: PlanDiscipline;
   totalTrainingDays: number;
   /** every program day mapped to a calendar date, in order. */
   days: ScheduledDay[];
@@ -273,6 +290,7 @@ export function planSchedule(opts: {
       monthShort: MONTH[dt.getMonth()]!,
       isToday: dateKeyOf(ts) === todayKey,
       isRest: !d.isTraining,
+      kind: d.kind,
       status: "upcoming" as PlanDayStatus, // resolved below
       trainingDayNumber: d.isTraining ? trainingSeen : null,
       totalTrainingDays,
@@ -357,6 +375,7 @@ export function planSchedule(opts: {
   return {
     planId: cal.planId,
     planName: cal.planName,
+    discipline: cal.discipline,
     totalTrainingDays,
     days,
     todayIndex: Math.max(0, todayIndex),

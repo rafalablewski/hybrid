@@ -81,7 +81,7 @@ export default function WaterCard({
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.lg }}>
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: 38, lineHeight: 40, color: met ? txt(C, C.lime) : C.chalk, fontVariant: ["tabular-nums"] }}
+          style={{ fontFamily: F.takeover, fontSize: 38, lineHeight: 40, color: met ? txt(C, C.lime) : C.chalk, fontVariant: ["tabular-nums"] }}
         >
           {formatVolume(h.ml, units)}
         </Text>

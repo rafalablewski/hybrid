@@ -45,7 +45,7 @@ import { NativeDateField, LIQUID_GLASS_SUPPORTED } from "./swiftui";
  * kit's one segmented control does not, and their off-iOS fallback was a
  * static pill row where every other screen gets `LiquidSeg` — which is now
  * what `ASegment` draws on every platform, so going through the kit is also
- * how this sheet stopped speaking SF Pro eight dp above type set in Archivo.
+ * how this sheet stopped speaking SF Pro eight dp above type set in the app's face.
  * And each value carried TWO controls — a preset segment and a stepper, both
  * writing the same number, with the segment holding NO selection at all the
  * moment the stepper moved the value off the preset grid.
