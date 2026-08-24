@@ -288,6 +288,30 @@ export const space: Record<SpaceToken, number> = {
  */
 export const sheetPadBottom = (insetBottom = 0) => Math.max(insetBottom, space.xxl);
 
+/**
+ * THE GAP BETWEEN AN EYEBROW AND THE THING IT LABELS — one number, everywhere.
+ *
+ * The app's dominant label voice is the eyebrow pair (`kicker` / `overline` in
+ * theme/typography.ts — see the long note there on why there are two). What
+ * that tier never carried was the other half of its contract: how far the value
+ * sits beneath it. So every call site decided again, and an Aug 2026 sweep
+ * found ONE relationship spelled EIGHT ways across 29 named-eyebrow sites —
+ * 1, 2, 3, 4, 5, 6, 7 and 8dp, eighteen of them on no rung of the ladder at
+ * all. Two of them are in the same card: the Performance screen's freshness
+ * band sat 2dp under its FRESHNESS kicker while its capability line sat 5dp
+ * under CAPABILITY, which is the kind of difference nobody can name and
+ * everybody reads as sloppy.
+ *
+ * `space.xxs` because an eyebrow and its value are ONE unit, not two stacked
+ * ones — the label is read as part of the figure, so the gap has to be the
+ * tightest rung the ladder offers rather than a separation. It was also
+ * already the modal choice, so the sweep moved the fewest sites.
+ *
+ * This is deliberately NOT a `ty()` style: it is a relationship between two
+ * nodes, and a text style can only describe one of them.
+ */
+export const LABEL_GAP = space.xxs;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LEADING + TRACKING — the two axes that had no token, and therefore no limit.
 //

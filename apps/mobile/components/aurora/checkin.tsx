@@ -14,7 +14,7 @@ import {
   FEELS,
   type CheckinSessionRef,
 
-  ALPHA, STATE_OPACITY } from "@hybrid/core";
+  ALPHA, STATE_OPACITY, LABEL_GAP } from "@hybrid/core";
 import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { askPushOnce } from "../../lib/push";
@@ -375,7 +375,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           <Text style={{ ...ty(C, "overline"), marginTop: 16  }}>
             {t("w.recovery.checkins.step")} {steps.length} / {steps.length} — {t("w.recovery.checkins.detailsStep")}
           </Text>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: LABEL_GAP }}>{t("w.recovery.checkins.reviewTitle")}</Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
             {CHECKIN_METRICS.map((m) => {
               // An unanswered metric shows a dash, not a neutral face — a face

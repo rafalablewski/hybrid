@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
-import { athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/core";
+import { athleteSegment, SEGMENT_LABELS, type AthleteSegment, LABEL_GAP } from "@hybrid/core";
 import { fetchSquad, type SquadRow, type SquadSummary } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -182,7 +182,7 @@ function SummaryCard({ C, label, value, color }: { C: Palette; label: string; va
   return (
     <ACard style={{ flex: 1, minWidth: 140, padding: 16 }}>
       <Text style={{ fontFamily: F.takeover, fontSize: 28, lineHeight: leading(28, "tight"), color }}>{value}</Text>
-      <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{label}</Text>
+      <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{label}</Text>
     </ACard>
   );
 }

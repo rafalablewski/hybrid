@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, Share, Text, TextInput, View, useWindowD
 import Svg, { SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NUTRITION_FAVS_KEY, NUTRITION_RECENT_KEY } from "@hybrid/core";
+import { NUTRITION_FAVS_KEY, NUTRITION_RECENT_KEY, LABEL_GAP } from "@hybrid/core";
 import { getPref, setPref } from "../../lib/synced-prefs";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -2080,7 +2080,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     {src ? <MarkPlate C={C} src={src} height={24} /> : null}
                     <View style={{ flex: 1 }}>
                       <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.publishedBy")}</Text>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{portion.verified!.sourceName}</Text>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP }}>{portion.verified!.sourceName}</Text>
                     </View>
                     <Glyph name="chevron" size={16} color={C.ash} />
                   </Pressable>
@@ -3063,7 +3063,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <MarkPlate C={C} src={src} height={26} />
             <View style={{ flex: 1 }}>
               <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.publishedBy")}</Text>
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{src.name}</Text>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP }}>{src.name}</Text>
             </View>
             <Glyph name="chevron" size={17} color={C.ash} />
           </Pressable>
@@ -3118,13 +3118,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {f.ingredients ? (
               <View style={f.packSize ? { marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line } : null}>
                 <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.ingredients")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body, "relaxed") }}>{f.ingredients}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP, lineHeight: leading(fs.body, "relaxed") }}>{f.ingredients}</Text>
               </View>
             ) : null}
             {f.mayContain ? (
               <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.mayContain")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body, "relaxed") }}>{f.mayContain}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: LABEL_GAP, lineHeight: leading(fs.body, "relaxed") }}>{f.mayContain}</Text>
               </View>
             ) : null}
             {/* Say out loud that this is OUR translation of someone else's pack —
@@ -3265,7 +3265,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           {([[t("w.recovery.nutrition.itemsChecked"), String(items.length)], [t("w.recovery.nutrition.lastChecked"), checked ?? "—"]] as const).map(([lab, val]) => (
             <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 12 }}>
               <Text style={ty(C, "kicker")}>{lab}</Text>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk, marginTop: 5 }}>{val}</Text>
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk, marginTop: LABEL_GAP }}>{val}</Text>
             </View>
           ))}
         </View>
@@ -3677,7 +3677,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <Glyph name="target" size={20} color={C.ash} />
           <View>
             <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.goalLabel")}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: 2 }}>{goalName(goal)}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: LABEL_GAP }}>{goalName(goal)}</Text>
           </View>
         </View>
         <Glyph name="chevron" size={16} color={C.ash} />

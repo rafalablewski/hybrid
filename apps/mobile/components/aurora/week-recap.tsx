@@ -6,6 +6,7 @@ import {
   fmtKm,
   fmtWeight,
   kgToUnit,
+  LABEL_GAP,
   type LoggedSession,
   type WeightUnit,
   type BodyweightLookup,
@@ -131,7 +132,7 @@ export function WeekRecapPager({ sessions, units, bw }: { sessions: LoggedSessio
                   {p.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1 }}>
                       <Text style={ty(C, "kicker")}>{s.label}</Text>
-                      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), color: C.chalk, marginTop: 4 }}>
+                      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), color: C.chalk, marginTop: LABEL_GAP }}>
                         {s.value}
                       </Text>
                     </View>

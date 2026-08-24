@@ -18,6 +18,7 @@ import {
   type WeightUnit,
   colors,
   space,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -482,7 +483,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "kicker"), marginTop: 3  }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>

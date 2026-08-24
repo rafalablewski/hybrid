@@ -31,6 +31,7 @@ import {
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -243,7 +244,7 @@ function Full({ top }: { top?: ReactNode }) {
           does not collapse margins and CSS does, so a block that kept its own
           would sit 16 lower here than on web. */}
       <ACard solid>
-        <ASection title={t("w.home.cockpit.stateTitle")} />
+        <ASection lead title={t("w.home.cockpit.stateTitle")} />
         {/* THE VERDICT — freshness, then the tissue worth watching. It used to
             sit at the top of the screen as the head's subtitle; the hub head has
             no sub slot, and this sentence reads better beside the number it
@@ -265,7 +266,7 @@ function Full({ top }: { top?: ReactNode }) {
                 <Text style={ty(C, "kicker")}>
                   {t("w.home.cockpit.freshness")}
                 </Text>
-                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: LABEL_GAP }}>
                   {t(hpiBandKey(state.hpi.band))}
                 </Text>
                 {/* The wearable rides the headline as the signed adjustment it
@@ -404,6 +405,7 @@ function Full({ top }: { top?: ReactNode }) {
           the week once instead of restating it as a percentage. */}
       <ACard solid style={{ marginTop: 16 }}>
         <ASection
+          lead
           title={!macroRead.settled ? " " : macro ? macro.goalOrSport : t("w.home.cockpit.setUp")}
           meta={macro && phaseBlock ? phaseBlock.label : undefined}
         />
@@ -437,7 +439,7 @@ function Full({ top }: { top?: ReactNode }) {
       {/* 7 · GO DEEPER — the exits. Every row carries a live value, because a
           door that tells you what is behind it is the only kind worth a row. */}
       <ACard solid style={{ marginTop: 16 }}>
-        <ASection title={t("w.home.cockpit.deeper")} />
+        <ASection lead title={t("w.home.cockpit.deeper")} />
         <Mod C={C} label={t("w.home.cockpit.trends")} value={trendsValue(weeks, prefs.units, t) ?? t("w.home.cockpit.last7")} onPress={() => router.push("/trends")} />
         <Mod
           C={C}
@@ -641,7 +643,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
               <Text style={ty(C, "kicker")}>
                 {t("w.home.cockpit.freshness")}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: LABEL_GAP }}>
                 {t(hpiBandKey(state.hpi.band))}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.teaseYours")}</Text>

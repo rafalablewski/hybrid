@@ -26,6 +26,7 @@ import {
   type StatRange,
   sessionTitleText,
   ALPHA,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
@@ -387,7 +388,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
     /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <ACard style={{ flex: 1, padding: 16 }}>
       <Text style={ty(C, "kicker")}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), marginTop: 4, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), marginTop: LABEL_GAP, color: C.chalk }}>{value}</Text>
     </ACard>
   );
 
