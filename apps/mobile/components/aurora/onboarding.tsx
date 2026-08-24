@@ -114,12 +114,59 @@ export default function AuroraOnboarding() {
   );
   const hasPlanStep = intake !== "casual";
   const total = steps.length + (hasPlanStep ? 1 : 0);
+  /**
+   * THE RAIL COUNTS QUESTIONS, NOT SCREENS, now that one screen can carry
+   * several. A tracker's whole intake is one screen, and a one-segment rail
+   * reports nothing; three segments filling as each question arrives reports
+   * what is actually left to answer, which is what a progress rail is for.
+   */
+  const railMarks = useMemo(
+    () => steps.reduce((n, st) => n + (st.grouped ? st.questions.length : 1), 0) + (hasPlanStep ? 1 : 0),
+    [steps, hasPlanStep],
+  );
   // Switching the persona answer re-derives the wizard, which can make it
   // SHORTER than the step currently showing (athlete → casual drops four
   // questions). Without this the screen would render an undefined question.
   useEffect(() => { setIdx((i) => Math.min(i, Math.max(0, total - 1))); }, [total]);
   const onPlanStep = hasPlanStep && idx >= steps.length;
   const step = onPlanStep ? null : steps[Math.min(idx, steps.length - 1)] ?? null;
+
+  /**
+   * HOW MANY QUESTIONS OF A GROUPED SCREEN ARE SHOWING.
+   *
+   * A screen carrying three questions at once is a wall, and a wall is where
+   * people leave. So a group ASKS ONE AT A TIME: answer the first and the second
+   * arrives under it, answer that and the third does. What was already answered
+   * stays on screen, which is the whole point of them sharing one — you can see
+   * and correct what you said without travelling back to another screen.
+   *
+   * The trap this must not set: if a question only appears once the one above it
+   * is ANSWERED, someone who wants to skip is stuck, and someone who presses on
+   * would commit having never seen the questions below. So the primary control
+   * advances the REVEAL first and the screen second — the same one tap per
+   * question the athlete used to spend on the same three questions across three
+   * screens, minus the three screen transitions.
+   */
+  const revealTarget = useCallback((st: typeof step): number => {
+    if (!st?.grouped) return 1;
+    let n = 1;
+    while (n < st.questions.length && touched.has(st.questions[n - 1]!.key)) n++;
+    return n;
+  }, [touched]);
+  /**
+   * DERIVED, NOT SYNCED. `opened` records only what the Continue control has
+   * pushed open BEYOND what the answers already justify, and only for the
+   * screen it was pressed on — so arriving at a screen needs no effect to
+   * settle the count and leaving one needs no effect to reset it. The cut that
+   * kept the count in state and chased `idx` with two effects had a frame in
+   * it: the arriving screen rendered with the PREVIOUS screen's count and the
+   * questions it was missing popped in after paint, un-animated, which is the
+   * one thing this whole mechanism exists to avoid.
+   */
+  const [opened, setOpened] = useState<{ idx: number; n: number }>({ idx: 0, n: 0 });
+  const revealed = Math.max(revealTarget(step), opened.idx === idx ? opened.n : 0);
+  const shown = step?.grouped ? step.questions.slice(0, revealed) : step ? step.questions : [];
+  const moreToReveal = !!step?.grouped && revealed < step.questions.length;
   const waiting = loading && questions.length === 0;
 
   /** Move a step. The scroll position is part of the move: a step is a PAGE, so
@@ -173,7 +220,27 @@ export default function AuroraOnboarding() {
   /** The last step commits, whether that is the plan step or, for a tracker,
    *  the final question. */
   const onLastStep = idx >= total - 1;
-  const next = () => { if (!onLastStep) go(idx + 1, 1); else void finish(); };
+  /** Where the rail's fill reaches: every question on the screens already
+   *  passed, plus how far into this one the reveal has got. */
+  const railIndex = useMemo(
+    () => steps.slice(0, idx).reduce((n, st) => n + (st.grouped ? st.questions.length : 1), 0)
+      + (onPlanStep ? 0 : revealed - 1),
+    [steps, idx, revealed, onPlanStep],
+  );
+  const next = () => {
+    // REVEAL FIRST, then travel. This is what keeps the group from trapping
+    // anyone: the control that would have carried you past this question when
+    // it had a screen of its own still does.
+    if (moreToReveal) {
+      haptic.light();
+      setOpened({ idx, n: revealed + 1 });
+      // The screen changed without travelling, so nothing else would tell a
+      // VoiceOver user that a question just arrived under the one they answered.
+      AccessibilityInfo.announceForAccessibility(step!.questions[revealed]!.title);
+      return;
+    }
+    if (!onLastStep) go(idx + 1, 1); else void finish();
+  };
   /** Only ever a STEP. It used to fall through to `leave()` at step 0, which
    *  made Back and skip two vocabularies pointing at one destination on the
    *  very first screen a new athlete sees — so the control is simply absent
@@ -190,7 +257,9 @@ export default function AuroraOnboarding() {
   // EVERY required question on the screen, not just the first: a grouped screen
   // that let you leave with one of three answered would be worse than three
   // screens, because the thing you skipped is no longer a screen you skipped.
-  const canNext = onPlanStep ? true : !step || step.questions.every(answered);
+  // Only what is SHOWING is judged: a required question still hidden cannot
+  // block a control whose job is to reveal it.
+  const canNext = onPlanStep ? true : !step || shown.every(answered);
 
   if (forkQ && !intake) {
     return (
@@ -214,7 +283,7 @@ export default function AuroraOnboarding() {
         {/* Filled by POSITION: every step up to the one you are on. The rail
             itself is the kit's now (`AStepRail`) — four wizards drew four of
             them and only this one animated. */}
-        <AStepRail marks={Array.from({ length: total }, (_, i) => (i <= idx ? "done" : "empty"))} style={{ marginTop: space.sm }} />
+        <AStepRail marks={Array.from({ length: railMarks }, (_, i) => (i <= railIndex ? "done" : "empty"))} style={{ marginTop: space.sm }} />
         <Pressable
           onPress={leave}
           accessibilityRole="button"
@@ -242,8 +311,8 @@ export default function AuroraOnboarding() {
                       // the fine print under it. One subtitle at the top would
                       // be describing whichever question happened to be first.
                       <View style={{ gap: space.xl }}>
-                        {step.questions.map((qq) => (
-                          <View key={qq.key}>
+                        {shown.map((qq) => (
+                          <Reveal key={qq.key}>
                             <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk, lineHeight: leading(fs.bodyLg, "tight") }}>
                               {qq.title}
                             </Text>
@@ -253,7 +322,7 @@ export default function AuroraOnboarding() {
                               </Text>
                             )}
                             <QuestionBody q={qq} answers={answers} setAnswer={setAnswer} personaChoice={persona} />
-                          </View>
+                          </Reveal>
                         ))}
                       </View>
                     ) : (
@@ -313,7 +382,9 @@ export default function AuroraOnboarding() {
               step 0 was the fork itself. */}
           <APill label={t("common.back")} variant="outline" onPress={back} />
           <APill
-            label={onPlanStep || onLastStep ? (onPlanStep && plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
+            label={!moreToReveal && (onPlanStep || onLastStep)
+              ? (onPlanStep && plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue"))
+              : t("w.account.onboarding.next")}
             onPress={next}
             disabled={!canNext || commit !== "idle"}
             state={commit}
@@ -325,6 +396,54 @@ export default function AuroraOnboarding() {
       </Animated.View>
     </SafeAreaView>
   );
+}
+
+/** How far a revealed question rises into place, in dp. Shorter than a step's
+ *  travel and vertical rather than horizontal: it is arriving UNDER the
+ *  question above it, not replacing what was there. */
+const REVEAL_RISE = 14;
+
+/**
+ * A QUESTION ARRIVING ON A SHARED SCREEN.
+ *
+ * Grouping the three body questions onto one screen took the tracker's intake
+ * from three screens to one, and immediately posed the problem grouping always
+ * poses: three controls presented at once is a FORM, and a form is a wall. So
+ * the group asks one at a time — answer the first and the second rises in under
+ * it — which keeps the single screen's honesty (everything you have said stays
+ * visible and correctable) without its cost.
+ *
+ * It fades and rises on `springs.slide`, the same spring the step travel uses,
+ * because it is the same event at a smaller scale: something arriving from the
+ * direction it is arriving from. Reduce Motion keeps the fade and drops the
+ * travel — an arrival still has to be legible as one.
+ *
+ * There is no exit half: a revealed question is never un-revealed (the count
+ * only ever grows within a screen), so this is a mount animation and nothing
+ * more.
+ */
+function Reveal({ children }: { children: ReactNode }) {
+  const reduced = useReducedMotion();
+  /** 0 = below and invisible, 1 = in place. */
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = reduced
+      ? Animated.timing(v, { toValue: 1, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
+      : Animated.spring(v, { toValue: 1, ...springToRN(springs.slide), useNativeDriver: true });
+    a.start();
+    return () => a.stop();
+  }, [v, reduced]);
+  const style = useMemo(
+    () =>
+      reduced
+        ? { opacity: v }
+        : {
+            opacity: v,
+            transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [REVEAL_RISE, 0] }) }],
+          },
+    [v, reduced],
+  );
+  return <Animated.View style={style}>{children}</Animated.View>;
 }
 
 /** How far a step travels as it arrives, in dp. Short on purpose: the body is

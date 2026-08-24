@@ -13,6 +13,22 @@ const wiz = (p: "casual" | "athlete") =>
 /** Which screen carries the question with this engine key. */
 const stepWith = (p: "casual" | "athlete", engineKey: string) =>
   wiz(p).findIndex((st) => st.questions.some((q) => q.engineKey === engineKey));
+/**
+ * A SCREEN IS NOT A TAP EITHER, now that a grouped screen reveals its questions
+ * one at a time: the first is shown, and each press of the primary control
+ * opens the next until the screen is full and the press travels. So the tests
+ * below count PRESSES, derived the same way the progress rail counts segments —
+ * one per question on a grouped screen, one per screen otherwise.
+ */
+const tapsOver = (p: "casual" | "athlete", from: number, to: number) =>
+  wiz(p).slice(from, to).reduce((n, st) => n + (st.grouped ? st.questions.length : 1), 0);
+/** How many presses until the question with this engine key is on screen. */
+const tapsToSee = (p: "casual" | "athlete", engineKey: string) => {
+  const steps = wiz(p);
+  const si = stepWith(p, engineKey);
+  const st = steps[si]!;
+  return tapsOver(p, 0, si) + (st.grouped ? st.questions.findIndex((q) => q.engineKey === engineKey) : 0);
+};
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
 import { SCRUB_UNSET } from "../components/aurora/kit";
@@ -141,9 +157,11 @@ describe("a date the athlete has not answered", () => {
     // The fork is a screen: picking IS the advance, so no Next follows it.
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    // Derived, and it is a SCREEN index now: the birth question shares its
-    // screen with sex and body mass, so counting questions would overshoot.
-    for (let i = 0; i < stepWith("athlete", "birthYear"); i++) next(container);
+    // Derived, and it is a PRESS count: the birth question shares its screen
+    // with sex and body mass and is revealed second, so the walk is "past the
+    // goal screen, then one press into the body screen" rather than a step
+    // index either of questions or of screens.
+    for (let i = 0; i < tapsToSee("athlete", "birthYear"); i++) next(container);
     const body = container.textContent ?? "";
     // Non-vacuity: the assertions below are trivially true on any screen that
     // is not this one, so prove we arrived. The title is core's own — the mock
@@ -203,7 +221,7 @@ describe("what setup writes down", () => {
     // age off the bar and sleep off the daily check-in. Stress is the one
     // recovery input nothing can measure.
     const stressAt = stepWith("athlete", "stress");
-    for (let i = 0; i < stressAt; i++) fireEvent.click(cta(container));
+    for (let i = 0; i < tapsToSee("athlete", "stress"); i++) fireEvent.click(cta(container));
     // A 1–5 range draws as segments rather than a scrub, so the pick is a tab.
     const seg = Array.from(container.querySelectorAll('[role="tab"]'))
       .find((e) => (e.textContent ?? "").startsWith("4"));
@@ -264,10 +282,13 @@ describe("choosing the tracker", () => {
     // question is asked here rather than as step one — capture it, then walk.
     const seen: string[] = [container.textContent ?? ""];
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
-    const screens = wiz("casual");
-    for (let i = 0; i < screens.length; i++) {
+    // One capture per PRESS, not per screen: the tracker's whole intake is a
+    // single grouped screen that reveals one question at a time, so a walk that
+    // counted screens would see the first question and call it the intake.
+    const taps = tapsOver("casual", 0, wiz("casual").length);
+    for (let i = 0; i < taps; i++) {
       seen.push(container.textContent ?? "");
-      if (i < screens.length - 1) fireEvent.click(cta(container)); // the last commits
+      if (i < taps - 1) fireEvent.click(cta(container)); // the last commits
     }
     const all = seen.join(" ");
     for (const q of intake("casual")) {
