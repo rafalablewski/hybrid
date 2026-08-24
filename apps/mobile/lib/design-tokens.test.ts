@@ -2499,7 +2499,10 @@ describe("spacing", () => {
     // between the two counts.
     // 570 → 565: the same deletion — five off-ladder paddings inside the
     // unreachable statistics screen.
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 565, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    // 565 → 562: the logger's header toolbar collapsed from two pills to one
+    // ⋯, and the lozenge that held them took its hand-measured geometry with
+    // it (the 2pt inter-leaf gap, the 3pt floor pad, the 28pt leaf height).
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 562, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**
