@@ -15,7 +15,7 @@ import {
   type RecordRow,
   type WeightUnit,
 } from "@hybrid/core";
-import { useLang } from "../../lib/i18n";
+import { useLang, useSessionCount } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, ty } from "../../lib/ui";
 import { ASection, ADrawer } from "./kit";
@@ -78,6 +78,7 @@ export default function RecordsBoard({
 }) {
   const { palette: C } = useTheme();
   const { t, lang } = useLang();
+  const sessionCount = useSessionCount();
   const favourites = useExerciseFavourites();
   const [pickOpen, setPickOpen] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -145,8 +146,6 @@ export default function RecordsBoard({
       .replace("{d}", day(r.bestAt));
   };
 
-  const sessionCount = (n: number): string =>
-    t(`w.home.rb.sessN.${pluralForm(n, lang)}`).replace("{n}", String(n));
 
   const row = (r: RecordRow) => {
     const [value, unit] = latestFigure(r);

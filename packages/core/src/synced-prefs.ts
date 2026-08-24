@@ -57,7 +57,6 @@ export const SYNCED_PREF_KEYS = [
   "hybrid.nutrition.savedRecipes.v1",
   "hybrid.searchMisses",            // what search failed to find — feeds the catalog
   // ── where a screen was left ───────────────────────────────────────────
-  "hybrid.historyView",             // list or calendar
   "hybrid.sport",                   // the sport last opened
   "hybrid.nutrition.favorites",
   "hybrid.nutrition.recent",

@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { getPref, setPref } from "../../lib/synced-prefs";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, isHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
-import { fetchMacrocycle } from "../../lib/api";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, springs, springToRN, swipe, rubberBand, projectSwipe, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
-import { useLang } from "../../lib/i18n";
+import { useLang, useSessionCount } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, LoadSwap, PressScale as Pressable } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
@@ -18,20 +15,8 @@ import { ACard, APill, GUTTER, RADIUS, CARD_PAD } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
-import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
-import type { ComponentType } from "react";
+import { WeeksView, type ViewCtx } from "./history-views";
 import { withAlpha } from "./field";
-
-// Compile-checked view→component table: adding a HistoryViewId without wiring
-// its component here is a type error, not a silent fall-back.
-const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = {
-  agenda: AgendaView,
-  weeks: WeeksView,
-  timeline: TimelineView,
-  trend: TrendView,
-};
-
-const VIEW_KEY = "hybrid.historyView";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const moodColorH = (C: Palette, m: MoodDef) => (m.tone === "red" ? C.red : m.tone === "amber" ? C.amber : (txt(C, C.lime) as string));
@@ -68,52 +53,29 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
   );
 }
 
-/** AURORA History — the five merged History × Calendar layouts behind a view
- *  switcher. Live sessions are managed (archive/delete) from the session
- *  detail screen; the archived screen keeps the classic swipe list — drag a
- *  card left to reveal restore/delete (iOS-native pattern). */
+/** AURORA History — calendar-week chapters, each ending in the door to its own
+ *  week summary. The switchable layouts (agenda / timeline / trend) were
+ *  retired in Aug 2026; a week is the grain an athlete reviews in, and the
+ *  three others projected the same sessions three more ways.
+ *
+ *  Live sessions are managed (archive/delete) from the session detail screen;
+ *  the archived screen keeps the classic swipe list — drag a card left to
+ *  reveal restore/delete (iOS-native pattern). */
 export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const sessionCount = useSessionCount();
   // A SPORT FILTER, arriving from that sport's page. The sport page lists three
   // recent efforts and ends in a door to "all N efforts" — a door that landed
   // on unfiltered History would promise a number and show a different one.
-  const { sport: sportRaw, view: viewParam } = useLocalSearchParams<{ sport?: string; view?: string }>();
+  const { sport: sportRaw } = useLocalSearchParams<{ sport?: string }>();
   const sportParam = typeof sportRaw === "string" ? sportRaw.trim() : "";
   const sportFilter = sportParam ? (sportFromSlug(sportParam) ?? sportParam) : null;
   const bw = useBodyweightLookup();
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
-  // null until AsyncStorage resolves — the screen shows a loader instead of
-  // painting the classic list and swapping to the saved layout a frame later.
-  const [view, setView] = useState<HistoryViewId | null>(null);
-  const [planId, setPlanId] = useState<string | null>(null);
-  const [planStartedAt, setPlanStartedAt] = useState<string | null>(null);
   const manage = useSessionActions();
   const units = useLoggerPrefs().units;
-  const { overrides } = usePlanOverrides(planId);
-
-  // Hydrate the persisted layout choice + the enrolled plan (agenda ghosts and
-  // block chapters key off the date-anchored schedule; both degrade to nothing
-  // when no plan is enrolled).
-  useEffect(() => {
-    // A `view` PARAM WINS FOR THIS VISIT, and does not overwrite the saved one.
-    // It is what lets /statistics — the screen folded into the trend view in
-    // Jul 2026 — redirect somewhere exact instead of dropping the athlete on
-    // whichever layout they last chose. Arriving by a link that names a layout
-    // should show that layout; it should not silently re-set their preference.
-    if (isHistoryView(viewParam)) {
-      setView(viewParam);
-      fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
-      return;
-    }
-    setView(normalizeHistoryView(getPref<string | null>(VIEW_KEY, null)));
-    fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
-  }, [viewParam]);
-  const pickView = (v: HistoryViewId) => {
-    setView(v);
-    setPref(VIEW_KEY, v);
-  };
 
   const q = useSessionsQuery({ archived: showArchived });
   // `sportSessions` is the sport page's own narrowing (discipline tag for an
@@ -144,15 +106,16 @@ export default function AuroraHistory() {
     return m;
   }, [sessions]);
 
-  // No merged layout renders on the archived screen, so skip the schedule
-  // build there (the archived `sessions` array would feed it garbage anyway).
-  const schedule = useMemo(
-    () => (planId && planStartedAt && !showArchived ? planSchedule({ planId, startedAt: planStartedAt, sessions, overrides }) : null),
-    [planId, planStartedAt, sessions, overrides, showArchived],
-  );
   const viewCtx: ViewCtx = useMemo(
-    () => ({ sessions, units, bw, schedule, prs: (id: string) => prCounts.get(id) ?? 0, onOpen: (id: string) => router.push(`/session/${id}`) }),
-    [sessions, units, bw, schedule, prCounts, router],
+    () => ({
+      sessions,
+      units,
+      bw,
+      prs: (id: string) => prCounts.get(id) ?? 0,
+      onOpen: (id: string) => router.push(`/session/${id}`),
+      onWeek: (startKey: string) => router.push(`/week/${startKey}`),
+    }),
+    [sessions, units, bw, prCounts, router],
   );
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
@@ -219,14 +182,11 @@ export default function AuroraHistory() {
     );
   };
 
-  // Archived management keeps the classic swipe list; the five merged layouts
-  // (agenda/journal/weeks/timeline/blocks) apply to live history. Until the
-  // persisted choice hydrates (view === null) nothing view-specific renders,
-  // so the saved layout never flashes another one first.
-  const hydrated = view !== null || showArchived;
-  // The five merged layouts (agenda, journal, weeks, timeline, blocks) lay a
-  // filtered slice over the WHOLE plan's schedule, which would draw ghost days
-  // for sessions the filter just removed. A filtered History is the plain list.
+  // Archived management keeps the classic swipe list, and so does a SPORT
+  // FILTER: the week chapters aggregate a whole week (tonnage, session count,
+  // PRs), and aggregating a filtered slice under a week's date range would
+  // print totals for a week nobody trained. The sport page's door promises "all
+  // N efforts" — what it opens is those N efforts, as a list.
   const listMode = showArchived || sportFilter != null;
 
   // THE HERO — rank `title`. History is an INFORMATION page: its subject is a
@@ -236,26 +196,29 @@ export default function AuroraHistory() {
   // components/aurora/hero.tsx and packages/core/src/hero.ts).
   const header = (railNode: ReactNode) => (
     <>
+      {/* The sub-rail slot, still threaded through even though this screen no
+          longer docks one (the view switcher went with the layouts). It stays
+          because the container's dock point assumes the rail is the FIRST thing
+          in the scroll content, and a screen that owns its own scroller is the
+          one place that premise can be broken — see hero.tsx. */}
       {railNode}
       {/* Swipe hint, once at the top of the archived list. */}
       {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 16, marginBottom: 8 }}>{t("w.analyze.hist.swipeHint")}</Text>}
-      {/* The merged History × Calendar layouts render inside the list header, so
-          the FlatList stays the screen's sole scroller (nav-scroll + refresh).
-          Trade-off (known): unlike the archived-list rows, these aggregate
-          layouts are NOT virtualized — revisit under the
-          mobile-list-virtualization capability. */}
-      {!listMode && view !== null && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[view]; return <V ctx={viewCtx} />; })()}
+      {/* The week chapters render inside the list header, so the FlatList stays
+          the screen's sole scroller (nav-scroll + refresh). Trade-off (known):
+          unlike the archived-list rows, the chapters are NOT virtualized —
+          revisit under the mobile-list-virtualization capability. */}
+      {!listMode && !loading && !q.isError && sessions.length > 0 && <WeeksView ctx={viewCtx} />}
     </>
   );
 
   // Loading / error / empty all render as the FlatList's empty component (its
   // data is [] in each of those states), so the header (title + toggle) stays.
-  // Pre-hydration (saved view not yet read) also shows the loader.
   // The placeholder HANDS OVER to whichever of the three outcomes lands, so an
   // empty history and a failed fetch both arrive where the skeleton was rather
   // than replacing it.
   const empty = (
-    <LoadSwap loading={loading || !hydrated}>
+    <LoadSwap loading={loading}>
       {() =>
         q.isError ? (
           // A real fetch failure — distinct from a genuine empty history, so an
@@ -289,24 +252,23 @@ export default function AuroraHistory() {
         title: sportFilter ?? t("nav.history"),
         // The count is a fact about SESSIONS, so it says so — "12 sessions" /
         // "12 Archived", not "12 History" (the screen's own name restated as a
-        // unit read as a broken string).
-        meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "histview.sessionsLbl")}` : null],
+        // unit read as a broken string). And it counts in the reader's plural
+        // rules rather than gluing a plural noun to any number: it used to say
+        // "1 sessions" on the day you logged your first.
+        meta: [sessions.length ? (showArchived ? `${sessions.length} ${t("history.archived")}` : sessionCount(sessions.length)) : null],
       }}
       back={() => router.back()}
       // The rail's trailing slot — ONE control, in the metadata voice. It used
       // to be a bordered pill in the title row, which is where History invented
       // its own hero.
       accessory={<HeroAccessory label={t("history.archived")} active={showArchived} onPress={() => setShowArchived((v) => !v)} onDark={false} />}
-      // The view switcher is a SUB-rail: it docks beneath the collapsed bar
-      // rather than scrolling away, so the layout you are in stays addressable.
-      rail={!listMode && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
       scroller={(scrollProps, railNode) => (
         <FlatList
           data={listMode && !loading && !q.isError ? sessions : []}
           keyExtractor={(s) => s.id}
           renderItem={renderItem}
           ListHeaderComponent={header(railNode)}
-          ListEmptyComponent={!hydrated || loading || q.isError || sessions.length === 0 ? empty : null}
+          ListEmptyComponent={loading || q.isError || sessions.length === 0 ? empty : null}
           showsVerticalScrollIndicator={false}
           initialNumToRender={8}
           windowSize={11}

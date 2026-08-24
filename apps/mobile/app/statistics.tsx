@@ -17,10 +17,12 @@ import { Redirect } from "expo-router";
  * surfaces come to answer one question differently — the exact drift the fold
  * was carried out to end.
  *
- * So the route stays (a live deep-link target, as `promotedTo` intends) and
- * sends the athlete to the view that absorbed it, with the layout named
- * explicitly rather than left to whichever one they last chose.
+ * The trend view itself went in Aug 2026, with the rest of History's switchable
+ * layouts (`sessionBuckets` went with it — it had no other caller). So the
+ * route stays, as a live deep-link target the way `promotedTo` intends, and
+ * lands on History itself: there is one layout there now, and it is the one
+ * this screen's readings were folded into.
  */
 export default function Statistics() {
-  return <Redirect href="/history?view=trend" />;
+  return <Redirect href="/history" />;
 }

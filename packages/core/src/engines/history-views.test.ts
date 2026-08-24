@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  HISTORY_VIEWS,
-  normalizeHistoryView,
-  historyStream,
-  upcomingPlanDays,
-  weekChapters,
-  sessionHeadline,
-} from "./history-views";
-import { planSchedule } from "../plan-schedule";
+import { weekChapters, sessionHeadline } from "./history-views";
 import type { LoggedSession } from "./session";
 
 // 2026-07-16 (Thu) noon LOCAL — the fixed "now" for every test. All fixture
@@ -34,56 +26,6 @@ const FIXTURE: LoggedSession[] = [
   run("r1", at(9, 18)),
 ];
 
-describe("view registry", () => {
-  it("normalizes unknown (and retired) ids to the agenda", () => {
-    expect(normalizeHistoryView("weeks")).toBe("weeks");
-    expect(normalizeHistoryView("nope")).toBe("agenda");
-    expect(normalizeHistoryView(undefined)).toBe("agenda");
-    // the retired layouts a device may still have persisted
-    expect(normalizeHistoryView("list")).toBe("agenda");
-    expect(normalizeHistoryView("heatmap")).toBe("agenda");
-    expect(HISTORY_VIEWS[0]!.id).toBe("agenda");
-  });
-});
-
-describe("historyStream", () => {
-  const stream = historyStream(FIXTURE, { now: NOW });
-
-  it("groups by day newest-first with rest gaps between", () => {
-    const kinds = stream.map((x) => x.kind);
-    expect(kinds).toEqual(["day", "gap", "day", "gap", "day"]);
-    const days = stream.filter((x) => x.kind === "day");
-    expect(days.map((d) => d.kind === "day" && d.dateKey)).toEqual(["2026-07-16", "2026-07-13", "2026-07-09"]);
-  });
-
-  it("computes gap lengths (whole rest days between training days)", () => {
-    const gaps = stream.filter((x) => x.kind === "gap");
-    expect(gaps[0]).toMatchObject({ days: 2 }); // Jul 14 + 15
-    expect(gaps[1]).toMatchObject({ days: 3 }); // Jul 10–12
-  });
-
-  it("flags today, orders sessions newest-first, sums volume", () => {
-    const today = stream[0]!;
-    expect(today.kind === "day" && today.isToday).toBe(true);
-    const mon = stream[2]!;
-    if (mon.kind !== "day") throw new Error("expected day");
-    expect(mon.sessions.map((s) => s.id)).toEqual(["aft", "d2", "d1"]);
-    expect(mon.volume).toBe(2 * 120 * 5 + 2 * 110 * 5 + 2 * 60 * 5);
-    expect(mon.shape).toBe("strength");
-    // Jul 9 (lift + 30-min run) carries the highest sRPE load, so Jul 13 sits a level below.
-    expect(mon.level).toBe(3);
-    const thu9 = stream[4]!;
-    expect(thu9.kind === "day" && thu9.level).toBe(4);
-  });
-
-  it("marks cardio-only days and mixed days", () => {
-    const today = stream[0]!;
-    expect(today.kind === "day" && today.shape).toBe("cardio");
-    const thu9 = stream[4]!;
-    expect(thu9.kind === "day" && thu9.shape).toBe("mixed");
-  });
-});
-
 describe("weekChapters", () => {
   const weeks = weekChapters(FIXTURE, { now: NOW });
 
@@ -107,56 +49,6 @@ describe("weekChapters", () => {
   it("uses the injected prs lookup instead of re-detecting", () => {
     const w2 = weekChapters(FIXTURE, { now: NOW, prs: () => 1 });
     expect(w2[0]!.totals.prs).toBe(w2[0]!.totals.sessions);
-  });
-});
-
-describe("upcomingPlanDays (with a real schedule)", () => {
-  // A real 8-week program anchored so that NOW falls inside week 2.
-  const PLAN = "oly-soviet-8wk";
-  const sched = planSchedule({
-    planId: PLAN,
-    startedAt: new Date(2026, 6, 6).toISOString(),
-    sessions: FIXTURE,
-    now: NOW,
-  });
-
-  it("resolves a schedule for the fixture plan", () => {
-    expect(sched).not.toBeNull();
-  });
-
-  it("lists the next upcoming training days as agenda ghosts", () => {
-    const up = upcomingPlanDays(sched, 2);
-    // Jul 16 carries a logged session (t1) → today is "done", so only future
-    // ghosts appear, capped at the limit.
-    expect(up.filter((u) => !u.isToday)).toHaveLength(2);
-    const future = up.filter((u) => !u.isToday);
-    expect(future[0]!.dateKey > "2026-07-16").toBe(true);
-    expect(future[0]!.planName).toBe(sched!.planName);
-    expect(future[0]!.week).toBeGreaterThan(0); // multi-week plan → week set
-    expect(future[0]!.title.length).toBeGreaterThan(0);
-  });
-
-  it("includes TODAY's still-open plan session as an isToday ghost", () => {
-    // Same schedule but nothing logged today: if today is a training day it
-    // must surface as an isToday ghost ahead of the future ones.
-    const sched2 = planSchedule({
-      planId: PLAN,
-      startedAt: new Date(2026, 6, 6).toISOString(),
-      sessions: FIXTURE.filter((s) => s.id !== "t1"),
-      now: NOW,
-    })!;
-    const dueToday = sched2.days.find((d) => d.isToday && !d.isRest);
-    const up = upcomingPlanDays(sched2, 2);
-    if (dueToday) {
-      expect(up[0]).toMatchObject({ isToday: true, dateKey: dueToday.dateKey });
-      expect(up.filter((u) => !u.isToday)).toHaveLength(2); // limit caps only the future ones
-    } else {
-      expect(up.every((u) => !u.isToday)).toBe(true);
-    }
-  });
-
-  it("returns [] without a schedule", () => {
-    expect(upcomingPlanDays(null)).toEqual([]);
   });
 });
 

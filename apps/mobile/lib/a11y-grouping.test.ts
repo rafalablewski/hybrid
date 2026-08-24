@@ -83,6 +83,11 @@ const GROUPED: Record<string, Grouped> = {
     why:
       "The sheet's TITLE + SUBTITLE, so the sheet announces itself as one heading when it opens. The close control, the scroller and everything the caller renders inside are siblings of it.",
   },
+  "components/aurora/week-summary.tsx": {
+    sites: 1,
+    why:
+      "A record row on the week summary — the trophy, the lift's name and the weight, which are one fact and are read as three unrelated utterances apart (worse for the cardio ones, where the value is a pace). It is a leaf by construction: the row renders a Glyph and two Texts, and the week summary's only controls (the share circle, the nav button) live in the hero rail, not in this list.",
+  },
   "components/aurora/protocol.tsx": {
     sites: 1,
     why:

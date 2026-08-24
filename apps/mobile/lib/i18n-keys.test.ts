@@ -88,7 +88,9 @@ const TEMPLATED: string[] = [
   "w.home.rb.read.paceClimbing",
   "w.home.rb.read.paceHolding",
   "w.home.rb.read.paceSlipping",
-  // records-board.tsx — the fold's evidence line, through pluralForm().
+  // lib/i18n.tsx `useSessionCount()` — every session COUNT in the app, through
+  // pluralForm(): the Records board's evidence line, History's hero, its week
+  // chapters and the week summary's hero.
   "w.home.rb.sessN.one",
   "w.home.rb.sessN.few",
   "w.home.rb.sessN.many",

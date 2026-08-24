@@ -27,7 +27,12 @@ import { fileURLToPath } from "node:url";
  *      lights up is claiming a selection it does not have.
  *
  * (This guard covered both clients until the web client was retired — web now
- * ships only the admin panel, so the mobile rails are the whole set.)
+ * ships only the admin panel, so the mobile rails are the whole set. HISTORY
+ * left that set in Aug 2026: its rail was the switcher over four layouts, and
+ * with three of the layouts retired there is one layout and nothing to switch.
+ * Plans' category rail is what is left, and one rail is still a rail worth
+ * holding to the primitive — the drift this guard exists for started with two
+ * of them disagreeing.)
  */
 
 const APP_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -37,7 +42,6 @@ const mob = (f: string) => join(REPO_ROOT, "apps", "mobile", "components", "auro
 
 /** The rails this spec covers. */
 const RAILS = [
-  ["mob  history", mob("history-views.tsx")],
   ["mob  plans", mob("plans.tsx")],
 ] as const;
 
@@ -109,9 +113,8 @@ describe("the retired rail vocabulary cannot come back", () => {
   /**
    * The rail slots are full-bleed and UNPADDED — the rail owns its gutter.
    * So the rail COMPONENTS carry no geometry at all: each is a `<DockRail>`
-   * and nothing else. (Note this checks the switcher/category functions only —
-   * Plans' GoalShelf and History's week strip are content rails and bleed on
-   * their own account, correctly.)
+   * and nothing else. (Note this checks the category function only — Plans'
+   * GoalShelf is a content rail and bleeds on its own account, correctly.)
    */
   for (const [name, path] of RAILS) {
     it(`${name} rail component sets no geometry of its own`, () => {

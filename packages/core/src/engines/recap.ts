@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock } from "./session";
-import { localDayKey } from "../day-key";
+import { localDayKey, localMondayMs, addLocalDays } from "../day-key";
 import { sessionVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { deviceTrueSessions } from "../device-truth";
@@ -16,16 +16,18 @@ import {
   type MuscleVolume,
 } from "./records";
 
-// Weekly recap — the retention loop. Rolls the last 7 days of training into one
+// Weekly recap — the retention loop. Rolls a week of training into one
 // shareable summary (with deltas vs the week before), so "come home and review"
-// has a natural weekly beat. Pure, so web + mobile compute it identically.
+// has a natural weekly beat. Two windows read it: the ROLLING seven days
+// (weeklyRecap), and a Mon–Sun CALENDAR week (calendarWeekRecap — what History's
+// week chapters are cut on, and what the week summary screen reports). Pure.
 
 // The figures are DECLARED in the app's reading order (figure-order.ts), the
 // order every recap surface renders them in. They used to lead with the session
 // count while the Progress card led with tonnage, and a shape that suggests one
 // sequence while the screens use another is how the drift started.
 export interface WeeklyRecap {
-  /** ISO start of the 7-day window. */
+  /** ISO start of the window this recap covers. */
   start: string;
   volume: number; // kg tonnage
   sets: number;
@@ -104,13 +106,30 @@ export function weekAdherence(sessions: LoggedSession[], target = 3, now = Date.
   return { days, done: trained.size, target: Math.max(target, trained.size) };
 }
 
-export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): WeeklyRecap {
-  const within = (s: LoggedSession, from: number, to: number) => ms(s.startedAt) >= from && ms(s.startedAt) < to;
+/**
+ * The recap for an ARBITRARY window, with its deltas against the window
+ * immediately before it.
+ *
+ * `weeklyRecap` and `calendarWeekRecap` are the same reading over two different
+ * windows — a rolling seven days, and a Mon–Sun calendar week — so the maths is
+ * written once here. It was inlined in `weeklyRecap` until the week summary
+ * screen needed a PAST week: a rolling window anchored on `now` can only ever
+ * answer for the week that is happening.
+ */
+function recapWindow(
+  sessions: LoggedSession[],
+  from: number,
+  to: number,
+  prevFrom: number,
+  prevTo: number,
+  bw?: BodyweightInput,
+): WeeklyRecap {
+  const within = (s: LoggedSession, lo: number, hi: number) => ms(s.startedAt) >= lo && ms(s.startedAt) < hi;
   // The week's distance and minutes are the measured ones wherever a device
   // recorded the session (see device-truth.ts).
   const measured = deviceTrueSessions(sessions);
-  const thisWeek = measured.filter((s) => within(s, now - WEEK, now + 1));
-  const prevWeek = measured.filter((s) => within(s, now - 2 * WEEK, now - WEEK));
+  const thisWeek = measured.filter((s) => within(s, from, to));
+  const prevWeek = measured.filter((s) => within(s, prevFrom, prevTo));
 
   let volume = 0;
   let sets = 0;
@@ -163,7 +182,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
   const prevVolume = prevWeek.reduce((v, s) => v + sessionVolume(s.blocks, false, bwAt(bw, s.startedAt)), 0);
 
   return {
-    start: new Date(now - WEEK).toISOString(),
+    start: new Date(from).toISOString(),
     sessions: thisWeek.length,
     volume,
     sets,
@@ -181,6 +200,26 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
     sessionsDelta: thisWeek.length - prevWeek.length,
     volumeDelta: volume - prevVolume,
   };
+}
+
+/** The ROLLING seven days ending at `now`, against the seven before them — the
+ *  retention beat ("your week", wherever the week is the last seven days). */
+export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): WeeklyRecap {
+  return recapWindow(sessions, now - WEEK, now + 1, now - 2 * WEEK, now - WEEK, bw);
+}
+
+/**
+ * A CALENDAR week — Monday 00:00 to the next Monday 00:00, local — against the
+ * calendar week before it. The week summary screen's reading, and History's
+ * week chapters are cut on exactly these boundaries, so the summary behind a
+ * chapter and the chapter itself count the same sessions by construction.
+ *
+ * The bounds step by local calendar days rather than by 7 × 86 400 000, so the
+ * 23- and 25-hour DST weeks are still whole weeks.
+ */
+export function calendarWeekRecap(sessions: LoggedSession[], mondayMs: number, bw?: BodyweightInput): WeeklyRecap {
+  const monday = localMondayMs(mondayMs);
+  return recapWindow(sessions, monday, addLocalDays(monday, 7), addLocalDays(monday, -7), monday, bw);
 }
 
 /**

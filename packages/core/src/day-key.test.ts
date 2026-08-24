@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { localDayKey, localTodayKey, localMidnightMs, addLocalDays, localMondayMs, dayKeyDiff, msUntilNextLocalDay } from "./day-key";
+import { localDayKey, localTodayKey, localMidnightMs, addLocalDays, localMondayMs, dayKeyMs, dayKeyDiff, msUntilNextLocalDay } from "./day-key";
 
 // These tests are TIMEZONE-ROBUST: fixtures are built from LOCAL date
 // components (new Date(y, m, d, h)), so the expectations hold whatever TZ the
@@ -51,6 +51,29 @@ describe("localMondayMs", () => {
     // A Monday maps to itself; a Sunday maps back six days.
     expect(localDayKey(localMondayMs(new Date(2026, 6, 13, 3).getTime()))).toBe("2026-07-13");
     expect(localDayKey(localMondayMs(new Date(2026, 6, 19, 23).getTime()))).toBe("2026-07-13");
+  });
+});
+
+describe("dayKeyMs", () => {
+  it("round-trips a key back to its own LOCAL midnight", () => {
+    for (const iso of [new Date(2026, 0, 1, 9).getTime(), new Date(2026, 6, 16, 23, 30).getTime(), new Date(2026, 11, 31, 0, 5).getTime()]) {
+      const key = localDayKey(iso);
+      expect(dayKeyMs(key)).toBe(localMidnightMs(iso));
+      expect(localDayKey(dayKeyMs(key))).toBe(key);
+    }
+  });
+
+  it("is LOCAL midnight, not Date.parse's UTC midnight", () => {
+    // The whole reason it exists: west of Greenwich, Date.parse("2026-08-17")
+    // is the 16th at local time.
+    expect(new Date(dayKeyMs("2026-08-17")).getDate()).toBe(17);
+    expect(new Date(dayKeyMs("2026-08-17")).getHours()).toBe(0);
+  });
+
+  it("answers NaN for anything that is not a key, so a bad deep link is detectable", () => {
+    for (const bad of ["", "nope", "2026-8-17", "2026-08-17T00:00", "20260817"]) {
+      expect(Number.isNaN(dayKeyMs(bad))).toBe(true);
+    }
   });
 });
 

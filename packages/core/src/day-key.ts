@@ -46,6 +46,24 @@ export const localMondayMs = (ms: number): number => {
   return addLocalDays(mid, -dow);
 };
 
+/**
+ * Local midnight for a day KEY — the inverse of `localDayKey`.
+ *
+ * A key is a calendar-date LABEL, so reading it back is not `Date.parse`:
+ * `Date.parse("2026-08-17")` is UTC midnight, which is the previous day for
+ * every athlete west of Greenwich. It exists because a key now travels as a
+ * ROUTE PARAM (the week summary is `/week/2026-08-17`), and a screen that has
+ * to turn one back into a moment must not each invent its own parse.
+ *
+ * `NaN` for anything that is not a well-formed key, so a caller can tell a
+ * typo'd deep link from a real week.
+ */
+export const dayKeyMs = (key: string): number => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!m) return NaN;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+};
+
 /** Whole days from day-key `a` to day-key `b` (b − a). Pure label math. */
 export const dayKeyDiff = (a: string, b: string): number =>
   Math.round((Date.parse(`${b}T00:00:00.000Z`) - Date.parse(`${a}T00:00:00.000Z`)) / DAY);

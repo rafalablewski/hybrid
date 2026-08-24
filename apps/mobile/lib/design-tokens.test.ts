@@ -633,6 +633,12 @@ describe("named type styles", () => {
     // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
     // label above a card or a figure; `overline` (+0.115em) is a section label,
     // where the label is structure and the extra air is the division.
+    // 161 → 157: History's retired layouts. The agenda's day labels, its
+    //   plan-day ghosts, the timeline's rest-gap labels and the weeks view's
+    //   weekday letters were four hand-rolled mono uppercase eyebrows inside
+    //   three views that no longer exist — and the weekday letters that DID
+    //   survive moved into one shared WeekMarks, so the same drawing is now
+    //   counted once instead of twice.
     // 164 → 161 with the History + Settings refit: Settings' own Label and
     //   Section header were each a hand-rolled overline (the very shape this
     //   rule names as the destination), and History's Trend range toggle
@@ -645,7 +651,7 @@ describe("named type styles", () => {
     //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      161,
+      157,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -875,7 +881,10 @@ describe("geometry", () => {
     //   History's trend view a year earlier and never given a door, so it drew
     //   the same charts off the same engines with nothing pointing at it — and
     //   one raw radius went with it. Claimed here rather than left as headroom.
-    burnDown(hits(/borderRadius:\s*\d/g), 112, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 112 → 111: the week-recap PAGER was deleted (each week opens its own
+    //   summary now, rather than the current week riding a pager above every
+    //   other week's chapter), and its position dots' raw radius went with it.
+    burnDown(hits(/borderRadius:\s*\d/g), 111, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -1453,7 +1462,11 @@ describe("colour arithmetic", () => {
     // no join left to finish and the alpha went with the argument for it. The
     // wash costs this rule nothing either — its stops come from BAND_WASH,
     // tokens rather than numbers at the call site.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 103,
+    // 103 → 101. History's retired layouts again: the agenda's load dots and
+    // the timeline's and agenda's rest-gap labels each dimmed ash by a raw
+    // fraction (0.7, 0.55) that was neither a rung nor a ramp. Both went with
+    // the views.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 101,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
@@ -2381,7 +2394,11 @@ describe("spacing", () => {
     // between the two counts.
     // 570 → 565: the same deletion — five off-ladder paddings inside the
     // unreachable statistics screen.
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 565, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    // 565 → 561: History's retired layouts (the agenda's week strip and its
+    // ghost rows, the timeline's rail) and the week pager, minus the one
+    // surviving `gap: 5` that the two week readings now share through
+    // WeekMarks rather than each drawing for itself.
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 561, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**

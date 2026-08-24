@@ -489,9 +489,12 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
 );
 RecapShareCard.displayName = "RecapShareCard";
 
-export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, units: WeightUnit = "kg"): string {
+/** The text fallback when the card can't be captured. `heading` names WHICH
+ *  week — a past week shared as "This week" would be a lie about the date, and
+ *  every week but the current one is now shareable from its own summary. */
+export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, units: WeightUnit = "kg", heading?: string): string {
   return [
-    `\u{1F4C8} ${t("w.teams.coach.thisWeek")} — HYBRID`,
+    `\u{1F4C8} ${heading ?? t("w.teams.coach.thisWeek")} — HYBRID`,
     `${fmtTonnage(recap.volume, units)} – ${recap.sessions} ${t("w.teams.coach.sessionsWord")} – ${recap.prs.length} ${t("recap.prs")}`,
     recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].topLoad, units)}` : null,
     t("share.tracked"),
@@ -500,10 +503,15 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
     .join("\n");
 }
 
-/** ONE PAGE of the week summary, as the branded card that leaves the app. The
- *  week pager (aurora/week-recap.tsx) renders whichever page the athlete is
- *  LOOKING at into this off-screen card, so what is shared is exactly what was
- *  chosen — the session summary's grammar, applied to the week. */
+/** THE WEEK, as the branded card that leaves the app. The week summary
+ *  (aurora/week-summary.tsx) renders its week into this off-screen card and
+ *  shares the capture from the hero rail's share circle.
+ *
+ *  It is called a PAGE because it was one: the shape was built for a pager that
+ *  sat above History's week list and shared whichever page of the CURRENT week
+ *  was under the thumb. The pager went when every week got its own summary
+ *  screen; the shape survived it unchanged, because "a tag, three figures, some
+ *  named results and one closing fact" is what a week posts as. */
 export type WeekSharePage = {
   /** Small mono tag beside the brand — WHICH page of the week this is. */
   tag: string;

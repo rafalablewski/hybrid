@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { weeklyRecap, weekAdherence } from "./recap";
+import { weeklyRecap, calendarWeekRecap, weekAdherence } from "./recap";
+import { localMondayMs, addLocalDays } from "../day-key";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-10T12:00:00.000Z").getTime();
@@ -105,5 +106,59 @@ describe("weekAdherence", () => {
 
   it("target floors at the done count so the ratio never exceeds the goal", () => {
     expect(weekAdherence([], 3, NOW).target).toBe(3);
+  });
+});
+
+describe("calendarWeekRecap", () => {
+  // A Mon–Sun week, built in LOCAL time so the boundaries are the ones an
+  // athlete's calendar has (the rolling window can't answer for a past week at
+  // all, which is why this exists).
+  const MONDAY = localMondayMs(new Date(2026, 5, 10, 12).getTime());
+  const on = (dayOffset: number, hour: number) => {
+    const d = new Date(addLocalDays(MONDAY, dayOffset));
+    d.setHours(hour, 0, 0, 0);
+    return d.toISOString();
+  };
+
+  const week: LoggedSession[] = [
+    sess("mon", on(0, 9), null, [squat("100", "5")]),
+    sess("sun", on(6, 21), null, [squat("100", "5")]),
+    // The instant BEFORE the week and the instant the NEXT week starts — the
+    // two sessions a sloppy window quietly swallows.
+    sess("before", new Date(addLocalDays(MONDAY, 0) - 1).toISOString(), null, [squat("50", "5")]),
+    sess("after", new Date(addLocalDays(MONDAY, 7)).toISOString(), null, [squat("50", "5")]),
+  ];
+
+  it("counts Monday 00:00 up to (not including) the next Monday", () => {
+    const r = calendarWeekRecap(week, MONDAY);
+    expect(r.sessions).toBe(2);
+    expect(r.volume).toBe(2 * 100 * 5);
+    expect(r.activeDays).toBe(2);
+    expect(r.start).toBe(new Date(MONDAY).toISOString());
+  });
+
+  it("takes any instant inside the week, not only its Monday", () => {
+    const midweek = calendarWeekRecap(week, addLocalDays(MONDAY, 3) + 5 * 3_600_000);
+    expect(midweek.sessions).toBe(2);
+    expect(midweek.start).toBe(new Date(MONDAY).toISOString());
+  });
+
+  it("compares against the CALENDAR week before it", () => {
+    const prior = [...week, sess("prev", new Date(addLocalDays(MONDAY, -4)).toISOString(), null, [squat("80", "5")])];
+    const r = calendarWeekRecap(prior, MONDAY);
+    // "prev" AND "before" — the Sunday-night session one millisecond before
+    // this Monday belongs to the week that just ended, which is the boundary
+    // the rolling window used to blur.
+    expect(r.prevSessions).toBe(2);
+    expect(r.prevVolume).toBe(80 * 5 + 50 * 5);
+    expect(r.sessionsDelta).toBe(0);
+    expect(r.volumeDelta).toBe(2 * 100 * 5 - (80 * 5 + 50 * 5));
+  });
+
+  it("an untrained week reads as zeros, not as the nearest trained one", () => {
+    const r = calendarWeekRecap(week, addLocalDays(MONDAY, 14));
+    expect(r.sessions).toBe(0);
+    expect(r.volume).toBe(0);
+    expect(r.prs).toEqual([]);
   });
 });
