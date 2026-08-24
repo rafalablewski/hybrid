@@ -94,6 +94,10 @@ const TEMPLATED: string[] = [
   "w.home.rb.sessN.one",
   "w.home.rb.sessN.few",
   "w.home.rb.sessN.many",
+  // lib/week-words.ts — the week paragraph's day count, through pluralForm().
+  "recap.dayN.one",
+  "recap.dayN.few",
+  "recap.dayN.many",
 ];
 
 describe("i18n keys", () => {

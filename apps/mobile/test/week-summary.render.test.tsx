@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent } from "@testing-library/react";
 import { localMondayMs, localDayKey, addLocalDays } from "@hybrid/core";
 import { renderScreen } from "./render";
 
@@ -19,7 +20,12 @@ import { renderScreen } from "./render";
  * dropped the sport.
  *
  * THE SHARE. It is a bare circle, so its accessible NAME is the only thing that
- * says what it is.
+ * says what it is — and behind it, the 9:16 card that actually leaves the app.
+ *
+ * THE NARRATION. The paragraph is composed in core and RESOLVED here, which
+ * means the two halves of it (the key and the numbers) only meet at render: a
+ * sentence can go missing, keep an unsubstituted `{slot}`, or name the wrong
+ * discipline without anything else in the stack noticing.
  */
 
 // A FINISHED week, three weeks back. The current week would be in progress —
@@ -126,6 +132,53 @@ describe("the week summary", () => {
   it("concludes exactly once, and only when there is a week to compare against", () => {
     const { container } = renderScreen(<AuroraWeekSummary startKey={START} />);
     expect(container.textContent).toMatch(/on the week before|Tracking with the week before/);
+  });
+
+  it("READS THE WEEK OUT — the figures again, in sentences", () => {
+    const { container } = renderScreen(<AuroraWeekSummary startKey={START} />);
+    const text = container.textContent ?? "";
+    // How much, how often, and how it divided.
+    expect(text).toContain("3 sessions across 3 days");
+    // Each half in its own words: what was lifted, what was covered.
+    expect(text).toContain("1.0 t");
+    // THE PACE BELONGS TO THE DISCIPLINE THAT COVERED THE GROUND. The tennis
+    // match is the bigger slice by time; the 9 km and the 5:00 are the run's.
+    expect(text).toContain("9 km of running at 5:00 /km");
+    // Every slot substituted — an unresolved template is the failure mode a
+    // key-plus-numbers contract has and a formatted string does not.
+    expect(text).not.toMatch(/\{[a-z]+\}/);
+  });
+
+  it("concludes ONCE — the verdict leads the paragraph, it does not repeat inside it", () => {
+    const { container } = renderScreen(<AuroraWeekSummary startKey={START} />);
+    const text = container.textContent ?? "";
+    expect(text.split("on the week before").length - 1).toBeLessThanOrEqual(1);
+  });
+
+  it("shares the CARD, and the card carries the paragraph out of the app", () => {
+    const { getAllByLabelText, container, baseElement } = renderScreen(<AuroraWeekSummary startKey={START} />);
+    act(() => { fireEvent.click(getAllByLabelText(/Share your week/)[0]!); });
+
+    // The PREVIEW is in the sheet, which a Modal portals to a sibling of the
+    // render container rather than into the tree it was written in.
+    const sheet = Array.from(baseElement.children)
+      .filter((el) => el !== container)
+      .map((el) => el.textContent ?? "")
+      .join(" ");
+    // The 9:16 card is what leaves — the brand, and the SAME sentences the
+    // screen prints. A card of four figures says nothing to whoever sees it,
+    // which is why the paragraph is on it.
+    expect(sheet).toContain("HYBRID");
+    expect(sheet).toContain("3 sessions across 3 days");
+    expect(sheet).toContain("Tracked with HYBRID.");
+    // And the conclusion, which the screen sets at its own rank above the
+    // paragraph and the card has no second rank for.
+    expect(sheet).toMatch(/on the week before|Tracking with the week before/);
+
+    // AND THE COPY BEING PHOTOGRAPHED, off-screen at export width — one
+    // component, one props object, one prop apart, which is what makes the
+    // preview trustworthy as the thing that will be posted.
+    expect(container.textContent ?? "").toContain("Tracked with HYBRID.");
   });
 
   it("says so, rather than printing zeros, for a week nobody trained", () => {

@@ -504,108 +504,14 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
     .join("\n");
 }
 
-/** THE WEEK, as the branded card that leaves the app. The week summary
- *  (aurora/week-summary.tsx) renders its week into this off-screen card and
- *  shares the capture from the hero rail's share circle.
- *
- *  It is called a PAGE because it was one: the shape was built for a pager that
- *  sat above History's week list and shared whichever page of the CURRENT week
- *  was under the thumb. The pager went when every week got its own summary
- *  screen; the shape survived it unchanged, because "a tag, three figures, some
- *  named results and one closing fact" is what a week posts as. */
-export type WeekSharePage = {
-  /** Small mono tag beside the brand — WHICH page of the week this is. */
-  tag: string;
-  /** THE FIRST ONE LEADS. The card sets it at display size and the rest as a
-   *  pair beneath, which is the hierarchy the screen it was captured from
-   *  uses: the week's own figure over the halves that make it up. */
-  stats: { label: string; value: string }[];
-  /** Named results under the figures (PR lifts, cardio records). */
-  rows?: { name: string; value: string; pr?: boolean }[];
-  /** One quiet closing fact (top muscle, delta vs last week). */
-  note?: string | null;
-};
-
-export const WeekPageShareCard = forwardRef<View, { page: WeekSharePage; t: (k: string) => string }>(
-  ({ page, t }, ref) => {
-    // THE LIVE PALETTE, not this file's back-compat `C`. The named type styles
-    // (`ty`) resolve their ink against a full ThemePalette, and the static
-    // object here carries only the raw colours — so a card that wants the same
-    // eyebrows as the screen it was captured from has to ask the theme for
-    // them. There is one theme, so nothing about the capture changes.
-    const P = useTheme().palette;
-    return (
-    <View
-      ref={ref}
-      collapsable={false}
-      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), borderRadius: RADIUS.card, padding: CARD_PAD }}
-    >
-      {/* THE NAMEPLATE — the wordmark and what this card is, on one baseline
-          and on the card's two edges. Same row the widget's name occupies on
-          the screen this was captured from. */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking(fs.headline, "wordmark"), color: C.chalk }}>
-          {brand.name}
-          <Text style={{ color: C.lime }}>.</Text>
-        </Text>
-        <Text style={ty(P, "overline")}>{page.tag}</Text>
-      </View>
-
-      {/* THE FIGURES, IN THE SCREEN'S OWN HIERARCHY — the FIRST stat leads at
-          display size and the rest follow as a pair beneath it. Three equal
-          figures across one row is what this card used to draw, and it had two
-          faults: it flattened the week into three interchangeable facts, and
-          the longest of them wrapped, which put the three on three different
-          baselines. A card that is a screenshot of an argument should make the
-          same argument. */}
-      {page.stats[0] && (
-        <View style={{ marginTop: space.xl }}>
-          <Text
-            numberOfLines={1}
-            style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: tracking(fs.hero), color: C.chalk }]}
-          >
-            {page.stats[0].value}
-          </Text>
-          <Text style={[ty(P, "kicker"), { marginTop: space.xs }]}>{page.stats[0].label}</Text>
-        </View>
-      )}
-      {page.stats.length > 1 && (
-        <View style={{ flexDirection: "row", marginTop: space.lg }}>
-          {page.stats.slice(1).map((st, i) => (
-            <View key={st.label} style={{ flex: 1, alignItems: i === 0 ? "flex-start" : "flex-end" }}>
-              <Text
-                numberOfLines={1}
-                style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.display, lineHeight: leading(fs.display, "flush"), letterSpacing: tracking(fs.display), color: C.chalk }]}
-              >
-                {st.value}
-              </Text>
-              <Text style={[ty(P, "kicker"), { marginTop: space.xs }]}>{st.label}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {!!page.rows?.length && (
-        <View style={{ marginTop: space.xl, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line, paddingTop: space.sm }}>
-          {page.rows.slice(0, 4).map((r) => (
-            <View key={r.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.md, marginTop: space.sm }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs, flex: 1, minWidth: 0 }}>
-                {r.pr ? <Glyph name="trophy" size={fs.body} color={C.amber} label={t("w.train.logger.newPr")} /> : null}
-                <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
-              </View>
-              <Text style={[TABULAR, { fontFamily: F.monoBold, fontSize: fs.body, color: r.pr ? C.lime : C.chalk }]}>{r.value}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-      {!!page.note && (
-        <Text style={[TABULAR, { fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: space.lg }]}>{page.note}</Text>
-      )}
-      </View>
-    );
-  },
-);
-WeekPageShareCard.displayName = "WeekPageShareCard";
+// THE WEEK'S FLAT CARD IS GONE. It was a tag, three figures and a list —
+// legible to the athlete who trained the week and mute to everyone else, since
+// "9.0 t / 4 / 8.2 km" says nothing to a person who has to reconstruct a week
+// from it. The week posts as a 9:16 STORY now, carrying the summary's own
+// paragraph (components/aurora/week-story-card.tsx), which is both the format
+// the platforms want and the one a reader can actually read. Deleted rather
+// than left dormant: the pager's card sat here with no caller for a release,
+// and the next screen that wants a week card should find the story, not this.
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

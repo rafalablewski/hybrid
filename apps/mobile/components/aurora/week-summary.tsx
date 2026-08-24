@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text } from "react-native";
+import { View, Text, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import {
   activityVerdict,
@@ -22,6 +22,8 @@ import {
   durationParts,
   durationUnits,
   formatDuration,
+  weekNarrative,
+  sliceName,
   LABEL_GAP,
   type EnduranceSlice,
   type GymWindow,
@@ -35,9 +37,13 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, Loading, MAX_FONT_SCALE, TABULAR, fs, leading, space, tracking, ty } from "../../lib/ui";
-import { MUSCLE_LABEL, WeekPageShareCard, recapShareText, shareCardImage, type WeekSharePage } from "../../lib/share";
-import { ACard, cardStack } from "./kit";
+import { MUSCLE_LABEL, recapShareText, shareCardImage } from "../../lib/share";
+import { weekWords } from "../../lib/week-words";
+import { WeekStoryCard, type WeekStoryFigures } from "./week-story-card";
+import Sheet from "./sheet";
+import { ACard, GUTTER, cardStack } from "./kit";
 import { AWidget, WidgetFigure, WidgetRow, WidgetSeam, durationFigure } from "./widget";
+import { APill } from "./kit";
 import { HeroAction, HeroScreen } from "./hero";
 import { SHARE_MARK } from "./share-mark";
 import { Glyph } from "./icons";
@@ -82,9 +88,20 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 /** sec/km → "5:12 /km" for a cardio pace record. */
 const paceStr = (secPerKm: number) => `${paceClock(secPerKm)} /km`;
 
+/** The story card never grows past this, so a tablet still gets a postable
+ *  9:16 rather than a poster. Mirrors the session card's own ceiling. */
+const STORY_MAX_WIDTH = 420;
+/** How much of the screen's height the PREVIEW may take inside the sheet. */
+const STORY_PREVIEW_H = 0.54;
+/** How far off the left edge the CAPTURE copy sits. react-native-view-shot
+ *  photographs a view's own rendering, so the card has to be laid out and drawn
+ *  — it does not have to be anywhere a person can see. */
+const CAPTURE_OFFSCREEN = 10000;
+
 export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
   const { palette: C } = useTheme();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const win = useWindowDimensions();
   const sessionCount = useSessionCount();
   const router = useRouter();
   const units = useLoggerPrefs().units;
@@ -126,16 +143,35 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
   const verdict = useMemo(() => (range ? activityVerdict(sessions, range, bw) : null), [sessions, range, bw]);
   const split = useMemo(() => (range ? weekSplit(sessions, range, bw) : null), [sessions, range, bw]);
 
+  // The athlete's own h/min, from their language — core holds the two keys so a
+  // screen cannot quietly pick a different pair.
+  const units_ = useMemo(() => durationUnits(t), [t]);
+
   const endKey = week?.endKey ?? (valid ? localDayKey(mondayMs + 6 * 86_400_000) : startKey);
   const title = valid ? rangeLabel(startKey, endKey) : t("session.notFound");
 
+  // THE WEEK, READ OUT — core composes the sentences, the client resolves them
+  // into this reader's language, units and duration words. The screen prints
+  // the paragraph and the story card carries the SAME one out of the app.
+  const words = useMemo(
+    () => (recap && split ? weekWords(weekNarrative(recap, split.gym, split.endurance, verdict), t, lang, units) : []),
+    [recap, split, verdict, t, lang, units],
+  );
+  // The screen sets the CONCLUSION at its own rank above the paragraph, so the
+  // paragraph itself drops it. The story card keeps the whole thing: a card has
+  // no second rank to put it in, and out of the app the conclusion is the line
+  // that makes the rest mean something.
+  const narration = useMemo(() => words.slice(0, -1), [words]);
+
   // No card for a week nobody trained — an untrained week has nothing to post,
   // so the rail carries no share circle rather than one that exports zeros.
-  const page = useMemo<WeekSharePage | null>(
-    () => (recap && split && recap.sessions > 0 ? sharePage(recap, split, title, units, t) : null),
-    [recap, split, title, units, t],
+  const story = useMemo<WeekStoryFigures | null>(
+    () => (recap && split && recap.sessions > 0 ? storyFigures(recap, split, title, words, units, units_, t) : null),
+    [recap, split, title, words, units, units_, t],
   );
+
   const shareRef = useRef<View>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const doShare = async () => {
     if (sharing || !recap) return;
@@ -147,10 +183,13 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
     }
   };
 
+  // The card is CAPTURED at export width and PREVIEWED at sheet width — one
+  // component, one props object, and only the width differs. A fixed type scale
+  // would break at one of the two, which is why every size on it is a fraction.
+  const captureWidth = Math.min(win.width - GUTTER * 2, STORY_MAX_WIDTH);
+  const previewWidth = Math.min(captureWidth, Math.round(((win.height * STORY_PREVIEW_H) * 9) / 16));
+
   const lime = txt(C, C.lime) as string;
-  // The athlete's own h/min, from their language — core holds the two keys so a
-  // screen cannot quietly pick a different pair.
-  const units_ = useMemo(() => durationUnits(t), [t]);
   // THE COMBINED DELTA COMES FROM THE VERDICT, not from the recap's own previous
   // week — so the figure and the sentence beneath it are measured from the same
   // place. It matters most while a week is still running: the verdict truncates
@@ -174,23 +213,17 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
          the workout summary's. It is the screen-level utility this screen has,
          and a screen has exactly one of those. */
       accessory={
-        page ? (
+        story ? (
           <HeroAction
             glyph={SHARE_MARK.glyph}
             fallbackGlyph={SHARE_MARK.fallback}
             label={`${t("recap.share")} – ${title}`}
-            onPress={() => void doShare()}
+            onPress={() => setShareOpen(true)}
             onDark={false}
           />
         ) : undefined
       }
     >
-      {/* The capture node — the branded card, off-screen, at export width. */}
-      {page && (
-        <View pointerEvents="none" style={{ position: "absolute", left: -10000, top: 0, opacity: 0, width: 340 }}>
-          <WeekPageShareCard ref={shareRef} page={page} t={t} />
-        </View>
-      )}
 
       {q.isPending ? (
         <Loading />
@@ -225,13 +258,32 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
             )}
           </AWidget>
 
-          {/* THE ONE INTERPRETIVE LINE ON THIS SCREEN — on the ground between
-              the widgets, because it is prose and every widget holds data. It
-              keeps the engine's honesty: a week with nothing before it makes no
-              claim at all. */}
+          {/* ══ THE WEEK, READ OUT ═══════════════════════════════════════════
+              On the ground between the widgets, because it is prose and every
+              widget holds data.
+
+              TWO RANKS, AND THE SPLIT IS THE POINT. The CONCLUSION comes first,
+              in the app's one interpretive voice — the same sentence Today's
+              card states about the same window, and it keeps that engine's
+              honesty (a week with nothing before it makes no claim at all).
+              The NARRATION follows at reading size: what the week actually was,
+              in sentences, because nobody recounts their training as "9.0 t, 20
+              sets, 8.2 km" and a summary that cannot be read is also a summary
+              that cannot be posted. The conclusion interprets; the narration
+              recounts — which is why only one of them takes the editorial rank. */}
           {verdict && (
-            <Text style={[ty(C, "editorial", C.ash), { marginTop: space.xs, marginBottom: space.xl, paddingHorizontal: space.xxs }]}>
+            <Text style={[ty(C, "editorial", C.chalk), { marginTop: space.xs, paddingHorizontal: space.xxs }]}>
               {verdictLead(verdict, t)}
+            </Text>
+          )}
+          {narration.length > 0 && (
+            <Text
+              style={{
+                fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "relaxed"),
+                color: C.ash, marginTop: space.md, marginBottom: space.xl, paddingHorizontal: space.xxs,
+              }}
+            >
+              {narration.join(" ")}
             </Text>
           )}
 
@@ -306,6 +358,33 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
             </AWidget>
           )}
         </>
+      )}
+
+      {/* ── SHARE ──────────────────────────────────────────────────────────
+          WHAT YOU SEE IS WHAT YOU POST. The sheet holds the real card at
+          preview width; the pill under it captures the SAME component at
+          export width. The two differ in one prop, which is the only way a
+          preview can be trusted to be the thing. */}
+      {story && (
+        <Sheet visible={shareOpen} onClose={() => setShareOpen(false)} title={t("recap.share")} sub={title}>
+          <View style={{ alignItems: "center" }}>
+            <WeekStoryCard figures={story} width={previewWidth} tracked={t("share.tracked")} />
+          </View>
+          <APill
+            label={t("summary.shareStory")}
+            onPress={doShare}
+            disabled={sharing}
+            style={{ marginTop: space.lg }}
+          />
+        </Sheet>
+      )}
+
+      {/* THE THING BEING PHOTOGRAPHED — mounted only while the sheet is open,
+          and off the left edge at export width. */}
+      {story && shareOpen && (
+        <View pointerEvents="none" style={{ position: "absolute", left: -CAPTURE_OFFSCREEN, top: 0, width: captureWidth }}>
+          <WeekStoryCard ref={shareRef} figures={story} width={captureWidth} tracked={t("share.tracked")} />
+        </View>
       )}
     </HeroScreen>
   );
@@ -479,46 +558,40 @@ const METRIC_KEY: Record<string, string> = {
 /* ── THE CARD THAT LEAVES THE APP ────────────────────────────────────────── */
 
 /**
- * The week as the branded card — and it carries BOTH halves, for the same
- * reason the screen does. A hybrid athlete's week posted as three lifting
- * figures is a post about somebody else's training.
- *
- * The clock leads because it is the figure both halves paid into; the two
- * halves' own figures follow, and a half with nothing in it takes no slot.
+ * THE STORY CARD'S FIGURES — the same three the screen sets, in the same
+ * hierarchy: the clock both halves paid into, then each half's own figure. The
+ * paragraph is handed over ALREADY RESOLVED, from the same resolver the screen
+ * prints, so the card and the screen cannot describe one week two ways.
  */
-function sharePage(
+function storyFigures(
   recap: WeeklyRecap,
   split: { gym: GymWindow; endurance: EnduranceWindow },
-  tag: string,
+  stamp: string,
+  words: string[],
   units: WeightUnit,
+  u: { h: string; min: string },
   t: (k: string) => string,
-): WeekSharePage {
-  const stats = [
-    { label: t("w.home.week.lHours"), value: formatDuration(recap.minutes) },
-    split.gym.totals.tonnage > 0 ? { label: t("summary.volumeMoved"), value: fmtTonnage(split.gym.totals.tonnage, units) } : null,
-    split.endurance.totals.distanceKm > 0
-      ? { label: t("w.analyze.stats.distance"), value: fmtKm(split.endurance.totals.distanceKm) }
-      : split.endurance.totals.minutes > 0
-        ? { label: t("recap.enduranceSport"), value: formatDuration(split.endurance.totals.minutes) }
-        : null,
-  ]
-    .filter((s): s is { label: string; value: string } => s !== null)
-    .slice(0, 3);
-
-  const rows = [
-    ...recap.prs.map((p) => ({ name: p.lift, value: fmtWeight(p.topLoad, units), pr: true })),
-    ...recap.cardioPrs.map((p) => ({ name: p.move, value: p.kind === "pace" ? paceStr(p.value) : fmtKm(p.value), pr: true })),
-  ].slice(0, 4);
-
-  const hasPrev = recap.prevSessions > 0 || recap.prevVolume > 0;
+): WeekStoryFigures {
+  const halves: { label: string; value: string }[] = [];
+  if (split.gym.totals.tonnage > 0) {
+    halves.push({ label: t("recap.gym"), value: fmtTonnage(split.gym.totals.tonnage, units) });
+  }
+  if (split.endurance.totals.efforts > 0) {
+    halves.push({
+      label: t("recap.enduranceSport"),
+      value: split.endurance.totals.distanceKm > 0
+        ? fmtKm(split.endurance.totals.distanceKm)
+        : formatDuration(split.endurance.totals.minutes, u),
+    });
+  }
   return {
-    tag,
-    stats,
-    rows,
-    note: hasPrev
-      ? `${signed(Math.round(kgToUnit(recap.volumeDelta, units)))} ${units} – ${signed(recap.sessionsDelta)} ${t("w.teams.coach.sessionsWord")} ${t("recap.vsLastWeek")}`
-      : recap.topMuscle
-        ? `${t("recap.top")} ${MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle}`
-        : null,
+    stamp,
+    lead: { value: formatDuration(recap.minutes, u), label: t("w.home.week.lHours") },
+    halves,
+    words,
+    records: [
+      ...recap.prs.map((p) => ({ name: p.lift, value: fmtWeight(p.topLoad, units) })),
+      ...recap.cardioPrs.map((p) => ({ name: p.move, value: p.kind === "pace" ? paceStr(p.value) : fmtKm(p.value) })),
+    ],
   };
 }
