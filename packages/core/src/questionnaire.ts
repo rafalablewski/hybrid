@@ -368,11 +368,15 @@ export function questionnaireFromAnswers(
     birthYear: birth?.year,
     birthMonth: birth?.month,
     daysPerWeek: n(read("daysPerWeek")),
-    // The two recovery inputs, on the check-in's own 1-5 scale. Same rule as
-    // everything else here: `read` applies no default, so a question stepped
-    // past contributes nothing rather than writing a middling 3 onto the
-    // profile where it would read back as an answer the athlete gave.
-    sleep: n(read("sleep")),
+    // STRESS ONLY. Sleep is deliberately absent even though it is a legal
+    // engine key: `withMeasured` resolves `stored.sleep ?? measured.sleep`, so
+    // anything written here would outrank the mean of every daily check-in
+    // permanently — the same way a typed training age outranked the log.
+    // Setup is the one place that must not write it, because at setup there is
+    // nothing to overrule.
+    //
+    // `read` applies no default, so a question stepped past contributes nothing
+    // rather than writing a middling 3 that reads back as an answer.
     stress: n(read("stress")),
     // BODY MASS IS DELIBERATELY ABSENT. It is a reading with a date, not a
     // standing answer, so setup writes it to the BODY LOG — the same store the

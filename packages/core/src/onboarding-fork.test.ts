@@ -35,20 +35,27 @@ describe("which questions each intake is asked", () => {
     expect(keys().length).toBe(DEFAULT_ONBOARDING_QUESTIONS.length);
   });
 
-  it("asks a tracker EVERYTHING about themselves, and only skips the goal", () => {
+  it("asks a tracker for everything that shapes their own model", () => {
     // THE FORK IS THE OUTCOME, NOT THE DATA, and the first cut of it had this
     // backwards: it marked experience, days per week and equipment athlete-only
-    // on the reasoning that they exist to shape a plan. They do not.
-    // questionnaireFromAnswers maps experience and daysPerWeek onto the volume
-    // profile, where one is a stimulus multiplier and the other a recovery
-    // factor, and both are counted in the model's confidence divisor — so
-    // skipping them permanently degraded every tracker's model.
-    expect(keys("casual")).toEqual(keys("athlete").filter((k) => k !== "goal"));
+    // on the reasoning that they exist to shape a plan. They do not —
+    // daysPerWeek is a recovery factor and is counted in the model's confidence
+    // divisor, so skipping it degraded every tracker's ceiling.
+    for (const k of ["sex", "birth", "bodyweight", "days", "equipment"]) {
+      expect(keys("casual"), k).toContain(k);
+    }
   });
 
-  it("makes the goal the ONLY question an intake can skip", () => {
+  it("skips exactly two questions, each for its own stated reason", () => {
+    // GOAL — a tracker has said they are not training for one, so there is
+    //   nothing for the answer to shape.
+    // STRESS — a friction call rather than a principle, and worth naming as
+    //   one: it does feed a tracker's volume ceiling, and someone who came to
+    //   log their training does not need a question about their job on the way
+    //   in. It is a row on the questionnaire screen for anyone who wants it.
     const athleteOnly = DEFAULT_ONBOARDING_QUESTIONS.filter((q) => q.personas).map((q) => q.key);
-    expect(athleteOnly).toEqual(["goal"]);
+    expect(athleteOnly).toEqual(["goal", "stress"]);
+    expect(keys("casual")).toEqual(keys("athlete").filter((k) => !athleteOnly.includes(k)));
   });
 
   it("asks an athlete everything", () => {
@@ -61,33 +68,36 @@ describe("which questions each intake is asked", () => {
     expect(keys("casual")).not.toContain("goal");
   });
 
-  it("costs a tracker exactly one question fewer than an athlete", () => {
-    expect(keys("athlete").length - keys("casual").length).toBe(1);
+  it("costs a tracker two questions fewer than an athlete", () => {
+    expect(keys("athlete").length - keys("casual").length).toBe(2);
   });
 
   it("asks every intake for the model inputs it can only be TOLD", () => {
-    // personalizeLandmarks multiplies the athlete's ceiling by seven supplied
-    // inputs. Five of them are things only the athlete knows, and setup asked
-    // for three until sleep and stress were added — so nobody could reach a
-    // confident model without finding the questionnaire screen on their own.
     const asked = new Set(
       onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, "casual").map((q) => q.engineKey),
     );
-    for (const k of ["birthYear", "bodyweightKg", "sleep", "stress", "daysPerWeek"]) {
+    for (const k of ["birthYear", "bodyweightKg", "daysPerWeek"]) {
       expect(asked, `the model reads ${k} and setup never asks for it`).toContain(k);
     }
   });
 
-  it("does not ask for the one input it can MEASURE", () => {
-    // Training age is the strongest input of the seven and the only one the
-    // app can read off the bar (engines/fitness-level.ts). Asking for it was
-    // asking an athlete to self-assess the figure that then governs their
-    // volume ceiling — and `resolveExperience` gives a stated answer permanent
-    // priority, so the tap outranked the measurement forever.
-    const asked = new Set(
-      onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, "athlete").map((q) => q.engineKey),
-    );
-    expect(asked).not.toContain("experience");
+  it("does not ask for anything it can MEASURE", () => {
+    // TWO INPUTS, ONE RULE. Training age is read off the bar
+    // (engines/fitness-level.ts) and sleep is the mean of the daily check-in's
+    // own answer (sleepFromCheckins). In BOTH cases a stated value takes
+    // permanent priority over the measured one — `resolveExperience` prefers
+    // the stated tier, `withMeasured` resolves `stored.sleep ?? measured.sleep`
+    // — so asking at setup does not merely duplicate the measurement, it
+    // suppresses it, using an answer given before there was anything to
+    // measure. Both stay legal engine keys and both stay rows on the
+    // questionnaire screen, where overruling an estimate is a deliberate act.
+    for (const persona of ["casual", "athlete"] as const) {
+      const asked = new Set(
+        onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, persona).map((q) => q.engineKey),
+      );
+      expect(asked, persona).not.toContain("experience");
+      expect(asked, persona).not.toContain("sleep");
+    }
   });
 });
 

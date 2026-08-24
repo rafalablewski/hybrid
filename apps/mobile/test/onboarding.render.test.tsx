@@ -190,12 +190,14 @@ describe("what setup writes down", () => {
     // this branch is asked the five plan-shaping questions this test steps past.
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label)); // → goal
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    // SLEEP is the question this proves the rule on now: it carries a default
-    // (a mid-scale prior is honest to SHOW) and it reaches the profile, which
-    // is exactly the pair the rule is about. Experience used to play this part
-    // and no longer exists — setup measures training age instead of asking.
+    // STRESS is the question this proves the rule on: it carries a default (a
+    // mid-scale prior is honest to SHOW) and it reaches the profile, which is
+    // exactly the pair the rule is about. Experience used to play this part,
+    // then sleep did, and neither is asked any more — the app measures training
+    // age off the bar and sleep off the daily check-in. Stress is the one
+    // recovery input nothing can measure.
     const wiz = intake("athlete").filter((x) => x.engineKey !== "persona");
-    const sleepAt = wiz.findIndex((x) => x.engineKey === "sleep");
+    const sleepAt = wiz.findIndex((x) => x.engineKey === "stress");
     for (let i = 0; i < sleepAt; i++) fireEvent.click(cta(container));
     // A 1–5 range draws as segments rather than a scrub, so the pick is a tab.
     const seg = Array.from(container.querySelectorAll('[role="tab"]'))
@@ -207,13 +209,13 @@ describe("what setup writes down", () => {
 
     await waitFor(() => expect(written).toHaveBeenCalled());
     const profile = written.mock.calls.at(-1)![0] as Record<string, unknown>;
-    expect(profile.sleep, "the answer that was given").toBe(4);
-    // Never a training age, whatever the wizard shows — it is measured, not told.
+    expect(profile.stress, "the answer that was given").toBe(4);
+    // Never a measured field, whatever the wizard shows.
     expect(profile.experience, "a training age nobody can self-assess").toBeUndefined();
+    expect(profile.sleep, "sleep is the check-in's to measure").toBeUndefined();
     // `days` carries defaultValue 3 and `sex`/`birth`/`bodyweight` carry none —
     // every one of them was stepped past, so none of them may be on the profile.
     expect(profile.daysPerWeek, "a frequency nobody chose").toBeUndefined();
-    expect(profile.stress, "a stress score nobody chose").toBeUndefined();
     expect(profile.sex).toBeUndefined();
     expect(profile.birthYear).toBeUndefined();
     expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();

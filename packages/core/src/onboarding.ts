@@ -110,13 +110,13 @@ export type OnboardingQuestionKind = (typeof ONBOARDING_QUESTION_KINDS)[number];
 export const ONBOARDING_ENGINE_KEYS = [
   "persona", "goal", "experience", "daysPerWeek", "equipment",
   "sex", "birthYear", "bodyweightKg",
-  // THE LAST TWO COMPLETE THE RECOVERY MODEL. `personalizeLandmarks` scales the
-  // athlete's ceiling by seven supplied inputs and divides its confidence by the
-  // same seven; setup was asking for five of them, so nobody could reach a
-  // confident model without finding the questionnaire screen on their own.
-  // Sleep is the single largest recovery factor in the table (its worst tier
-  // costs 22%) and life stress is next. Both are asked of EVERY intake, because
-  // how much someone recovers is not a plan question.
+  // BOTH REMAIN LEGAL KEYS, and only one is still shipped as a question.
+  //
+  // `sleep` is MEASURED from the daily check-in (sleepFromCheckins) and a typed
+  // value outranks the measurement, so setup does not ask — the questionnaire
+  // screen keeps the row for an athlete who wants to overrule it deliberately.
+  // `stress` is the one recovery input nothing measures, so it is asked, of the
+  // goal intake only.
   "sleep", "stress",
 ] as const;
 
@@ -299,25 +299,39 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // for them — unlike sex or body mass, where a default would be a fabricated
   // measurement — but the profile still records only what was TOUCHED, so a
   // skipped one stays unknown rather than becoming a 3 nobody chose.
+  // NO SLEEP QUESTION, for the reason the training-age question went: the app
+  // MEASURES it. `sleepFromCheckins` takes the mean of the daily check-in's own
+  // sleep answer over a rolling window, and `withMeasured` resolves
+  // `stored.sleep ?? measured.sleep` — the STORED value first. So a figure
+  // typed once at setup would permanently suppress the mean of every check-in
+  // the athlete ever gives, which is the same defect as a self-assessed
+  // training age and costs more, because sleep is the largest recovery factor
+  // in the table. It was briefly asked here and should not have been.
+  //
+  // The check-in asks it every day, of every persona, on this same 1-5 scale.
+  // Nothing is lost by not asking it once, badly, on day zero.
   {
-    id: "sleep", key: "sleep", kind: "number", engineKey: "sleep", system: true, enabled: true, order: 5,
-    title: "How do you usually sleep?",
-    subtitle: "1 is broken, 5 is consistently great. Sleep moves your recovery ceiling more than anything else we can ask about.",
-    min: 1, max: 5, step: 1, defaultValue: 3,
-  },
-  {
-    id: "stress", key: "stress", kind: "number", engineKey: "stress", system: true, enabled: true, order: 6,
+    id: "stress", key: "stress", kind: "number", engineKey: "stress", system: true, enabled: true, order: 5,
+    // THE ONE RECOVERY INPUT NOTHING CAN MEASURE. The check-in captures mood and
+    // energy and deliberately does not relabel either as life stress, so this
+    // genuinely has to be asked or go unknown.
+    //
+    // Asked of the goal intake only. Someone who came to log their training
+    // does not need a question about their job on the way in — the volume
+    // ceiling it feeds is a thing they meet later, if at all, and it is a row on
+    // the questionnaire screen whenever they want it.
+    personas: ["athlete"],
     title: "How stressful is life right now?",
     subtitle: "1 is calm, 5 is very stressed. It costs recovery the same way a hard training week does.",
     min: 1, max: 5, step: 1, defaultValue: 3,
   },
   {
-    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 7,
+    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 6,
     title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
-    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 8,
+    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 7,
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [
