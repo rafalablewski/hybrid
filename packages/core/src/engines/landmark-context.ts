@@ -4,6 +4,8 @@ import { heatWeeklyFrequency, type HeatSignalRow } from "./heat";
 import { energyBalance, energyStateFromIntake, type EnergyBalance, type FuelSignalRow } from "./fuel";
 import type { RecoveryReport } from "./landmark-adapt";
 import type { AthleteVolumeProfile } from "./landmark-profile";
+import { trainingDaysPerWeek } from "./habits";
+import type { LoggedSession } from "./session";
 
 /**
  * MEASURED INPUTS → PROFILE DEFAULTS.
@@ -53,6 +55,20 @@ const DAY = 86_400_000;
 export interface MeasuredProfile {
   /** Mean check-in sleep (1–5) over the window. */
   sleep?: number;
+  /**
+   * TRAINING DAYS PER WEEK, from the log — the median of the last four weeks'
+   * distinct training days (habits.ts `trainingDaysPerWeek`).
+   *
+   * Setup used to ask for this and it was the wrong question in two ways. It
+   * asked for an INTENTION where the model wants a HABIT, and the two diverge
+   * exactly where it matters: the athlete who plans five and trains three is
+   * the one whose recovery multiplier is wrong. And it was another standing
+   * claim typed on day zero that then outranked every week of evidence after
+   * it. Absent until there is at least one week with training in it — a
+   * fabricated 3 is what the helper's own `fallback` would give, and this is
+   * the one place that must not take it.
+   */
+  daysPerWeek?: number;
   /** Energy availability — from the food log where it can be read, from the
    *  bodyweight trend where it cannot. `nutritionBasis` says which. */
   nutrition?: AthleteVolumeProfile["nutrition"];
@@ -190,6 +206,8 @@ export function energyBalanceFromBodyweight(
 export function measuredProfile(
   opts: {
     checkins?: RecoveryReport[];
+    /** The athlete's logged sessions — read for training FREQUENCY only. */
+    sessions?: LoggedSession[];
     bodyweight?: BodyweightPoint[];
     heightCm?: number | null;
     /** The newest body-fat reading from the same body log (`latestBodyFatPct`).
@@ -210,6 +228,18 @@ export function measuredProfile(
   } = {},
 ): MeasuredProfile {
   const out: MeasuredProfile = { measured: [] };
+  // NO FALLBACK. trainingDaysPerWeek returns 3 for an empty log by design (its
+  // callers want a usable number); here an invented frequency would become a
+  // recovery multiplier nobody earned, so the log has to actually contain a
+  // training week before this says anything.
+  const sessions = opts.sessions ?? [];
+  if (sessions.length > 0) {
+    const days = trainingDaysPerWeek(sessions, { now: opts.now });
+    if (Number.isFinite(days) && days > 0) {
+      out.daysPerWeek = days;
+      out.measured.push("daysPerWeek");
+    }
+  }
   const sleep = sleepFromCheckins(opts.checkins ?? [], { now: opts.now });
   if (sleep !== null) {
     out.sleep = sleep;
@@ -290,6 +320,7 @@ export function withMeasured(stored: AthleteVolumeProfile, measured: MeasuredPro
   return {
     ...stored,
     sleep: stored.sleep ?? measured.sleep,
+    daysPerWeek: stored.daysPerWeek ?? measured.daysPerWeek,
     heat: measured.heat,
     nutrition: stored.nutrition ?? measured.nutrition,
     // Always measured, never stored — like `heat`, and for the same reason:

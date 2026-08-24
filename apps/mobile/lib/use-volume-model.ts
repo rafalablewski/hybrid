@@ -69,8 +69,8 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   const recovery = useRecoveryReports(sessions);
 
   const measured = useMemo(
-    () => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, bodyFatPct: loggedBodyFatPct, heatSignals, nutritionSignals }),
-    [recovery, bodyweightPoints, loggedHeightCm, loggedBodyFatPct, heatSignals, nutritionSignals],
+    () => measuredProfile({ checkins: recovery, sessions, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, bodyFatPct: loggedBodyFatPct, heatSignals, nutritionSignals }),
+    [recovery, sessions, bodyweightPoints, loggedHeightCm, loggedBodyFatPct, heatSignals, nutritionSignals],
   );
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);

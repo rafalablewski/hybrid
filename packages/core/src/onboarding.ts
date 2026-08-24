@@ -327,11 +327,34 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   },
   {
     id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 6,
-    title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
+    // A PLAN QUESTION NOW, AND ONLY A PLAN QUESTION. It had two readers: the
+    // recommender, which picks the plan whose weekly frequency is closest to
+    // the answer, and the volume profile, where it was a recovery factor.
+    //
+    // The second reader is gone. `trainingDaysPerWeek` measures frequency from
+    // the log — the median of the last four weeks' distinct training days —
+    // and that beats the answer in two ways: it is a HABIT where this asks for
+    // an INTENTION, and the two diverge exactly where it matters, on the
+    // athlete who plans five and trains three. `withMeasured` resolves
+    // `stored ?? measured`, so a number typed here would have outranked every
+    // week of training after it.
+    //
+    // The recommender is a real reader and cannot measure anything yet, so the
+    // question stays — asked of the intake that is getting a plan, and no
+    // longer written onto the profile (see questionnaire.ts).
+    personas: ["athlete"],
+    title: "How many days a week can you train?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
     id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 7,
+    // ASKED OF THE GOAL INTAKE ONLY, because it has no consumer for the other
+    // one. Equipment decides which movements may be PRESCRIBED — and a tracker
+    // is never prescribed anything: with no plan enrolled, Today's quick start
+    // opens the empty logger rather than the engine's session. Asking someone
+    // what kit they own in order to shape prescriptions they will not receive
+    // is a screen that buys nothing.
+    personas: ["athlete"],
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [

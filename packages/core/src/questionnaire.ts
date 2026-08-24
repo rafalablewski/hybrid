@@ -367,7 +367,11 @@ export function questionnaireFromAnswers(
     sex: read("sex"),
     birthYear: birth?.year,
     birthMonth: birth?.month,
-    daysPerWeek: n(read("daysPerWeek")),
+    // NO daysPerWeek. Measured from the log (landmark-context `measuredProfile`
+    // → habits `trainingDaysPerWeek`), and `withMeasured` resolves
+    // `stored ?? measured` — so a number typed at setup would outrank every
+    // week of training after it, which is the same trap sleep and training age
+    // were removed from.
     // STRESS ONLY. Sleep is deliberately absent even though it is a legal
     // engine key: `withMeasured` resolves `stored.sleep ?? measured.sleep`, so
     // anything written here would outrank the mean of every daily check-in

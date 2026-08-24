@@ -35,26 +35,27 @@ describe("which questions each intake is asked", () => {
     expect(keys().length).toBe(DEFAULT_ONBOARDING_QUESTIONS.length);
   });
 
-  it("asks a tracker for everything that shapes their own model", () => {
-    // THE FORK IS THE OUTCOME, NOT THE DATA, and the first cut of it had this
-    // backwards: it marked experience, days per week and equipment athlete-only
-    // on the reasoning that they exist to shape a plan. They do not —
-    // daysPerWeek is a recovery factor and is counted in the model's confidence
-    // divisor, so skipping it degraded every tracker's ceiling.
-    for (const k of ["sex", "birth", "bodyweight", "days", "equipment"]) {
-      expect(keys("casual"), k).toContain(k);
-    }
+  it("asks a tracker only for what nothing else can supply", () => {
+    // THE RULE, arrived at over four passes: setup asks for what the app cannot
+    // find out on its own, of the intake that has a consumer for it. Three
+    // things about a body are the whole of what a tracker can uniquely answer.
+    expect(keys("casual")).toEqual(["persona", "sex", "birth", "bodyweight"]);
   });
 
-  it("skips exactly two questions, each for its own stated reason", () => {
-    // GOAL — a tracker has said they are not training for one, so there is
-    //   nothing for the answer to shape.
-    // STRESS — a friction call rather than a principle, and worth naming as
-    //   one: it does feed a tracker's volume ceiling, and someone who came to
-    //   log their training does not need a question about their job on the way
-    //   in. It is a row on the questionnaire screen for anyone who wants it.
+  it("skips four questions, each for its own stated reason", () => {
+    // GOAL — a tracker said they are not training for one.
+    // DAYS — a plan question: the recommender picks the plan closest to the
+    //   answer. It stopped being a profile field (frequency is measured from
+    //   the log), so with no plan to match there is nothing left to read it.
+    // EQUIPMENT — decides which movements may be PRESCRIBED, and a tracker is
+    //   never prescribed anything: with no plan, Today's quick start opens the
+    //   empty logger. The answer would have no reader.
+    // STRESS — a friction call rather than a principle, and named as one: it
+    //   does feed a tracker's ceiling, and someone who came to log their
+    //   training does not need a question about their job on the way in. It is
+    //   a row on the questionnaire screen whenever they want it.
     const athleteOnly = DEFAULT_ONBOARDING_QUESTIONS.filter((q) => q.personas).map((q) => q.key);
-    expect(athleteOnly).toEqual(["goal", "stress"]);
+    expect(athleteOnly).toEqual(["goal", "stress", "days", "equipment"]);
     expect(keys("casual")).toEqual(keys("athlete").filter((k) => !athleteOnly.includes(k)));
   });
 
@@ -68,36 +69,45 @@ describe("which questions each intake is asked", () => {
     expect(keys("casual")).not.toContain("goal");
   });
 
-  it("costs a tracker two questions fewer than an athlete", () => {
-    expect(keys("athlete").length - keys("casual").length).toBe(2);
+  it("costs a tracker four questions fewer than an athlete", () => {
+    expect(keys("athlete").length - keys("casual").length).toBe(4);
   });
 
   it("asks every intake for the model inputs it can only be TOLD", () => {
     const asked = new Set(
       onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, "casual").map((q) => q.engineKey),
     );
-    for (const k of ["birthYear", "bodyweightKg", "daysPerWeek"]) {
+    for (const k of ["sex", "birthYear", "bodyweightKg"]) {
       expect(asked, `the model reads ${k} and setup never asks for it`).toContain(k);
     }
   });
 
-  it("does not ask for anything it can MEASURE", () => {
-    // TWO INPUTS, ONE RULE. Training age is read off the bar
-    // (engines/fitness-level.ts) and sleep is the mean of the daily check-in's
-    // own answer (sleepFromCheckins). In BOTH cases a stated value takes
-    // permanent priority over the measured one — `resolveExperience` prefers
-    // the stated tier, `withMeasured` resolves `stored.sleep ?? measured.sleep`
-    // — so asking at setup does not merely duplicate the measurement, it
-    // suppresses it, using an answer given before there was anything to
-    // measure. Both stay legal engine keys and both stay rows on the
-    // questionnaire screen, where overruling an estimate is a deliberate act.
+  it("asks NEITHER intake to self-assess something the app measures", () => {
+    // THREE MEASURED INPUTS, AND THE RULE IS ABOUT WRITING, NOT ASKING.
+    // Training age is read off the bar (fitness-level.ts), sleep is the mean of
+    // the daily check-in (sleepFromCheckins) and training frequency is the
+    // median of the last four weeks' training days (habits.ts). Each resolves
+    // stored-over-measured, so a value written from setup does not duplicate
+    // the measurement — it SUPPRESSES it, using an answer given before there
+    // was anything to measure. None of the three reaches the profile from here
+    // (questionnaire.test.ts holds that).
+    //
+    // Two are not asked at all, because the profile was their only reader.
+    // FREQUENCY still is asked, of the goal intake, because it has a SECOND
+    // reader that cannot measure anything yet: the plan recommender picks the
+    // plan whose weekly frequency is closest to the answer. Asking a question
+    // whose answer goes to a plan and not to the model is fine; the defect was
+    // ever letting it reach the model.
     for (const persona of ["casual", "athlete"] as const) {
       const asked = new Set(
         onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, persona).map((q) => q.engineKey),
       );
-      expect(asked, persona).not.toContain("experience");
-      expect(asked, persona).not.toContain("sleep");
+      for (const k of ["experience", "sleep"]) {
+        expect(asked, `${persona} is asked to self-assess ${k}`).not.toContain(k);
+      }
     }
+    expect(keys("casual"), "a tracker has no plan to match").not.toContain("days");
+    expect(keys("athlete"), "the recommender reads it").toContain("days");
   });
 });
 
