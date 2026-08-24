@@ -130,7 +130,7 @@ export default function ActivityCompare({
           right". The meta names the AXIS, which is the one thing this page
           adds; the WINDOW is deliberately absent, since the section head above
           the card already carries it. */}
-      <ASection title={t("w.home.cmp.title")} meta={headline} />
+      <ASection lead title={t("w.home.cmp.title")} meta={headline} />
 
       <View style={{ marginTop: 4 }}>
         {rows.map((r) => {

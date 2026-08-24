@@ -4,7 +4,7 @@ import {
   RECIPES, isHighProtein, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
   type Recipe, type RecipeCollection, type RecipeCookView,
  colors,
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { F, FIXED_FONT_SCALE, PressScale, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -263,7 +263,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{st.unit}</Text>}
               </Text>
-              <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{st.label}</Text>
+              <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{st.label}</Text>
             </View>
           ))}
         </View>

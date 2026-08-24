@@ -5,6 +5,7 @@ import {
   type FoodRole, type PantryFood,
   ALPHA,
   space,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { F, PressScale as Pressable, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -73,7 +74,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
           {stats.lead ? (
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: 3 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: LABEL_GAP }}>
               {t("w.recovery.nutrition.pn.mostly").replace("{v}", roleLabel(stats.lead, t).toLowerCase())}
             </Text>
           ) : null}

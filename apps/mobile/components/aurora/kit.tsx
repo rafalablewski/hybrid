@@ -1598,6 +1598,7 @@ export function AMeter({
 
 export function ASection({
   title,
+  lead,
   sub,
   meta,
   action,
@@ -1605,6 +1606,20 @@ export function ASection({
   style,
 }: {
   title: string;
+  /**
+   * THIS HEAD OPENS ITS CONTAINER — there is no preceding section to seam
+   * against, so it takes no top margin.
+   *
+   * The seam below (`space.xxl`) is the gap BETWEEN two sections of a screen.
+   * A card already pays its own `CARD_PAD`, so a head that is the card's first
+   * child stacked the two: 20 of card pad plus 24 of seam put the title 44dp
+   * from the top edge against 20dp at the sides, and every such card read as
+   * sagging. Five did — three on Performance, one on the volume screen, and
+   * the week verdict's comparison page — and `questionnaire.tsx` had already
+   * worked around it with a local `marginTop: 0`, which is the tell that the
+   * standard could not express the case and each caller was re-deriving it.
+   */
+  lead?: boolean;
   /** A DESCRIPTOR under the title — "Find a coach for your goal" — for a head
    *  whose subject needs a sentence rather than a value. It is NOT the meta
    *  slot in a second position: meta is a VALUE (a count, a window, "Free") and
@@ -1648,7 +1663,7 @@ export function ASection({
   // THE RHYTHM, and it is stated once: `space.xxl` above the head, `space.ms`
   // under it. Both are the SEAM tokens the section tier owns — a head that
   // wants its own numbers is a head that has left the tier.
-  const rhythm: ViewStyle = { marginTop: space.xxl, marginBottom: space.ms };
+  const rhythm: ViewStyle = { marginTop: lead ? 0 : space.xxl, marginBottom: space.ms };
   const row = (
     <>
       <Text

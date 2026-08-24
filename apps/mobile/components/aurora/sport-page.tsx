@@ -29,7 +29,7 @@ import {
   type SportStore,
   type SportWeek,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { fetchSessionBests, fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -708,7 +708,7 @@ function EffortLegend({ split, labels }: {
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{b.k}</Text>
+            <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{b.k}</Text>
           </View>
         ))}
       </View>

@@ -250,7 +250,7 @@ export default function AuroraVolume({ onOpenModel }: {
     .join(", ");
   return (
     <ACard solid>
-      <ASection title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
+      <ASection lead title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
       {summary.empty ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
       ) : (

@@ -8,7 +8,7 @@ import {
   type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
@@ -460,7 +460,7 @@ function Receipt({ C, t, explain, onOpen }: {
       style={{ flex: 1, minWidth: 0, paddingVertical: RECEIPT_PAD }}
     >
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: 3  }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>
         {label}
       </Text>
     </Pressable>

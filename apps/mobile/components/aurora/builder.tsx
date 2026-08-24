@@ -30,7 +30,7 @@ import {
   type StrengthSet,
   type WeightUnit,
 
-  ALPHA, GHOST_PLACEHOLDER_ALPHA } from "@hybrid/core";
+  ALPHA, GHOST_PLACEHOLDER_ALPHA, LABEL_GAP } from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
 import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -278,7 +278,7 @@ function Metric({ label, value, c, C }: { label: string; value: string; c?: stri
   return (
     <View style={{ marginRight: 16 }}>
       <Text style={ty(C, "overline")}>{label}</Text>
-      <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: c ? txt(C, c) : C.chalk, marginTop: LABEL_GAP, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
 }
