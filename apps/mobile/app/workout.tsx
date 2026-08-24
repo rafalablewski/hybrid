@@ -1881,42 +1881,31 @@ export default function Workout() {
                     too: schemes and special sets are answers to "what kind of
                     set", which is one question and now one menu, on the set
                     row itself. */}
-                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
+                {/* ADD SET, and only Add. A − sat here briefly, and it went:
+                    two bare glyphs of opposite consequence 9dp apart read as
+                    one control, and the separations that would have fixed that
+                    each cost something real (see the Add/Remove options deck —
+                    distance, ownership, rank, axis, altitude, mode, time,
+                    arithmetic, consequence). The decision was the tenth: don't
+                    draw the second control. Removing a set is a SWIPE — it acts
+                    on a specific set, it is nowhere near this row, and it can
+                    no longer be confused with adding one. The ⋯ menu's Delete
+                    row and the collapsed rows' hold menu are the doors for
+                    anyone the gesture does not reach.
+                    THE − WAS A WORKAROUND FOR A BROKEN SWIPE and it outlived
+                    the problem: it arrived in the same change that fixed the
+                    swipe, at a moment when the swipe was still the only way to
+                    remove a set at all. */}
                 <Pressable
                   onPress={() => addSet(x.uid)}
                   accessibilityRole="button"
                   accessibilityLabel={t("workout.addSet")}
                   hitSlop={8}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2 }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2, marginTop: 2 }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>{t("workout.addSet")}</Text>
                 </Pressable>
-                {/* AND THE WAY BACK OFF IT. A bare − beside the bare ＋, which
-                    is the kit's grammar verbatim: no ring, so it SHRINKS in
-                    place rather than going anywhere. It takes the LAST set and
-                    only while that set is un-banked — the mis-tapped ＋ is the
-                    whole case, and a control that could quietly destroy logged
-                    work is not the same control. With the ⋯ menu's row it means
-                    the swipe is no longer the ONLY door to removing a set,
-                    which it had been on the one screen where the rows are full
-                    of number fields fighting for the same gesture. */}
-                {(() => {
-                  const lastSet = x.sets[x.sets.length - 1];
-                  if (!lastSet || lastSet.done || x.sets.length < 2) return null;
-                  return (
-                    <Pressable
-                      onPress={() => removeSetTravelling(x.uid, lastSet)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("workout.removeSet")}
-                      hitSlop={8}
-                      style={{ alignItems: "center", justifyContent: "center", paddingVertical: 12, paddingHorizontal: 12 }}
-                    >
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: C.ash }}>−</Text>
-                    </Pressable>
-                  );
-                })()}
-                </View>
                 {/* Popular-preset rail — one tap lays out the whole exercise. A
                     single horizontal rail replaces the old nested grid + manual
                     planner; it bleeds to the card's edges (negative margin =

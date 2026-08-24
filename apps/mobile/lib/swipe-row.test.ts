@@ -172,7 +172,7 @@ describe("every swipe carries a door the gesture is not", () => {
     {
       file: "app/workout.tsx",
       door: /DELETE_SET_KEY[\s\S]*useHoldMenu|useHoldMenu[\s\S]*DELETE_SET_KEY/,
-      why: "the ⋯ set menu's Delete row (the Glass menu and the RN panel both) for the set being worked, the bare − beside ＋ Add set for the last one, and a HOLD on the collapsed rows for every set in between — the ⋯ and the − between them leave a banked set in the middle of an exercise reachable by the gesture and nothing else",
+      why: "the ⋯ set menu's Delete row (the Glass menu and the RN panel both) for the set being worked, and a HOLD on the collapsed rows for every other set. There was briefly a bare − beside ＋ Add set as well; it went, because two bare glyphs of opposite consequence 9dp apart read as one control, and removing a set belongs to the set rather than to the tail of the list. These two doors have to cover every set between them now — the − was the only one that reached the LAST set specifically, and the hold menu already reaches it",
     },
     {
       file: "app/notifications.tsx",
