@@ -220,10 +220,31 @@ export default function DoneFloor({
           // moment they most need to feel oriented). The swipe itself IS the
           // system's, though: the standard short-swipe-opens / full-swipe-commits
           // gesture, so a deletable row here behaves like every other one in iOS.
+          // The swipe on the VoiceOver rotor. A swipe is a gesture a reader
+          // cannot make, and this row cannot be collapsed into one element to
+          // carry the actions itself — it has two targets (open, rate) — so the
+          // delete rides the row's OWN button, the notification list's idiom.
+          const askAndDelete = async () => {
+            if (!onDelete) return;
+            const ok = await confirm({
+              title: t("w.home.today.deleteTitle"),
+              message: t("w.home.today.deleteBody").replace("{title}", s.title),
+              confirmLabel: t("common.delete"),
+              destructive: true,
+            });
+            if (ok) onDelete(s);
+          };
           const row = (
             // Two targets, one row: the row opens the session, the word rates it.
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Pressable onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+              <Pressable
+                onPress={() => onOpen(s.id)}
+                accessibilityRole="button"
+                accessibilityLabel={s.title}
+                accessibilityActions={onDelete ? [{ name: "delete", label: t("common.delete") }] : undefined}
+                onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === "delete") void askAndDelete(); }}
+                style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}
+              >
                 <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, ALPHA.solid) }}>
                   <Mark mark={sessionMark(s)} size={fs.title} color={onPlanRow ? txt(C, C.lime) as string : txt(C, C.blue) as string} />
                 </View>
@@ -260,15 +281,21 @@ export default function DoneFloor({
               label={t("common.delete")}
               background="transparent"
               marginBottom={0}
-              onDelete={async () => {
-                const ok = await confirm({
+              // ASKED BEFORE THE ROW GOES ANYWHERE. This used to be the whole of
+              // `onDelete`, which SwipeRow calls once the row has already run
+              // off the edge and the gap has closed — so the app announced the
+              // session was gone and then asked whether it should be, and a
+              // "no" left the row parked off-screen with its data intact and no
+              // way back short of leaving the screen.
+              confirm={() =>
+                confirm({
                   title: t("w.home.today.deleteTitle"),
                   message: t("w.home.today.deleteBody").replace("{title}", s.title),
                   confirmLabel: t("common.delete"),
                   destructive: true,
-                });
-                if (ok) onDelete(s);
-              }}
+                })
+              }
+              onDelete={() => onDelete(s)}
             >
               {row}
             </SwipeRow>

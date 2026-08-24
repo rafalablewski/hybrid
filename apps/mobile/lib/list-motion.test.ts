@@ -57,8 +57,8 @@ const EXEMPT: { marker: string; why: string }[] = [
     why: "setTypeTo — swaps a row's badge. The row stays exactly where it is, so there is no layout change to travel.",
   },
   {
-    marker: "sets: x.sets.filter((_, j) => j !== i)",
-    why: "removeSet — its only caller is a SwipeRow, and closing the gap after a swipe belongs to the gesture that opened it (see components/swipe-row.tsx).",
+    marker: "sets: x.sets.filter((t) => (s.uid ? t.uid !== s.uid : t !== s))",
+    why: "removeSet — the SWIPE's path, and closing the gap after a swipe belongs to the gesture that opened it (see components/swipe-row.tsx). Its other callers, the ⋯ menu's Delete row and the bare − beside ＋ Add set, go through removeSetTravelling, which arms the motion itself: those are taps, and nothing else on the screen is moving to explain the change.",
   },
   {
     marker: "sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s))",

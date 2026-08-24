@@ -116,6 +116,14 @@ export default defineConfig({
             // truncates nothing, and to an English screenshot, which is the
             // shortest of the three languages we ship.
             "lib/column-fit.test.ts",
+            // The swipe surfaces, read as TEXT. Deleting a set was the app's
+            // worst gesture and NONE of its defects were reachable by running
+            // it: the row was judged against a position it could not reach, the
+            // scroller could take the gesture back mid-drag, and a responder
+            // built once held a first-render index on a row keyed by uid. Every
+            // half was correct on its own — only their relationships were
+            // wrong, and a relationship is what a source guard can see.
+            "lib/swipe-row.test.ts",
           ],
         },
         resolve: {

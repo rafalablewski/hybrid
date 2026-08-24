@@ -470,6 +470,17 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 onPress={() => builder.cycleType(b.uid, i)}
                 accessibilityRole="button"
                 accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
+                // The swipe on the rotor. A swipe is a gesture VoiceOver cannot
+                // make, and it was this row's ONLY way to remove a set — so the
+                // delete rides the row's own button, the notification list's
+                // idiom. The row can't collapse into one element to carry it
+                // itself: it is four live fields and a drag grip.
+                accessibilityActions={[{ name: "delete", label: t("w.analyze.hist.delete") }]}
+                onAccessibilityAction={(e) => {
+                  if (e.nativeEvent.actionName !== "delete") return;
+                  animateListChange(reducedMotion);
+                  builder.removeSet(b.uid, i);
+                }}
                 style={{ width: 34, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? withAlpha(accent, ALPHA.fill) : "transparent", alignItems: "center", justifyContent: "center" }}
               >
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>

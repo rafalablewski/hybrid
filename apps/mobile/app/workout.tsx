@@ -213,6 +213,10 @@ const SET_EXTRAS: { key: string; k: string }[] = [
   { key: "ramp", k: "workout.warmupRampTitle" },
   ...SET_SCHEMES.map((p) => ({ key: p.key, k: p.k })),
 ];
+/** The set menu's destructive row. Named rather than inlined because the Glass
+ *  menu and the RN panel both carry it, and a literal in two places is how two
+ *  menus stop agreeing about what they offer. */
+const DELETE_SET_KEY = "deleteSet";
 
 const REST_OPTIONS: { id: string; label: string }[] = [
   { id: "off", label: "Off" },
@@ -966,10 +970,25 @@ export default function Workout() {
     animateListChange(reducedMotion);
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
   };
-  // No animateListChange here: the only caller is a SwipeRow, and closing the
-  // gap after a swipe-delete belongs to SwipeRow itself now.
-  const removeSet = (u: string, i: number) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
+  // BY THE SET, not by its index. The row that carries this delete is keyed by
+  // uid, so it SURVIVES the removal of a set above it — and an index is only
+  // ever right for as long as nothing above the row has moved. (The gesture
+  // used to hand this a frozen index for a second reason too, fixed in
+  // swipe-row.tsx; both had to go, because either one alone still deletes the
+  // wrong set.) Identity is the fallback for a draft restored from storage
+  // before sets carried uids.
+  //
+  // No animateListChange here when a SwipeRow calls it: closing the gap after a
+  // swipe-delete belongs to the gesture that opened it. The MENU and the −
+  // arrive through removeSetTravelling below, which does arm it — they are
+  // taps, and nothing else on the screen is moving to explain the change.
+  const removeSet = (u: string, s: WSet) =>
+    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((t) => (s.uid ? t.uid !== s.uid : t !== s)) } : x)));
+  const removeSetTravelling = (u: string, s: WSet) => {
+    animateListChange(reducedMotion);
+    haptic.warning();
+    removeSet(u, s);
+  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
@@ -1604,7 +1623,7 @@ export default function Workout() {
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
                     return (
                       <View key={s.uid ?? i}>
-                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)} background="transparent">
+                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, s)} background="transparent">
                         {focus === "active" ? (
                           // FLAT active section — no inner card (the exercise card
                           // is the one surface): the set you're on reads as focus
@@ -1667,8 +1686,15 @@ export default function Workout() {
                                     options={SET_TYPE_OPTIONS.map((o) => ({ id: o.id, label: t(o.k) }))}
                                     value={st}
                                     onPick={(v) => setTypeTo(x.uid, i, v)}
-                                    extras={SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) }))}
-                                    onExtra={(k) => runSetExtra(x.uid, k)}
+                                    // DELETE IS IN THE MENU, and it is the point of
+                                    // this row rather than an extra on it: the swipe
+                                    // was the ONLY way to remove a set, and a gesture
+                                    // with nothing on screen saying it is there is not
+                                    // a door — it is also one VoiceOver cannot make.
+                                    // Last, in the destructive slot, exactly where the
+                                    // hold-menu puts its own.
+                                    extras={[...SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) })), { key: DELETE_SET_KEY, label: t("workout.deleteSet") }]}
+                                    onExtra={(k) => (k === DELETE_SET_KEY ? removeSetTravelling(x.uid, s) : runSetExtra(x.uid, k))}
                                   />
                                 ) : (
                                   <Pressable
@@ -1841,16 +1867,42 @@ export default function Workout() {
                     too: schemes and special sets are answers to "what kind of
                     set", which is one question and now one menu, on the set
                     row itself. */}
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
                 <Pressable
                   onPress={() => addSet(x.uid)}
                   accessibilityRole="button"
                   accessibilityLabel={t("workout.addSet")}
                   hitSlop={8}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2, marginTop: 2 }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2 }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>{t("workout.addSet")}</Text>
                 </Pressable>
+                {/* AND THE WAY BACK OFF IT. A bare − beside the bare ＋, which
+                    is the kit's grammar verbatim: no ring, so it SHRINKS in
+                    place rather than going anywhere. It takes the LAST set and
+                    only while that set is un-banked — the mis-tapped ＋ is the
+                    whole case, and a control that could quietly destroy logged
+                    work is not the same control. With the ⋯ menu's row it means
+                    the swipe is no longer the ONLY door to removing a set,
+                    which it had been on the one screen where the rows are full
+                    of number fields fighting for the same gesture. */}
+                {(() => {
+                  const lastSet = x.sets[x.sets.length - 1];
+                  if (!lastSet || lastSet.done || x.sets.length < 2) return null;
+                  return (
+                    <Pressable
+                      onPress={() => removeSetTravelling(x.uid, lastSet)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("workout.removeSet")}
+                      hitSlop={8}
+                      style={{ alignItems: "center", justifyContent: "center", paddingVertical: 12, paddingHorizontal: 12 }}
+                    >
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: C.ash }}>−</Text>
+                    </Pressable>
+                  );
+                })()}
+                </View>
                 {/* Popular-preset rail — one tap lays out the whole exercise. A
                     single horizontal rail replaces the old nested grid + manual
                     planner; it bleeds to the card's edges (negative margin =
@@ -1888,6 +1940,18 @@ export default function Workout() {
                         <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t(e.k)}</Text>
                       </Pressable>
                     ))}
+                    {/* The same destructive row the Glass menu carries, in the
+                        same last position, drawn in the red TEXT channel per
+                        the palette rule that red is kept strictly for risk. */}
+                    {ai >= 0 && (
+                      <Pressable
+                        onPress={() => { removeSetTravelling(x.uid, x.sets[ai]!); setSpecialUid(null); }}
+                        accessibilityRole="button"
+                        style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: C.line }}
+                      >
+                        <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.red) }}>{t("workout.deleteSet")}</Text>
+                      </Pressable>
+                    )}
                   </View>
                   );
                 })()}
