@@ -302,12 +302,20 @@ export function splitBoxStyle<T extends Record<string, unknown>>(
  * Here rather than in each client because the two implementations had drifted
  * on every single number (open 76 vs 84, commit 40 vs 44, clamp 110 vs 120)
  * while calling each other twins in their own header comments.
+ *
+ * THERE USED TO BE A `max: 120` HERE — an absolute ceiling on the travel — and
+ * it is gone because it was the app's worst gesture bug. The row was DRAWN
+ * against that ceiling and JUDGED against `fullAt` of its own width, and on
+ * every real row those two numbers are ~80px apart: a 329dp logger row commits
+ * at 197 while the band saturates at 120, so the row stalled dead under the
+ * finger and then teleported 77px sideways the instant the finger crossed the
+ * line — in both directions, on every crossing, with a haptic tick each time.
+ * A surface may not be decided against a position it cannot reach, which is
+ * what `swipeTravel` below now guarantees by construction.
  */
 export const swipe = {
   /** Width of the revealed action, in px/dp. */
   action: 80,
-  /** How far past the action width the row can be dragged before it stops. */
-  max: 120,
   /** Fraction of `action` the drag must PROJECT past to commit the reveal. */
   openAt: 0.5,
   /** Fraction of the row's width that commits the delete outright, no tap. */
@@ -318,8 +326,10 @@ export const swipe = {
   project: 0.15,
   /** Speed (px/s) that commits on its own, however short the travel. */
   flick: 800,
-  /** Rubber-band constant past the clamp: resistance grows with distance so the
-   *  row never runs off, and the finger feels the end instead of hitting a wall. */
+  /** Rubber-band constant past the END of the travel: resistance grows with
+   *  distance so the row never runs off, and the finger feels the end instead
+   *  of hitting a wall. Past a full-swipe row's commit point this is the whole
+   *  overshoot — the asymptote is `commit + resist`. */
   resist: 90,
 } as const;
 
@@ -467,6 +477,40 @@ export function rubberBand(offset: number, limit: number, resist: number = swipe
  */
 export function projectSwipe(offset: number, velocity: number): number {
   return offset + velocity * swipe.project;
+}
+
+/**
+ * Where a full swipe COMMITS on a row of `width` — the point the row's own edge
+ * has to pass for the action to run outright, with no second tap.
+ *
+ * `fullAt` of the row, with a FLOOR of two action widths: on a short row 60%
+ * lands inside the reveal itself, and a row that commits before it has finished
+ * showing the button deletes on the gesture the finger read as "open it". The
+ * floor yields on a row too narrow to hold it, because a threshold further out
+ * than the row is wide can never be reached at all.
+ */
+export function swipeCommitAt(width: number): number {
+  return Math.max(Math.min(swipe.action * 2, width * 0.9), width * swipe.fullAt);
+}
+
+/**
+ * THE ROW'S DRAWN OFFSET for a finger at `raw`, given its commit point.
+ *
+ * 1:1 all the way to the commit, then the rubber-band. That order is the whole
+ * point and it is the fix for the teleport described at the top of `swipe`: the
+ * row must be able to REACH the line it is judged against, so there is no
+ * resistance before it and nothing to "give way" at the crossing. Past the
+ * commit there is nothing further to reveal, so the band takes over and the
+ * finger feels the end of the gesture where the decision has already been made.
+ *
+ * Continuous everywhere by construction — `rubberBand` returns its input inside
+ * the limit, so the two zones meet at exactly `commit` with no step. That is
+ * asserted across a range of real row widths in motion.test.ts, because the
+ * defect it replaced was invisible to types, to the bundler and to every test
+ * that checked the two halves separately.
+ */
+export function swipeTravel(raw: number, commit: number): number {
+  return rubberBand(raw, commit, swipe.resist);
 }
 
 /* ────────────────────────────────────────────────────────────────────────
