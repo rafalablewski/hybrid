@@ -51,7 +51,12 @@ vi.mock(import("../lib/weigh-in"), async (importOriginal) => ({
 
 /** The second persona card — the one that starts UNSELECTED (the answer map is
  *  seeded with the question's `casual` default). */
-const UNPICKED = ONBOARDING_PERSONA_CHOICES[1]!.label;
+/** An AChoice OPTION ROW, which the goal step is made of. It used to be a
+ *  persona card, and could not stay one: the persona choice is its own screen
+ *  now (PersonaFork) and is drawn as full cards rather than as the shared row,
+ *  so asserting the row's invariant there would have been asserting a different
+ *  component that happens to sit in the same place. */
+const UNPICKED = ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label;
 
 /** The birth question, as the app ships it — asked fifth, and a DATE rather
  *  than an age, so it cannot go stale the day after it is answered. */
@@ -71,6 +76,8 @@ const surface = (el: HTMLElement) => el.firstElementChild as HTMLElement;
 describe("the onboarding wizard's option row", () => {
   it("draws the same tree picked and unpicked", () => {
     const { container } = render(<Onboarding />);
+    // Past the fork, onto the goal step — the first screen made of option rows.
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     const idle = row(container, UNPICKED);
     const nodes = idle.querySelectorAll("*").length;
     const restColour = surface(idle).style.borderTopColor;
@@ -123,8 +130,8 @@ describe("a date the athlete has not answered", () => {
     // persona → goal → experience → sex → BORN. The persona must be CHOSEN
     // rather than left on its seeded "casual" default: the wizard forks on that
     // answer now, and the tracker intake is not asked for a goal at all.
+    // The fork is a screen: picking IS the advance, so no Next follows it.
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
-    next(container);
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
     next(container); // → experience
     next(container); // → sex
@@ -179,8 +186,7 @@ describe("what setup writes down", () => {
     const { container } = render(<Onboarding />);
     // The ATHLETE intake, chosen: the wizard forks on this answer, and only
     // this branch is asked the five plan-shaping questions this test steps past.
-    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
-    fireEvent.click(cta(container)); // persona → goal
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label)); // → goal
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
     fireEvent.click(cta(container)); // → experience
     // The three experience choices are short, so the wizard draws them as a
@@ -189,7 +195,11 @@ describe("what setup writes down", () => {
     fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
     // Past every remaining question without touching any of them. Experience is
     // step index 2, the plan step sits at `length`, so that is the distance.
-    const steps = intake("athlete").length - 2;
+    // Derived rather than counted: the fork took the persona OUT of the step
+    // list, so the wizard is goal(0), experience(1), … and the plan step sits
+    // at `wizardSteps`. Experience is where this walk currently stands.
+    const wizardSteps = intake("athlete").filter((x) => x.engineKey !== "persona").length;
+    const steps = wizardSteps - 1;
     for (let i = 0; i < steps; i++) fireEvent.click(cta(container));
     fireEvent.click(cta(container)); // the plan step's commit
 
@@ -243,15 +253,17 @@ describe("choosing the tracker", () => {
     // rather than the plan matcher — so a tracker's ceiling lost a stimulus
     // multiplier, a recovery factor and two of seven confidence inputs.
     const { container } = render(<Onboarding />);
+    // The FORK is its own screen in front of the wizard, so the persona
+    // question is asked here rather than as step one — capture it, then walk.
+    const seen: string[] = [container.textContent ?? ""];
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
-    const qs = intake("casual");
-    const seen: string[] = [];
+    const qs = intake("casual").filter((x) => x.engineKey !== "persona");
     for (let i = 0; i < qs.length; i++) {
       seen.push(container.textContent ?? "");
       if (i < qs.length - 1) fireEvent.click(cta(container)); // the last commits
     }
     const all = seen.join(" ");
-    for (const q of qs) {
+    for (const q of intake("casual")) {
       expect(all, `the tracker was not asked "${q.title}"`).toContain(q.title);
     }
     // And the one thing it genuinely does not need.

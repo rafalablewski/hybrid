@@ -13,7 +13,7 @@ import {
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
-import { useTheme } from "../../lib/theme";
+import { useTheme, type Palette as P } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { F, HIT_SLOP, LoadSwap, PressScale as Pressable, Skeleton, fs, leading, space, tracking, ty, useEntrance} from "../../lib/ui";
@@ -89,14 +89,29 @@ export default function AuroraOnboarding() {
   // THE PLAN STEP BELONGS TO THE ATHLETE INTAKE. A tracker declined the goal
   // product on the first screen; ending their setup on "Start this plan" was
   // the clearest expression of the app not listening to that answer.
+  // THE FORK IS ITS OWN SCREEN, not step 1 of N.
+  //
+  // It was rendered as an ordinary wizard step: a progress rail above it, a
+  // step counter, the same layout as "what do you weigh". But it is not that
+  // kind of question. Every other step gathers a MEASUREMENT about a person who
+  // has already decided to be here; this one asks which of two products they
+  // want, and everything after it — how many questions remain, whether a plan
+  // is recommended, whether a season is enrolled — follows from the answer.
+  // Presenting the branch in the same chrome as the branches made the most
+  // consequential tap in the app look like the least consequential one.
+  //
+  // So it is lifted out: no rail, no counter, no Back, two full cards. The
+  // wizard begins at the question after it, and its Back returns here.
+  const forkQ = useMemo(() => questions.find((x) => x.engineKey === "persona") ?? null, [questions]);
+  const steps = useMemo(() => questions.filter((x) => x.engineKey !== "persona"), [questions]);
   const hasPlanStep = intake !== "casual";
-  const total = questions.length + (hasPlanStep ? 1 : 0);
+  const total = steps.length + (hasPlanStep ? 1 : 0);
   // Switching the persona answer re-derives the wizard, which can make it
   // SHORTER than the step currently showing (athlete → casual drops four
   // questions). Without this the screen would render an undefined question.
   useEffect(() => { setIdx((i) => Math.min(i, Math.max(0, total - 1))); }, [total]);
-  const onPlanStep = hasPlanStep && idx >= questions.length;
-  const q = onPlanStep ? null : questions[Math.min(idx, questions.length - 1)] ?? null;
+  const onPlanStep = hasPlanStep && idx >= steps.length;
+  const q = onPlanStep ? null : steps[Math.min(idx, steps.length - 1)] ?? null;
   const waiting = loading && questions.length === 0;
 
   /** Move a step. The scroll position is part of the move: a step is a PAGE, so
@@ -110,6 +125,25 @@ export default function AuroraOnboarding() {
   }, []);
 
   const leave = () => router.replace("/(tabs)");
+
+  /** Choosing on the fork screen. The pick IS the advance — a two-option branch
+   *  does not need a Continue under it to confirm what the tap already said. */
+  const pickIntake = (value: string) => {
+    if (!forkQ) return;
+    haptic.selection();
+    setAnswer(forkQ.key, value);
+    if (value === "casual" || value === "athlete") setClientPersona(value);
+    setDir(1);
+    setIdx(0);
+  };
+  /** Back OUT of the wizard, to the fork. Clearing the answer is what makes the
+   *  fork screen render again — and it is honest: they are re-deciding, so the
+   *  previous decision should not sit there pre-selected. */
+  const toFork = () => {
+    if (!forkQ) return;
+    setDir(-1);
+    setAnswer(forkQ.key, "");
+  };
 
   const finish = async () => {
     setCommit("saving");
@@ -136,15 +170,29 @@ export default function AuroraOnboarding() {
    *  made Back and skip two vocabularies pointing at one destination on the
    *  very first screen a new athlete sees — so the control is simply absent
    *  there now, which is what the check-in wizard has always done. */
-  const back = () => { if (idx > 0) go(idx - 1, -1); };
+  const back = () => { if (idx > 0) go(idx - 1, -1); else toFork(); };
 
   const answered = (qq: OnboardingQuestion): boolean => {
-    if (qq.kind === "persona") return !!(answers[qq.key] ?? persona);
+    // No persona arm here any more: it is not a step, it is the screen in front
+    // of the wizard, and the wizard does not render until it is answered.
     if (!qq.required) return true;
     const v = answers[qq.key];
     return v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0);
   };
   const canNext = onPlanStep ? true : !q || answered(q);
+
+  if (forkQ && !intake) {
+    return (
+      <PersonaFork
+        C={palette}
+        q={forkQ}
+        enterStyle={enterStyle}
+        skipLabel={t("w.account.onboarding.skip")}
+        onPick={pickIntake}
+        onSkip={leave}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top", "bottom"]}>
@@ -227,7 +275,10 @@ export default function AuroraOnboarding() {
             nothing behind step 0 but the wizard's own exit, and that exit is
             already on screen as "skip". */}
         <View style={{ flexDirection: "row", gap: space.md, alignItems: "stretch", paddingTop: space.md }}>
-          {idx > 0 && <APill label={t("common.back")} variant="outline" onPress={back} />}
+          {/* Back is present on step 0 too, because there is now something
+              behind it: the fork. It used to be absent there, correctly, when
+              step 0 was the fork itself. */}
+          <APill label={t("common.back")} variant="outline" onPress={back} />
           <APill
             label={onPlanStep || onLastStep ? (onPlanStep && plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
             onPress={next}
@@ -521,4 +572,90 @@ function seedFor(q: OnboardingQuestion, min: number, max: number): number {
   const seed = q.engineKey ? byKey[q.engineKey] : undefined;
   const v = seed ?? Math.round((min + max) / 2);
   return Math.min(max, Math.max(min, v));
+}
+
+/**
+ * THE FORK — the first screen a new athlete meets, and the only one that is not
+ * a question about them.
+ *
+ * It asks which of two products they want, and everything downstream follows
+ * from the answer: how many questions remain, whether a plan is recommended,
+ * whether a season is enrolled, which surfaces the app opens. It used to be
+ * rendered as step 1 of N — a progress rail above it, a step counter, the same
+ * layout as "what do you weigh" — which put the most consequential tap in the
+ * app in the chrome of the least consequential one.
+ *
+ * WHAT IS DELIBERATELY ABSENT, and each absence is the point:
+ *   • no step rail — there is nothing to be one-of-eight through yet;
+ *   • no Back — there is nothing behind the first screen;
+ *   • no Continue — a two-option branch does not need a button under it to
+ *     confirm what the tap already said, and a Continue would imply a default
+ *     that this question specifically does not have;
+ *   • no pre-selection — see the persona question's own comment in core. A seed
+ *     here would be the app choosing and reporting the choice back as theirs.
+ *
+ * The copy is the QUESTION'S, not this file's: title, subtitle and both choices
+ * come from the admin-editable row, so an operator rewording the fork rewords
+ * this screen too rather than only the version that no longer renders.
+ */
+function PersonaFork({ C, q, enterStyle, skipLabel, onPick, onSkip }: {
+  C: P;
+  q: OnboardingQuestion;
+  enterStyle: ReturnType<typeof useEntrance>;
+  skipLabel: string;
+  onPick: (value: string) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
+      <AuroraField />
+      <Animated.View style={[{ flex: 1, padding: space.xxl }, enterStyle]}>
+        <Pressable
+          onPress={onSkip}
+          accessibilityRole="button"
+          hitSlop={HIT_SLOP}
+          style={{ alignSelf: "flex-end", marginTop: space.sm }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{skipLabel}</Text>
+        </Pressable>
+
+        {/* The question owns the top of the screen rather than sitting mid-list
+            under a rail. `justifyContent: center` is what makes this read as a
+            fork rather than as a form: two choices, weighted equally, with the
+            question above them and nothing below. */}
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero), color: C.chalk }}>
+            {q.title}
+          </Text>
+          {!!q.subtitle && (
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color: C.ash, marginTop: space.sm }}>
+              {q.subtitle}
+            </Text>
+          )}
+
+          <View style={{ gap: space.md, marginTop: space.xxl }}>
+            {(q.choices ?? []).map((c) => (
+              <Pressable
+                key={c.value}
+                onPress={() => onPick(c.value)}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.label}. ${c.blurb ?? ""}`}
+              >
+                <ACard>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "tight"), letterSpacing: tracking(fs.title), color: C.chalk }}>
+                    {c.label}
+                  </Text>
+                  {!!c.blurb && (
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: space.xs }}>
+                      {c.blurb}
+                    </Text>
+                  )}
+                </ACard>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Animated.View>
+    </SafeAreaView>
+  );
 }
