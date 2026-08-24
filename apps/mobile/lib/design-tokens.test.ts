@@ -615,6 +615,63 @@ describe("leading and tracking", () => {
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
     expect(raw, 'letterSpacing → tracking(size) / tracking(size, "label"|"caps"), or trackFigure(size) for a figure').toEqual([]);
   });
+
+  it("HARD — a tracked TextInput gives the trailing kern back", () => {
+    // THE ONE PLACE A TIGHTENING IS DESTRUCTIVE RATHER THAN OPTICAL.
+    //
+    // `letterSpacing` is kerning on EVERY glyph of the run, the last one
+    // included, so a run lays out `|track|` NARROWER than it draws. A `Text`
+    // does not care — nothing clips it, and the overhang lands in space the
+    // layout was leaving empty. A `TextInput` is a scrolling content view
+    // clipped to its own bounds, so the overhang is CUT: at
+    // `trackFigure(fs.stat)` the workout logger's set editor shaved a flat
+    // vertical slice off the right of the last digit of `20 kg × 10`, on both
+    // fields, on every phone, for as long as the fields have existed.
+    //
+    // IT IS INVISIBLE UNTIL IT ISN'T, which is why this is a rule and not a
+    // fix. A field only clips once its content has filled it, so an identical
+    // style clipped in the logger (auto-width) and looked perfect in the
+    // nutrition portion field (`minWidth: 96`) until somebody typed a fourth
+    // digit. "Does this field clip?" is a question about what has been typed
+    // into it, and no screenshot answers it.
+    //
+    // `kernPad(track)` (core's scale.ts) is the give-back, and it is exact
+    // rather than a fudge: pad the trailing edge by the kern the layout added
+    // and never drew. It returns 0 for a positive track — that one leaves a
+    // real GAP and is a centring problem for the other edge, which is why the
+    // one-time-code fields are not caught here (their letterSpacing is a raw
+    // positive, named and exempted by the rule above).
+    // A field's style may be hoisted to a local const — the logger's two
+    // figures share one, which is the point of hoisting it — so the element's
+    // own text is not always where the tracking is written. Follow
+    // `style={ident}` to `const ident = { … }` in the same file and read both.
+    const styleOf = (text: string, el: string): string => {
+      const ref = el.match(/style=\{([A-Za-z_$][\w$]*)\}/);
+      if (!ref) return el;
+      const at = text.indexOf(`const ${ref[1]} = {`);
+      if (at < 0) return el;
+      let depth = 0;
+      for (let i = text.indexOf("{", at); i < text.length; i++) {
+        if (text[i] === "{") depth++;
+        else if (text[i] === "}" && --depth === 0) return el + text.slice(at, i + 1);
+      }
+      return el;
+    };
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      // The lookahead is what keeps `useRef<TextInput | null>` out of this:
+      // a type argument is not an element, and without it the scan ran on from
+      // that ref to the next `/>` and reported whatever field it landed in.
+      for (const m of text.matchAll(/<TextInput(?=\s*\/>|\s+[A-Za-z{])[\s\S]{0,3000}?\/>/g)) {
+        const style = styleOf(text, m[0]);
+        const track = style.match(/letterSpacing:\s*((?:tracking|trackFigure)\([^)]*\))/);
+        if (!track) continue;
+        if (style.includes(`kernPad(${track[1]})`)) continue;
+        bad.push(`${path}:${text.slice(0, m.index).split("\n").length}`);
+      }
+    }
+    expect(bad, "a TextInput with letterSpacing: X needs paddingRight: kernPad(X) — see kernPad in core's scale.ts").toEqual([]);
+  });
 });
 
 describe("named type styles", () => {

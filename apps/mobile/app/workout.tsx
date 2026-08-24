@@ -149,7 +149,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, Mono, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty, useRowEntrance} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, Mono, PressScale as Pressable, fs, kernPad, leading, space, trackFigure, tracking, ty, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
@@ -1595,6 +1595,17 @@ export default function Workout() {
                   const measureLabel = sp?.measure === "time" ? "s" : sp?.measure === "distance" ? "m" : "reps";
                   const total = x.sets.length;
                   const planned = !addSetIsNext(x.sets); // a queue sits below → show "of N"
+                  // ONE SPELLING FOR BOTH FIGURES — they are the same field
+                  // twice (load, then reps), and they had been two identical
+                  // literals, which is how the load one gets a fix the reps
+                  // one does not.
+                  //
+                  // `paddingRight` is not decoration and it is not a gap: it
+                  // is the trailing kern `trackFigure` adds to the LAST digit
+                  // and never draws, given back so the text field — which
+                  // clips to its bounds, unlike a Text — stops shaving the
+                  // right side off it. See `kernPad` in core's scale.ts.
+                  const figureField = { fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, paddingRight: kernPad(trackFigure(fs.stat)), textAlign: "center", minWidth: 44 } as const;
                   return x.sets.map((s, i) => {
                     const focus = setFocus(x.sets, i);
                     const st = setType(s);
@@ -1702,7 +1713,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={figureField}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1717,7 +1728,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={figureField}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>

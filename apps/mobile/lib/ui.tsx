@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, resolveText, type TextToken, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, kernPad, TABULAR_NUMS, resolveText, type TextToken, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -30,7 +30,7 @@ import { useNavScrollProps } from "./nav-scroll";
 // number — an absolute line box is also why Dynamic Type could not work — and
 // tracking(size) rather than a dp, because a letterSpacing is a proportion of the
 // size it sits on and an absolute one means something different at every rung.
-export { fs, space, lh, leading, tracking, trackFigure };
+export { fs, space, lh, leading, tracking, trackFigure, kernPad };
 import type { ThemePalette as Palette } from "@hybrid/core";
 import { faceFor } from "./faces";
 import { auroraScrollClearance } from "./layout";

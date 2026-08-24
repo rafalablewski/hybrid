@@ -602,6 +602,53 @@ export const TRACK_FIGURE_EM = -0.035;
 export const trackFigure = (size: number): number => Math.round(size * TRACK_FIGURE_EM * 10) / 10;
 
 /**
+ * THE PAD A TIGHTENED FIGURE NEEDS BACK — because a tracking is applied after
+ * the LAST glyph too, and a text field clips.
+ *
+ * `letterSpacing` is not "space BETWEEN characters". On every surface this app
+ * ships to it is kerning attached to EVERY character of the run, the final one
+ * included — iOS `NSKernAttributeName`, Android `TextView.setLetterSpacing`,
+ * CSS `letter-spacing` — so a run of n glyphs LAYS OUT at
+ *
+ *     Σ advances + n × track
+ *
+ * and still DRAWS out to `Σ advances + (n−1) × track`. With a NEGATIVE track
+ * the ink ends `|track|` past the right edge of the box that was measured for
+ * it. The tighter the figure, the further past.
+ *
+ * On a `Text` that costs nothing you can see: nothing clips a text node, so the
+ * last glyph overhangs by a point or two into space the layout was going to
+ * leave empty anyway. On a `TextInput` it is a bug you can photograph. A text
+ * field is a scrolling content view clipped to its own bounds, so the overhang
+ * is CUT — and at `trackFigure(fs.stat)`, −1.7dp, the app's largest figure and
+ * the one the workout logger puts under the cursor, that is a flat vertical
+ * shave down the right side of the last digit. The set editor drew `20 kg × 10`
+ * with both zeroes sliced, and the unit label beside each sat 1.7dp too close,
+ * which is the same defect read from the other end.
+ *
+ * IT ONLY SHOWS WHERE THE FIELD IS SIZED TO ITS CONTENT — an auto-width figure,
+ * or a `flex: 1` one whose value has filled it. A field with room to spare hides
+ * it entirely, which is why the same style clipped in the logger and looked
+ * perfect in the nutrition portion field at `minWidth: 96` until somebody typed
+ * a fourth digit. That is the argument for fixing it at the STYLE rather than
+ * per screen: whether a given field clips today is a property of what has been
+ * typed into it.
+ *
+ * The give-back is exact rather than a fudge — pad the trailing edge by the
+ * kern the layout added and never drew, and the ink lands on the box edge:
+ *
+ *     letterSpacing: trackFigure(fs.stat),
+ *     paddingRight: kernPad(trackFigure(fs.stat)),
+ *
+ * ZERO FOR A POSITIVE TRACK, and that is not an oversight. A positive track
+ * leaves a real trailing GAP inside the box, so nothing is clipped; what it
+ * breaks is CENTRING (the one-time-code fields, whose 8dp of air pushes the
+ * digits half a gap left of centre), and the compensation for that goes on the
+ * OTHER edge. Different defect, different remedy, not this function's business.
+ */
+export const kernPad = (track: number): number => Math.max(0, -track);
+
+/**
  * A FIGURE'S NUMERALS ARE TABULAR — the third figure axis, and the one that had
  * a rule and no owner.
  *

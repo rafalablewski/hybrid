@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, kernPad, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
 import { FIGURE_INK_EM, SOHNE } from "./theme/face-metrics";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
@@ -226,6 +226,28 @@ describe("tracking", () => {
     // Rounded to 0.1dp — RN takes fractional letterSpacing, and at this size
     // the tenth is visible.
     expect(trackFigure(46)).toBe(Math.round(46 * TRACK_FIGURE_EM * 10) / 10);
+  });
+
+  it("kernPad gives back exactly the kern a negative tracking never draws", () => {
+    // The defect it exists for: a tracking is applied after the LAST glyph
+    // too, so a run lays out |track| narrower than it draws, and a TextInput
+    // — which clips to its bounds, unlike a Text — cuts the difference off the
+    // last character. At the app's biggest figure that is 1.7dp of the last
+    // digit, which is what the workout logger's set editor was shaving.
+    expect(kernPad(trackFigure(fs.stat))).toBe(1.7);
+    expect(kernPad(trackFigure(fs.stat))).toBe(-trackFigure(fs.stat));
+    // EXACT, not a fudge — the pad IS the tracking, negated, at every size.
+    for (const size of [27, 30, 46, 49, 68]) {
+      expect(kernPad(trackFigure(size)), `${size}dp`).toBe(-trackFigure(size));
+      expect(kernPad(tracking(size)), `${size}dp`).toBe(-tracking(size));
+    }
+    // ZERO FOR A POSITIVE TRACK, and that is the definition rather than a
+    // clamp on a bad input: a positive tracking leaves a real trailing gap
+    // inside the box, so nothing is clipped. What it breaks is centring, and
+    // that compensation belongs to the opposite edge.
+    expect(kernPad(8)).toBe(0);
+    expect(kernPad(tracking(fs.nano, "label"))).toBe(0);
+    expect(kernPad(0)).toBe(0);
   });
 
   it("codifies the two eyebrow trackings already in use", () => {
