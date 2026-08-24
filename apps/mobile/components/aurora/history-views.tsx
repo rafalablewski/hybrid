@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { View, Text } from "react-native";
+import { WeekRecapPager } from "./week-recap";
 import {
   fmtTonnage,
   fmtKm,
@@ -32,7 +33,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Chip, F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
-import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
+import { ACard, APressCard, ASegment, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -243,6 +244,10 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
+      {/* THE WEEK'S SUMMARY LEADS — paged like the session summary, one page
+          per aspect of the week, the share capturing the page in view. The
+          chapters below stay the archive; the pager is the report. */}
+      <WeekRecapPager sessions={ctx.sessions} units={ctx.units} bw={ctx.bw} />
       {weeks.map((w) => (
         /* The current week keeps its lime-tinted hairline — that is the one
            value here that is genuinely this card's, so it is the one thing
@@ -252,10 +257,21 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
           </View>
-          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
+          {/* DAY MARKS, not a bar chart. A day trained is a discrete EVENT, so
+              it draws as a mark on a path (the session summary's instrument
+              rule: a bar is a rectangle standing in for a number and says
+              nothing about what kind of number it is). Two mark sizes carry the
+              load level, hue carries the kind (chartreuse lifting, teal
+              cardio-only), and a rest day is a faint tick — same encoding as
+              the agenda's week strip, so the two week readings agree. */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 22, marginTop: 12, marginBottom: 4 }}>
             {w.days.map((d) => {
-              const h = d.load <= 0 ? 3 : Math.max(6, Math.round((d.load / maxLoad) * 34));
-              return <View key={d.dateKey} style={{ flex: 1, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: d.load <= 0 ? withAlpha(C.ash, ALPHA.solid) : d.hasCardio && !d.hasStrength ? C.blue : C.lime }} />;
+              const size = d.load <= 0 ? 4 : d.load / maxLoad > 0.5 ? 10 : 7;
+              return (
+                <View key={d.dateKey} style={{ flex: 1, alignItems: "center" }}>
+                  <View style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: d.load <= 0 ? withAlpha(C.ash, ALPHA.line) : d.hasCardio && !d.hasStrength ? C.blue : C.lime }} />
+                </View>
+              );
             })}
           </View>
           <View style={{ flexDirection: "row", gap: 5 }}>
@@ -362,7 +378,6 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const buckets = useMemo(() => sessionBuckets(ctx.sessions, range), [ctx.sessions, range]);
   const recap = useMemo(() => weeklyRecap(ctx.sessions, Date.now(), ctx.bw), [ctx.sessions, ctx.bw]);
   const hasData = ctx.sessions.length > 0;
-  const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   /* `cardStyle` is gone: it was ACard's base style hoisted into a const and
      spread into two Views, which is the copy one step further along — the
@@ -379,46 +394,21 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: "row", gap: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 3 }}>
-        {TREND_RANGES.map((rg) => {
-          const on = range === rg.id;
-          return (
-            <Pressable
-              key={rg.id}
-              onPress={() => setRange(rg.id)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={{ flex: 1, paddingVertical: 8, borderRadius: RADIUS.pill, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
-                {t(rg.key)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* The range picker is the kit's segmented control, not a hand-rolled
+          twin of it — same track, same thumb, same 44dp floor as every other
+          equal-width switch in the app ("one entry point, ONE rendering"). */}
+      <ASegment options={TREND_RANGES.map((rg) => ({ id: rg.id, label: t(rg.key) }))} value={range} onPick={setRange} />
 
-      <ACard>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.stats.sessions")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
-            {buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}
-          </Text>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 16, gap: 6 }}>
-          {buckets.buckets.map((b, i) => (
-            <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
-              <View style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, backgroundColor: i === buckets.peakIndex ? C.lime : C.line }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
-            </View>
-          ))}
-        </View>
-      </ACard>
-
+      {/* NO CHART HERE, by decision. The window is four FIGURES, each on its
+          own tile — a chart in this slot was a picture of a number the tiles
+          already state, and it went (first from bars to marks, then entirely).
+          Core figure-order.ts: the session count leads, active days sit with
+          it, then time, then the ground covered. */}
       <View style={{ flexDirection: "row", gap: 10 }}>
-        {/* Core figure-order.ts: active days sit with the session count they
-            are a fact about, then time, then the ground covered. */}
+        <Mini label={t("w.analyze.stats.sessions")} value={hasData ? String(buckets.total) : "—"} />
         <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 10 }}>
         <Mini label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} />
         <Mini label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} />
       </View>

@@ -255,6 +255,13 @@ export default function AuroraHistory() {
           <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("history.emptyHint")}</Text>
+            {/* An empty history's next step is not on this screen — hand the
+                athlete the door to it instead of a sentence about it. Only the
+                true empty state: an empty ARCHIVE or an empty sport filter is
+                not "you haven't trained yet". */}
+            {!showArchived && !sportFilter && (
+              <APill label={t("history.startFirst")} size="compact" onPress={() => router.push("/workout?source=empty")} style={{ marginTop: 16 }} />
+            )}
           </ACard>
         )
       }
@@ -270,7 +277,10 @@ export default function AuroraHistory() {
       hero={{
         rank: "title",
         title: sportFilter ?? t("nav.history"),
-        meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "nav.history")}` : null],
+        // The count is a fact about SESSIONS, so it says so — "12 sessions" /
+        // "12 Archived", not "12 History" (the screen's own name restated as a
+        // unit read as a broken string).
+        meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "histview.sessionsLbl")}` : null],
       }}
       back={() => router.back()}
       // The rail's trailing slot — ONE control, in the metadata voice. It used
@@ -387,6 +397,12 @@ function SwipeCard({ C, busy, actions, onPress, children }: {
             onPress={() => { if (openRef.current) { animate(false); return; } onPress?.(); }}
             disabled={!onPress && actions.length === 0}
             accessibilityRole={onPress ? "button" : undefined}
+            // The swipe is a POINTER gesture, so a screen reader can't reach
+            // what hides behind it. The same actions ride the rotor instead
+            // (the hold-menu's idiom): VoiceOver announces "Actions available",
+            // and restore/delete fire without the drag ever happening.
+            accessibilityActions={actions.map((a) => ({ name: a.key, label: a.label }))}
+            onAccessibilityAction={(e) => actions.find((a) => a.key === e.nativeEvent.actionName)?.onPress()}
             style={{ padding: CARD_PAD }}
           >
             {children}
