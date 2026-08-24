@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { View, Text } from "react-native";
 import {
   fmtTonnage,
+  fmtKm,
   sessionHeadline,
   weekChapters,
   localDayKey,
@@ -91,6 +92,11 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
           </View>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 12, marginBottom: 4 }}>
             {w.totals.volume > 0 && <Chip color={C.lime}>{fmtTonnage(w.totals.volume, ctx.units)}</Chip>}
+            {/* THE OTHER HALF OF A HYBRID WEEK. The index used to be gym-only:
+                four runs and one squat session read as "0.5 t, 5 sessions" and
+                never mentioned the ground covered. Teal, the app's cardio hue,
+                so the two chips say which half they are without a label. */}
+            {w.totals.distanceKm > 0 && <Chip color={C.blue}>{fmtKm(w.totals.distanceKm)}</Chip>}
             <Chip color={C.ash}>{sessionCount(w.totals.sessions)}</Chip>
             {w.totals.prs > 0 && <Chip color={C.lime}>{`↑ ${w.totals.prs} PR`}</Chip>}
           </View>
@@ -147,7 +153,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 /** What is behind the door, as a live figure — a door with a generic caption is
  *  a door nobody opens twice. */
 function weekDoorSub(
-  totals: { volume: number; sessions: number; prs: number },
+  totals: { volume: number; sessions: number; prs: number; distanceKm: number },
   units: WeightUnit,
   t: (k: string) => string,
   sessionCount: (n: number) => string,

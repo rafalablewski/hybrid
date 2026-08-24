@@ -84,9 +84,9 @@ const GROUPED: Record<string, Grouped> = {
       "The sheet's TITLE + SUBTITLE, so the sheet announces itself as one heading when it opens. The close control, the scroller and everything the caller renders inside are siblings of it.",
   },
   "components/aurora/week-summary.tsx": {
-    sites: 2,
+    sites: 3,
     why:
-      "TWO ROWS, both leaves, both for the same reason — a label and its figure sit on one line and are one fact, and read apart they are two unrelated utterances. (1) The LEDGER row: 'Sets, 22' rather than 'Sets' … '22'. (2) The RECORD row: the trophy, the lift's name, where it came from and what it now stands at, which apart is four. Neither can contain a control: the ledger renders two Texts, the record row a Glyph and three, and the screen's only controls — the share circle and the nav button — live in the hero rail, not in either list.",
+      "THREE ROWS, all leaves, all for the same reason — a label and its figures sit on one line and are one fact, and read apart they are several unrelated utterances. (1) The LEDGER row: 'Sets, 22' rather than 'Sets' … '22'. (2) The RECORD row: the trophy, the lift's name, where it came from and what it now stands at, which apart is four. (3) The DISCIPLINE row in the endurance half: the sport's mark, its name, the ground it covered, the time and the pace — five nodes describing one activity. None can contain a control: they render Marks, Glyphs and Texts, and the screen's only controls — the share circle and the nav button — live in the hero rail, not in any of these lists.",
   },
   "components/aurora/protocol.tsx": {
     sites: 1,

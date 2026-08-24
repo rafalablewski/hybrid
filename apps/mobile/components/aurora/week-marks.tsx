@@ -64,7 +64,7 @@ export function WeekMarks({ days, max, dates }: {
       {/* THE BASELINE — the axis the marks are placed against. It is the one
           line here that is information rather than chrome: without it a rest
           day's tick has nothing to sit on and a low day looks like a mistake. */}
-      <View style={{ height: 1, backgroundColor: withAlpha(C.ash, ALPHA.line), marginTop: 3 }} />
+      <View style={{ height: 1, backgroundColor: withAlpha(C.ash, ALPHA.line), marginTop: space.xxs }} />
       <View style={{ flexDirection: "row", gap: space.xs, marginTop: space.xs }}>
         {days.map((d, i) => (
           <View key={d.dateKey} style={{ flex: 1, alignItems: "center" }}>

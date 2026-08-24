@@ -22,7 +22,7 @@ import { sessionVolume, sessionShape, sessionCardioTotals, cardioPace } from "./
 import { sessionLoad } from "./load";
 import { kgToUnit, type WeightUnit } from "../units";
 import { displaySportDistance, sportDistanceUnit } from "../olympic-sports";
-import { kmValue } from "../distance";
+import { kmValue, roundKm } from "../distance";
 import { prsForSession } from "./records";
 import { localDayKey, localMondayMs, addLocalDays } from "../day-key";
 import { bwAt, type BodyweightInput } from "../bodyweight";
@@ -150,8 +150,13 @@ export interface WeekChapter {
   isCurrent: boolean;
   /** Mon..Sun, always 7 entries. */
   days: WeekChapterDay[];
-  /** figure-order.ts's reading order, same as the chips that render them. */
-  totals: { volume: number; sessions: number; prs: number };
+  /** figure-order.ts's reading order, same as the chips that render them.
+   *
+   *  DISTANCE IS HERE because this is a hybrid-athlete app and the index was
+   *  gym-only: a week of four runs and one squat session summarised as "0.5 t,
+   *  5 sessions" and never mentioned the 40 km. The chip renders only when the
+   *  week covered ground, so a pure lifter's chapter is unchanged. */
+  totals: { volume: number; sessions: number; prs: number; distanceKm: number };
   /** newest first. */
   sessions: LoggedSession[];
 }
@@ -199,6 +204,16 @@ export function weekChapters(
           sessions: group.length,
           volume: Math.round(group.reduce((sum, s) => sum + sessionVolume(s.blocks, false, bwAt(opts?.bw, s.startedAt)), 0)),
           prs: group.reduce((sum, s) => sum + prsOf(s.id), 0),
+          // Read through device-truth like every other distance the app prints:
+          // the ground a watch measured outranks the ground that was typed.
+          distanceKm: roundKm(
+            group.reduce(
+              (sum, s) =>
+                sum +
+                deviceTrueSession(s).blocks.reduce((n, b) => n + (b.kind === "cardio" && b.distance ? b.distance : 0), 0),
+              0,
+            ),
+          ),
         },
         sessions: group,
       };

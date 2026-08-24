@@ -128,6 +128,7 @@ export * from "./activity-window";
 export * from "./activity-range-view";
 export * from "./week-verdict";
 export * from "./endurance-window";
+export * from "./week-split";
 export * from "./other-sports";
 export * from "./contrast";
 export * from "./premium-accent";

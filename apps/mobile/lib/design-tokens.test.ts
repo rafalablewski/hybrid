@@ -2406,7 +2406,11 @@ describe("spacing", () => {
     // ghost rows, the timeline's rail) and the week pager, minus the one
     // surviving `gap: 5` that the two week readings now share through
     // WeekMarks rather than each drawing for itself.
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 561, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    // 561 → 559: the week summary's hybrid split. The grid of stat tiles went,
+    // and the three 1dp/3dp optical nudges the new rows were first written with
+    // went on the ladder rather than into this number — a burn-down that RISES
+    // to accommodate the change being made is not a burn-down.
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 559, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**
