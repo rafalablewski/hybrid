@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, kernPad, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, kernPad, kernLead, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
 import { FIGURE_INK_EM, SOHNE } from "./theme/face-metrics";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
@@ -248,6 +248,23 @@ describe("tracking", () => {
     expect(kernPad(8)).toBe(0);
     expect(kernPad(tracking(fs.nano, "label"))).toBe(0);
     expect(kernPad(0)).toBe(0);
+  });
+
+  it("kernLead is the same kern from the other end — the centring half", () => {
+    // A positive tracking is never clipped; the trailing gap lands INSIDE the
+    // box, so a centred run sits half a gap left of centre. The one-time-code
+    // fields are the only shape in the app that does it, and 8dp of tracking
+    // on six centred digits is 4dp of drift.
+    expect(kernLead(8)).toBe(8);
+    expect(kernLead(3)).toBe(3);
+    // ZERO FOR A NEGATIVE TRACK — that one is kernPad's, and it is a clip, not
+    // a drift. The pair is exhaustive and never both non-zero: whichever edge
+    // the trailing kern took from, exactly one of them gives it back.
+    expect(kernLead(trackFigure(fs.stat))).toBe(0);
+    for (const track of [-1.7, -0.3, 0, 3, 8]) {
+      expect(Math.min(kernPad(track), kernLead(track)), `${track}`).toBe(0);
+      expect(kernPad(track) + kernLead(track), `${track}`).toBe(Math.abs(track));
+    }
   });
 
   it("codifies the two eyebrow trackings already in use", () => {

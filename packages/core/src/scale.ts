@@ -649,6 +649,39 @@ export const trackFigure = (size: number): number => Math.round(size * TRACK_FIG
 export const kernPad = (track: number): number => Math.max(0, -track);
 
 /**
+ * THE SAME KERN FROM THE OTHER END — a POSITIVE tracking is not clipped, it is
+ * OFF CENTRE, and the give-back goes on the leading edge.
+ *
+ * Same fact as `kernPad`, opposite sign, and it took the sweep for that one to
+ * find it. A positive `letterSpacing` also lands after the LAST character, but
+ * there it adds real space INSIDE the box rather than pushing ink outside it —
+ * so nothing is ever cut. What breaks instead is centring, and only centring:
+ * the box being centred is `Σ advances + n × track` while the INK inside it
+ * stops `track` short of the right edge, so a centred run sits `track / 2` LEFT
+ * of where it looks like it should.
+ *
+ * The app has exactly one shape that does this, and it is the shape where being
+ * a few dp off centre is most visible: THE ONE-TIME-CODE FIELD. Six digits,
+ * centred, tracked wide on purpose — the tracking is semantic there, saying
+ * "these are discrete digits, read them one at a time", which is why it is the
+ * one place `tracking(size)` is deliberately not used. At the mobile field's 8dp
+ * that is 4dp of drift on a six-character string; the web field's `.3em` at
+ * `fs.headline` is about 3px. Small, constant, and exactly the kind of thing
+ * that reads as "slightly wrong" without anyone locating it.
+ *
+ * Pad the LEADING edge by the same tracking and the two ends match, which puts
+ * the ink back in the middle of the box:
+ *
+ *     letterSpacing: OTP_TRACK,
+ *     paddingLeft: kernLead(OTP_TRACK),
+ *
+ * Zero for a negative track — that one is `kernPad`'s, and it is a clip rather
+ * than a drift. The pair covers the whole of it: whichever edge the trailing
+ * kern stole from, give it back there.
+ */
+export const kernLead = (track: number): number => Math.max(0, track);
+
+/**
  * A FIGURE'S NUMERALS ARE TABULAR — the third figure axis, and the one that had
  * a rule and no owner.
  *

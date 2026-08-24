@@ -163,7 +163,7 @@ export default function LoginPage() {
               autoFocus
               aria-label="Authenticator code"
               placeholder="000000"
-              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: ".3em", textAlign: "center" }}
+              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: OTP_TRACK, textAlign: "center", paddingLeft: `calc(14px + ${OTP_TRACK})` }}
             />
             <div role="alert">
               {error && (
@@ -286,6 +286,19 @@ export default function LoginPage() {
     </div>
   );
 }
+
+/**
+ * THE ONE-TIME-CODE TRACKING — semantic, not optical: it says "six discrete
+ * digits, read one at a time".
+ *
+ * `paddingLeft` beside it is not a nudge. A tracking lands after the LAST
+ * character too, so the box being centred is wider than the ink inside it and a
+ * centred code sits half a gap LEFT of centre. Padding the leading edge by the
+ * same tracking matches the two ends. Mobile spells it `kernLead(OTP_TRACK)`;
+ * here the field's own 14px of padding has to be carried along, and the
+ * longhand must come after the `...inputStyle` spread to beat its shorthand.
+ */
+const OTP_TRACK = ".3em";
 
 const inputStyle = {
   ...mono,

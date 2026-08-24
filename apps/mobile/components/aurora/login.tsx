@@ -7,9 +7,21 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, kernLead, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading , RADIUS} from "./kit";
 import { LegalLinks } from "../legal-links";
+
+/**
+ * THE ONE-TIME-CODE TRACKING, and the one place in the app a wide tracking is
+ * SEMANTIC rather than optical: it says "six discrete digits, read one at a
+ * time", which is why this field is exempt from `tracking(size)` by name in
+ * design-tokens.test.ts.
+ *
+ * It is a const so the field's `letterSpacing` and its `kernLead` compensation
+ * cannot drift apart — they are the same number twice, and the second one only
+ * makes sense as long as it is.
+ */
+const OTP_TRACK = 8;
 
 /** AURORA login/register — the rounded auth form from the Figma kit, on the
  *  same Supabase auth flow as the classic login screen. */
@@ -141,7 +153,7 @@ export default function AuroraLogin() {
             placeholder="000000"
             placeholderTextColor={palette.ash}
             accessibilityLabel={t("w.account.login.verify-title")}
-            style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
+            style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: OTP_TRACK, paddingLeft: kernLead(OTP_TRACK), textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
           />
           {!!error && (
             <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>

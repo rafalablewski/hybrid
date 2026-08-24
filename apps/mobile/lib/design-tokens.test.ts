@@ -664,13 +664,33 @@ describe("leading and tracking", () => {
       // that ref to the next `/>` and reported whatever field it landed in.
       for (const m of text.matchAll(/<TextInput(?=\s*\/>|\s+[A-Za-z{])[\s\S]{0,3000}?\/>/g)) {
         const style = styleOf(text, m[0]);
+        const at = `${path}:${text.slice(0, m.index).split("\n").length}`;
+        // A tracking written OUT — trackFigure(x) or tracking(x). The pad has
+        // to name the identical expression, so the two cannot drift apart.
         const track = style.match(/letterSpacing:\s*((?:tracking|trackFigure)\([^)]*\))/);
-        if (!track) continue;
-        if (style.includes(`kernPad(${track[1]})`)) continue;
-        bad.push(`${path}:${text.slice(0, m.index).split("\n").length}`);
+        if (track && !style.includes(`kernPad(${track[1]})`)) {
+          bad.push(`${at} — letterSpacing: ${track[1]} with no paddingRight: kernPad(${track[1]})`);
+        }
+        // A tracking arriving through a TYPE TOKEN. No field takes its style
+        // from `ty()` today, and that is exactly why this half is here: the
+        // clip does not care whether the number was typed at the call site, so
+        // a rule that only reads call sites would pass the day one does.
+        const token = style.match(/ty\(\s*[A-Za-z_$][\w$]*\s*,\s*"([a-zA-Z]+)"/);
+        if (token && resolveText(token[1] as Parameters<typeof resolveText>[0]).letterSpacing < 0 && !style.includes("kernPad(")) {
+          bad.push(`${at} — ty(…, "${token[1]}") resolves to a negative tracking with no kernPad`);
+        }
+        // AND THE MIRROR, because a positive tracking is not clipped, it is off
+        // centre: the box being centred carries a trailing gap the ink does
+        // not, so the run sits half a gap left. Only CENTRED fields drift —
+        // a left-aligned one (mfa-settings' code field) just has a wider right
+        // pad, which is nothing.
+        const lead = style.match(/letterSpacing:\s*([A-Z_][A-Z_0-9]*|\d+(?:\.\d+)?)\s*,/);
+        if (lead && /textAlign:\s*"center"/.test(style) && !style.includes(`kernLead(${lead[1]})`)) {
+          bad.push(`${at} — centred letterSpacing: ${lead[1]} with no paddingLeft: kernLead(${lead[1]})`);
+        }
       }
     }
-    expect(bad, "a TextInput with letterSpacing: X needs paddingRight: kernPad(X) — see kernPad in core's scale.ts").toEqual([]);
+    expect(bad, `\nthe trailing kern goes back on the edge it was stolen from — see kernPad / kernLead in core's scale.ts:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 
