@@ -3,6 +3,10 @@ import { Animated, PanResponder, Pressable, Text, View } from "react-native";
 import { springs, springToRN, swipe, swipeCommitAt, swipeTravel, projectSwipe, durations, FEEDBACK } from "@hybrid/core";
 import { fs, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+// The geometry LEAF, not kit — the same import hold-menu.tsx takes, and for the
+// same reason: kit reaches back here and reading the scale from it would close
+// the loop (see aurora/geometry.ts).
+import { RADIUS } from "./aurora/geometry";
 import { haptic } from "../lib/haptics";
 import { animateListChange } from "../lib/list-motion";
 import { useReducedMotion } from "../lib/use-reduced-motion";
@@ -73,7 +77,7 @@ import { useReducedMotion } from "../lib/use-reduced-motion";
  *  the logger's rows are spread across one card per exercise. */
 let openRow: { current: () => void } | null = null;
 
-export default function SwipeRow({ children, onDelete, confirm, label, leading, background, radius = 12, marginBottom = 6 }: {
+export default function SwipeRow({ children, onDelete, confirm, label, leading, background, radius = RADIUS.inner, marginBottom = 6 }: {
   children: ReactNode;
   /** Remove the row. Called once the row has run off the edge, immediately
    *  after the list motion is armed — so it must do the removal SYNCHRONOUSLY.
@@ -100,7 +104,14 @@ export default function SwipeRow({ children, onDelete, confirm, label, leading, 
    *  the live logger's active set was drawing while its own code said "no
    *  inner card". */
   background?: string;
-  /** Corner radius of the reveal — match the wrapped row. */
+  /** Corner radius of the reveal — match the wrapped row.
+   *
+   *  It clips the CONTAINER, which is what rounds the revealed strip to the
+   *  row's own shape; it used to sit on a fixed action tile, which is why the
+   *  Builder's ledger drew a rounded button behind a square row. `RADIUS.inner`
+   *  by default rather than a literal 12: that is the mark radius the rows
+   *  these wrap already use for their own controls, so the default agrees with
+   *  its neighbours by name instead of by coincidence. */
   radius?: number;
   /** Outer spacing (the wrapped row should drop its own margin). */
   marginBottom?: number;

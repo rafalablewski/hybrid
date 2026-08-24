@@ -139,6 +139,7 @@ import { FeelPrompt } from "../components/feel-prompt";
 import { scheduleRecoveryReminder } from "../lib/recovery-reminder";
 import SwipeRow from "../components/swipe-row";
 import HoldDragRow from "../components/hold-drag-row";
+import { useHoldMenu, type HoldMenuItem } from "../components/hold-menu";
 import { useDragReorder } from "../lib/use-drag-reorder";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
@@ -217,6 +218,12 @@ const SET_EXTRAS: { key: string; k: string }[] = [
  *  menu and the RN panel both carry it, and a literal in two places is how two
  *  menus stop agreeing about what they offer. */
 const DELETE_SET_KEY = "deleteSet";
+/** The collapsed set row's hold menu. Built from `t` at the call site rather
+ *  than held as a constant, because the label is translated and the dictionary
+ *  is not available at module scope. */
+const SET_ROW_MENU = (t: (k: string) => string): HoldMenuItem[] => [
+  { key: DELETE_SET_KEY, label: t("workout.deleteSet"), destructive: true },
+];
 
 const REST_OPTIONS: { id: string; label: string }[] = [
   { id: "off", label: "Off" },
@@ -1849,6 +1856,13 @@ export default function Workout() {
                               done={s.done}
                               dim={focus === "done" ? 0.62 : 0.72}
                               onReopen={s.done ? () => toggleDone(x.uid, i, false) : undefined}
+                              // ONE ROW, because the tap already re-opens a
+                              // banked set — a menu that offers what the row
+                              // does anyway is a second door to the same place.
+                              // What the collapsed row had NO door to is
+                              // removal, so that is what the hold carries.
+                              menu={SET_ROW_MENU(t)}
+                              onMenu={(k) => { if (k === DELETE_SET_KEY) removeSetTravelling(x.uid, s); }}
                               C={C}
                             />
                           );
@@ -2592,7 +2606,7 @@ function RpeScaleRow({ children }: { children: React.ReactNode }) {
  * animation can reach. This makes the ARRIVING row travel, on the native driver,
  * whether or not the request was granted.
  */
-function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, C }: {
+function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, menu, onMenu, C }: {
   badge: string;
   badgeColor: string;
   summary: string;
@@ -2604,10 +2618,29 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
   /** Resting opacity — banked reads quieter than queued. */
   dim: number;
   onReopen?: () => void;
+  /** HOLD THE ROW. A collapsed set's only affordance was a tap that re-opens
+   *  it, so removing one in the MIDDLE of an exercise meant the swipe and
+   *  nothing else — the app's own hold-menu docblock is about exactly this
+   *  gap ("the app could REMEMBER without being able to FORGET"), and a swipe
+   *  is both undiscoverable and unavailable to a screen reader. The menu's
+   *  rows ride the VoiceOver rotor through `a11yActions`, which is the half a
+   *  gesture can never provide. */
+  menu?: HoldMenuItem[];
+  onMenu?: (key: string) => void;
   C: Palette;
 }) {
   const enter = useRowEntrance();
+  const hold = useHoldMenu({ items: menu ?? [], onSelect: (k) => onMenu?.(k), disabled: !onMenu });
+  // The hold arms on the row's OWN pressable, the nutrition rows' idiom: an
+  // inner Pressable keeps the touch, so a hold on the summary never reaches a
+  // wrapper. The LIFT sits on a view of its own rather than merging into the
+  // entrance's style: the lift is native-driven and the entrance is not, and
+  // one transform array cannot be both (the later one would also simply
+  // replace the earlier, silently dropping the entrance's travel).
+  const held = { onLongPress: hold.holdProps.onLongPress, delayLongPress: hold.holdProps.delayLongPress };
   return (
+    <>
+    <Animated.View ref={hold.anchorRef} collapsable={false} style={hold.liftStyle}>
     <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6) }, enter, { opacity: Animated.multiply(enter.opacity, dim) }]}>
       <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: badgeColor }}>{badge}</Text>
       {/* A collapsed row SIGNALS; the expanded one explains. A plausibility
@@ -2618,7 +2651,13 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
           The effort rides INSIDE the re-open target, not beside it: the number
           you want to correct is the most likely reason to tap this row, so it
           had better be part of the button. */}
-      <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={onReopen}>
+      <Pressable
+        style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }}
+        onPress={onReopen}
+        {...held}
+        accessibilityActions={hold.a11yActions}
+        onAccessibilityAction={hold.onA11yAction}
+      >
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: summaryColor }}>{summary}</Text>
         {effortLabel ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: effortColor }}>{effortLabel}</Text>
@@ -2626,6 +2665,9 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.body, color: done ? txt(C, C.lime) : C.ash }}>{done ? "✓" : "○"}</Text>
     </Animated.View>
+    </Animated.View>
+    {hold.menu}
+    </>
   );
 }
 

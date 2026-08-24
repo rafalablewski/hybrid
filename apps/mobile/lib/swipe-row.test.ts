@@ -171,8 +171,8 @@ describe("every swipe carries a door the gesture is not", () => {
   const DOORS: { file: string; door: RegExp; why: string }[] = [
     {
       file: "app/workout.tsx",
-      door: /DELETE_SET_KEY/,
-      why: "the ⋯ set menu's Delete row (the Glass menu and the RN panel both), plus the bare − beside ＋ Add set",
+      door: /DELETE_SET_KEY[\s\S]*useHoldMenu|useHoldMenu[\s\S]*DELETE_SET_KEY/,
+      why: "the ⋯ set menu's Delete row (the Glass menu and the RN panel both) for the set being worked, the bare − beside ＋ Add set for the last one, and a HOLD on the collapsed rows for every set in between — the ⋯ and the − between them leave a banked set in the middle of an exercise reachable by the gesture and nothing else",
     },
     {
       file: "app/notifications.tsx",
