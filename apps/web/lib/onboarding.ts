@@ -21,8 +21,18 @@ type Row = {
   id: string; key: string; kind: string; title: string; subtitle: string | null;
   engineKey: string | null; choices: unknown; min: number | null; max: number | null;
   step: number | null; defaultValue: string | null; required: boolean; enabled: boolean;
-  system: boolean; order: number;
+  system: boolean; order: number; personas?: string[] | null;
 };
+
+/** Every column except `personas`, so a database without that column can still
+ *  be read. Prisma selects the whole model by default and errors on a column
+ *  that is not there, which would take the entire questionnaire down rather
+ *  than one field of it — the same soft-guard Macrocycle.planId uses. */
+const WITHOUT_PERSONAS = {
+  id: true, key: true, kind: true, title: true, subtitle: true, engineKey: true,
+  choices: true, min: true, max: true, step: true, defaultValue: true,
+  required: true, enabled: true, system: true, order: true,
+} as const;
 
 function rowToQuestion(r: Row): OnboardingQuestion | null {
   // A built-in's kind/engineKey are locked to the code default (the editor only
@@ -35,6 +45,11 @@ function rowToQuestion(r: Row): OnboardingQuestion | null {
     title: r.title,
     subtitle: r.subtitle ?? undefined,
     engineKey: def ? def.engineKey : r.engineKey ?? undefined,
+    // LOCKED FOR A BUILT-IN, exactly as kind and engineKey are, and for a
+    // sharper reason: stored rows REPLACE the defaults for the client, so a row
+    // that could widen a built-in's scope would put every tracker back on the
+    // goal question with nothing in the editor to show why.
+    personas: def ? def.personas : r.personas ?? undefined,
     choices: r.choices ?? (def ? def.choices : undefined),
     min: r.min ?? undefined,
     max: r.max ?? undefined,
@@ -53,7 +68,17 @@ export async function effectiveOnboardingQuestions(): Promise<{ questions: Onboa
   let rows: OnboardingQuestion[] = [];
   let unavailable = false;
   try {
-    const found = (await prisma.onboardingQuestion.findMany({ orderBy: { order: "asc" } })) as Row[];
+    let found: Row[];
+    try {
+      found = (await prisma.onboardingQuestion.findMany({ orderBy: { order: "asc" } })) as Row[];
+    } catch {
+      // The `personas` column is not migrated yet — read everything else and
+      // let custom questions fall back to "both", which is what they were
+      // before the column existed (reference/sql-onboarding-personas.sql).
+      found = (await prisma.onboardingQuestion.findMany({
+        orderBy: { order: "asc" }, select: WITHOUT_PERSONAS,
+      })) as Row[];
+    }
     rows = found.map(rowToQuestion).filter((q): q is OnboardingQuestion => !!q);
   } catch {
     unavailable = true;

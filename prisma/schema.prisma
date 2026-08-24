@@ -1560,6 +1560,14 @@ model OnboardingQuestion {
   required     Boolean  @default(false)
   enabled      Boolean  @default(true)
   system       Boolean  @default(false)
+  // WHICH INTAKE ASKS THIS — [] or null means both. The persona question forks
+  // the wizard (packages/core/src/onboarding.ts), so a question can belong to
+  // the goal intake, the tracker intake, or both. A BUILT-IN's scope is locked
+  // to the code default and this column is ignored for it: persona scope is
+  // structural rather than copy, and a stored row that could widen it would
+  // silently un-fork the wizard. Custom questions own theirs.
+  // reference/sql-onboarding-personas.sql.
+  personas     String[] @default([])
   order        Int      @default(0)
   authorId     String?
   authorEmail  String?

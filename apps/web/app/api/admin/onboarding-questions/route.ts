@@ -3,6 +3,7 @@ import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { effectiveOnboardingQuestions, isBuiltInQuestion, DEFAULT_BY_KEY } from "@/lib/onboarding";
+import { ONBOARDING_ENGINE_KEYS, type OnboardingEngineKey } from "@hybrid/core";
 
 // The full questionnaire an admin manages: built-in defaults overlaid by any DB
 // rows, including disabled ones. `unavailable` flags the unmigrated table.
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
 type Body = {
   key?: unknown; kind?: unknown; title?: unknown; subtitle?: unknown; engineKey?: unknown;
   choices?: unknown; min?: unknown; max?: unknown; step?: unknown; defaultValue?: unknown;
-  required?: unknown; enabled?: unknown; order?: unknown;
+  required?: unknown; enabled?: unknown; order?: unknown; personas?: unknown;
 };
 
 const KINDS = ["persona", "goal", "single", "multi", "number", "text"];
@@ -56,7 +57,38 @@ export async function POST(request: Request) {
   if (kind === "persona" || kind === "goal") {
     if (!builtIn) return NextResponse.json({ error: "persona/goal are built-in question types" }, { status: 400 });
   }
-  const engineKey = builtIn ? def!.engineKey ?? null : null;
+  // ENGINE KEY. Locked to the code default for a built-in. For a CUSTOM
+  // question the admin may now pick one from the recognised list, which is what
+  // makes a retired built-in re-addable: `experience` and `sleep` stopped being
+  // shipped questions when the app started measuring them, and an operator who
+  // wants to ask anyway should be able to.
+  //
+  // THIS IS ONLY SAFE BECAUSE THE PROFILE MAPPING IS AN ALLOWLIST. Before
+  // Aug 2026 `questionnaireFromAnswers` carried whatever engine key it found
+  // onto the volume profile, so an engine key set here would have written a
+  // self-assessed training age over a measured one. It now names the fields it
+  // writes — sex, birth, stress — and nothing else can reach the profile
+  // whatever an admin keys a question to. What an engine key still does is feed
+  // the PLAN RECOMMENDER, which is a per-setup decision and safe to shape.
+  const rawEngine = typeof b.engineKey === "string" ? b.engineKey : "";
+  const engineKey = builtIn
+    ? def!.engineKey ?? null
+    : (ONBOARDING_ENGINE_KEYS as readonly string[]).includes(rawEngine)
+      ? (rawEngine as OnboardingEngineKey)
+      : null;
+  // `persona` and `goal` drive the fork and the plan library; they are not
+  // things a custom question may impersonate.
+  if (!builtIn && (engineKey === "persona" || engineKey === "goal")) {
+    return NextResponse.json({ error: "persona/goal are built-in question types" }, { status: 400 });
+  }
+
+  // WHICH INTAKE ASKS IT. Ignored for a built-in — its scope is the code's, for
+  // the reason lib/onboarding.ts gives — and an empty list means both, never
+  // nobody, because a question no persona can see has deleted itself.
+  const CLIENT_PERSONAS = ["casual", "athlete"];
+  const personas = Array.isArray(b.personas)
+    ? [...new Set((b.personas as unknown[]).filter((v): v is string => typeof v === "string" && CLIENT_PERSONAS.includes(v)))]
+    : [];
 
   const choices =
     Array.isArray(b.choices)
@@ -82,24 +114,30 @@ export async function POST(request: Request) {
     required: !!b.required,
     enabled: b.enabled === undefined ? true : !!b.enabled,
     system: builtIn,
+    personas: builtIn ? [] : personas,
     order: num(b.order) ?? 0,
     authorId: gate.admin.id,
     authorEmail: gate.admin.email,
   };
 
   try {
-    const saved = await prisma.onboardingQuestion.upsert({
-      where: { key },
-      update: data,
-      create: { key, ...data },
-    });
+    let saved;
+    try {
+      saved = await prisma.onboardingQuestion.upsert({ where: { key }, update: data, create: { key, ...data } });
+    } catch {
+      // The `personas` column is not migrated yet. Saving the rest of the
+      // question is better than refusing the edit over one field the operator
+      // may not have used — reference/sql-onboarding-personas.sql adds it.
+      const { personas: _dropped, ...rest } = data;
+      saved = await prisma.onboardingQuestion.upsert({ where: { key }, update: rest, create: { key, ...rest } });
+    }
     await audit({
       actor: gate.admin,
       action: "onboarding.question.save",
       targetType: "onboarding-question",
       targetId: saved.id,
       summary: `Saved “${saved.title}” (${saved.kind}${saved.enabled ? "" : ", disabled"})`,
-      metadata: { key: saved.key, builtIn },
+      metadata: { key: saved.key, builtIn, engineKey, personas: builtIn ? "locked" : personas },
       req: request,
     });
     return NextResponse.json({ question: saved }, { status: 201 });

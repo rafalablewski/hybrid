@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { OnboardingQuestion, OnboardingChoice } from "@hybrid/core";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt, tint } from "@/lib/ui";
-import { ALPHA } from "@hybrid/core";
+import { ALPHA, ONBOARDING_ENGINE_KEYS } from "@hybrid/core";
 
 type Draft = {
   key: string;
@@ -18,17 +18,25 @@ type Draft = {
   enabled: boolean;
   order: number;
   system: boolean;
+  /** Which intake asks it. Empty = both. Locked for a built-in. */
+  personas: string[];
   id: string;
 };
 
 const CUSTOM_KINDS: OnboardingQuestion["kind"][] = ["single", "multi", "number", "text"];
+
+/** The engine fields a CUSTOM question may be keyed to. `persona` and `goal`
+ *  are absent because they drive the fork and the plan library and are not
+ *  things a custom question may impersonate — the API rejects them too. */
+const ASSIGNABLE_ENGINE_KEYS = ONBOARDING_ENGINE_KEYS.filter((k) => k !== "persona" && k !== "goal");
 
 function toDraft(q: OnboardingQuestion): Draft {
   return {
     key: q.key, kind: q.kind, title: q.title, subtitle: q.subtitle ?? "", engineKey: q.engineKey ?? null,
     choices: q.choices ? q.choices.map((c) => ({ ...c })) : [], min: q.min, max: q.max, step: q.step,
     defaultValue: q.defaultValue != null ? String(q.defaultValue) : undefined,
-    required: !!q.required, enabled: q.enabled, order: q.order, system: !!q.system, id: q.id,
+    required: !!q.required, enabled: q.enabled, order: q.order, system: !!q.system,
+    personas: q.personas ? [...q.personas] : [], id: q.id,
   };
 }
 
@@ -120,7 +128,7 @@ export default function AdminOnboarding() {
 
       {adding && (
         <QuestionEditor
-          draft={{ key: "", kind: "single", title: "", subtitle: "", choices: [{ value: "", label: "" }], required: false, enabled: true, order: (questions?.length ?? 0) + 10, system: false, id: "" }}
+          draft={{ key: "", kind: "single", title: "", subtitle: "", choices: [{ value: "", label: "" }], required: false, enabled: true, order: (questions?.length ?? 0) + 10, system: false, personas: [], id: "" }}
           busy={busy}
           onCancel={() => setAdding(false)}
           onSave={(d) => save(draftToBody(d))}
@@ -141,6 +149,14 @@ export default function AdminOnboarding() {
                       <Chip c={ASH}>{q.kind}</Chip>
                       {q.system ? <Chip c={BLUE}>built-in</Chip> : <Chip c={AMBER}>custom</Chip>}
                       {q.engineKey && <Chip c={ASH}>→ {q.engineKey}</Chip>}
+                      {/* WHICH INTAKE. A question with no scope is asked of
+                          both, and saying "both" out loud is worth a chip:
+                          the wizard forks, so "who sees this" is now a
+                          property of every question and an unlabelled one
+                          reads as an oversight rather than a decision. */}
+                      <Chip c={q.personas?.length ? LIME : ASH}>
+                        {q.personas?.length ? q.personas.join(" + ") : "both intakes"}
+                      </Chip>
                       {q.required && <Chip c={ASH}>required</Chip>}
                     </div>
                     <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{q.title}</div>
@@ -183,6 +199,7 @@ function draftToBody(d: Draft): Record<string, unknown> {
     min: d.kind === "number" ? d.min : undefined, max: d.kind === "number" ? d.max : undefined,
     step: d.kind === "number" ? d.step : undefined, defaultValue: d.defaultValue,
     required: d.required, enabled: d.enabled, order: d.order,
+    engineKey: d.engineKey ?? undefined, personas: d.personas,
   };
 }
 
@@ -211,6 +228,62 @@ function QuestionEditor({ draft, busy, onSave, onCancel }: { draft: Draft; busy:
         </Field>
       )}
       {lockedKind && <Mono s={{ fontSize: fs.micro, display: "block", margin: "4px 0 8px" }} c={ASH}>type: {d.kind}{d.engineKey ? ` – feeds → ${d.engineKey}` : ""} (locked — built-in)</Mono>}
+
+      {/* ── WHO IS ASKED ──────────────────────────────────────────────────
+          The wizard forks on the first question, so every question after it
+          belongs to one intake or both. A BUILT-IN's scope is the code's and is
+          shown rather than offered: stored rows replace the defaults for the
+          client, so a row that could widen a built-in would put every tracker
+          back on the goal question with nothing here to show why. */}
+      {lockedKind ? (
+        <Mono s={{ fontSize: fs.micro, display: "block", margin: "0 0 8px" }} c={ASH}>
+          asked of: {d.personas.length ? d.personas.join(" + ") : "both intakes"} (locked — built-in)
+        </Mono>
+      ) : (
+        <Field label="Asked of">
+          <div style={{ display: "flex", gap: 6 }}>
+            {(["casual", "athlete"] as const).map((p) => {
+              const on = d.personas.includes(p);
+              return (
+                <button
+                  key={p}
+                  className="pressable"
+                  onClick={() => set({ personas: on ? d.personas.filter((x) => x !== p) : [...d.personas, p] })}
+                  style={{ ...smallBtn, borderColor: on ? LIME : LINE, color: txt(on ? LIME : ASH) }}
+                >
+                  {p === "casual" ? "just tracking" : "training for a goal"}
+                </button>
+              );
+            })}
+          </div>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
+            {d.personas.length === 0 || d.personas.length === 2
+              ? "asked of both intakes"
+              : `asked only of the ${d.personas[0] === "casual" ? "tracking" : "goal"} intake`}
+          </Mono>
+        </Field>
+      )}
+
+      {/* ── WHAT READS IT ─────────────────────────────────────────────────
+          A custom question is informational by default. Keying it to an engine
+          field is what lets a retired built-in be re-added: `experience` and
+          `sleep` stopped shipping when the app started measuring them, and an
+          operator who wants to ask anyway can. It cannot reach the volume
+          profile whatever is chosen — questionnaireFromAnswers names the fields
+          it writes — so what an engine key buys is the PLAN RECOMMENDER. */}
+      {!lockedKind && (
+        <Field label="Feeds (optional)">
+          <Select value={d.engineKey ?? ""} onChange={(e) => set({ engineKey: e.target.value || null })}>
+            <option value="">nothing — informational only</option>
+            {ASSIGNABLE_ENGINE_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+          </Select>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
+            {d.engineKey
+              ? "shapes the recommended plan. It cannot write to the athlete's model — those fields are measured."
+              : "stored with the athlete's answers and read by nothing."}
+          </Mono>
+        </Field>
+      )}
 
       {isPersonaOrGoal ? (
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
