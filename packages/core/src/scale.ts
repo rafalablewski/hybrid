@@ -682,6 +682,48 @@ export const kernPad = (track: number): number => Math.max(0, -track);
 export const kernLead = (track: number): number => Math.max(0, track);
 
 /**
+ * THE THIRD TRACKING, and the only one in the system that is SEMANTIC rather
+ * than OPTICAL — `trackOtp(fs.display)` → 8.1.
+ *
+ * `tracking(size)` is a correction for how a size READS; `trackFigure(size)` is
+ * the same argument for figures. Both answer "what does this need to look
+ * right". This one answers a different question: a one-time code is SIX
+ * DISCRETE DIGITS, to be read and checked one at a time against something on
+ * another screen, and the air between them is what says so. It is the content,
+ * not a refinement of it — which is why a `tracking()` rung would delete the
+ * thing the spacing is saying, and why the code fields carried a hand-typed
+ * number for as long as the system had no name for this.
+ *
+ * IT HAD THREE SPELLINGS, which is the same failure `trackFigure` was made for
+ * one axis over. Three fields, one intent, and no two agreeing:
+ *
+ *       site                       was          in em
+ *       mobile login (fs.display)  8dp          0.286em
+ *       web login (fs.headline)    .3em         0.300em
+ *       mobile MFA (fs.subtitle)   3dp          0.167em
+ *
+ * The first two are the same decision written twice; the third is HALF of it,
+ * and nothing about that field justifies half — it is a hand-typed number that
+ * looked right in isolation, which is exactly what a shared constant exists to
+ * stop. 0.29em is the band the two agreeing sites sit in, so adopting it moves
+ * them by 0.1dp and 0.2px — under the rounding — and moves the MFA field 3 →
+ * 5.2dp, which is the one visible change and the point of doing this at all.
+ *
+ * AN EM, for the reason every tracking here is an em: the three fields are set
+ * at three different sizes (28, 22, 18), so one dp cannot serve them and one
+ * ratio can. Rounded to 0.1dp, like its two siblings.
+ *
+ * POSITIVE, so it is `kernLead`'s case and not `kernPad`'s: the tracking lands
+ * after the last digit as real space inside the box, which never clips and does
+ * pull a CENTRED code off centre. A centred code field pads its leading edge by
+ * `kernLead(trackOtp(size))`; a left-aligned one (the MFA field, which shares a
+ * row with its Confirm button) needs nothing — there the trailing gap is just a
+ * slightly wider right pad inside a box that already has one.
+ */
+export const TRACK_OTP_EM = 0.29;
+export const trackOtp = (size: number): number => Math.round(size * TRACK_OTP_EM * 10) / 10;
+
+/**
  * A FIGURE'S NUMERALS ARE TABULAR — the third figure axis, and the one that had
  * a rule and no owner.
  *

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { stepUpRequired, isValidTotpCode, STATE_OPACITY } from "@hybrid/core";
+import { stepUpRequired, isValidTotpCode, STATE_OPACITY, kernLead, trackOtp } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, RED, ON_ACCENT, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
@@ -163,7 +163,7 @@ export default function LoginPage() {
               autoFocus
               aria-label="Authenticator code"
               placeholder="000000"
-              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: OTP_TRACK, textAlign: "center", paddingLeft: `calc(14px + ${OTP_TRACK})` }}
+              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: trackOtp(fs.headline), textAlign: "center", paddingLeft: FIELD_PAD_X + kernLead(trackOtp(fs.headline)) }}
             />
             <div role="alert">
               {error && (
@@ -287,24 +287,15 @@ export default function LoginPage() {
   );
 }
 
-/**
- * THE ONE-TIME-CODE TRACKING — semantic, not optical: it says "six discrete
- * digits, read one at a time".
- *
- * `paddingLeft` beside it is not a nudge. A tracking lands after the LAST
- * character too, so the box being centred is wider than the ink inside it and a
- * centred code sits half a gap LEFT of centre. Padding the leading edge by the
- * same tracking matches the two ends. Mobile spells it `kernLead(OTP_TRACK)`;
- * here the field's own 14px of padding has to be carried along, and the
- * longhand must come after the `...inputStyle` spread to beat its shorthand.
- */
-const OTP_TRACK = ".3em";
+/** The field's own horizontal padding, named so the code field can carry it
+ *  along when it pads its leading edge. */
+const FIELD_PAD_X = 14;
 
 const inputStyle = {
   ...mono,
   fontSize: fs.bodyLg,
   width: "100%",
-  padding: "13px 14px",
+  padding: `13px ${FIELD_PAD_X}px`,
   borderRadius: 12,
   background: INK2,
   color: CHALK,
