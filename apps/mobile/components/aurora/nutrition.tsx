@@ -90,7 +90,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { F, FIXED_FONT_SCALE, HIT_SLOP, MAX_FONT_SCALE, PressScale, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, HIT_SLOP, MAX_FONT_SCALE, PressScale, PressScale as Pressable, fs, kernPad, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { useListMotion } from "../../lib/list-motion";
 import { usePublishNavSurface } from "../../lib/nav-surface";
 import { RecipeShareCard, shareCardImage } from "../../lib/share";
@@ -2179,7 +2179,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
               <Pressable onPress={() => stepPortion(-1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), color: txt(C, C.lime) }}>–</Text></Pressable>
               <View style={{ alignItems: "center" }}>
-                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.takeover, fontSize: 30, lineHeight: leading(30, "flush"), letterSpacing: trackFigure(30), color: C.chalk, padding: 0 }} />
+                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.takeover, fontSize: 30, lineHeight: leading(30, "flush"), letterSpacing: trackFigure(30), color: C.chalk, padding: 0, paddingRight: kernPad(trackFigure(30)) }} />
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={ty(C, "overline")}>{portionUnitLabel(portionUnitActive)}</Text>
               </View>
               <Pressable onPress={() => stepPortion(1)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
@@ -2323,7 +2323,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <View key={tile.k} style={{ width: "47.5%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: tile.color }}>{tile.label}</Text>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, marginTop: 4 }}>
-              <TextInput value={f[tile.k]} onChangeText={(v) => setF((s) => ({ ...s, [tile.k]: v }))} keyboardType="numeric" placeholder="0" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} accessibilityLabel={tile.label} style={{ flex: 1, fontFamily: F.black, fontSize: 27, letterSpacing: tracking(27), color: C.chalk, padding: 0 }} />
+              <TextInput value={f[tile.k]} onChangeText={(v) => setF((s) => ({ ...s, [tile.k]: v }))} keyboardType="numeric" placeholder="0" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} accessibilityLabel={tile.label} style={{ flex: 1, fontFamily: F.black, fontSize: 27, letterSpacing: tracking(27), color: C.chalk, padding: 0, paddingRight: kernPad(tracking(27)) }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{tile.unit}</Text>
             </View>
           </View>
@@ -2739,7 +2739,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 8 }}>
           {fixed != null
             ? <Text style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fixed}</Text>
-            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, padding: 0 }} />}
+            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, padding: 0, paddingRight: kernPad(tracking(fs.display)) }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>g</Text>
         </View>
       </View>
@@ -2771,7 +2771,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* Title plate — Name + the personal Subname, one surface. */}
         <LinearGradient colors={[withAlpha(C.lime, 0.07), C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD }}>
           <Text style={{ ...ty(C, "overline"), marginBottom: 8  }}>{t("w.recovery.nutrition.foodName")}</Text>
-          <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: tracking(27), color: C.chalk, padding: 0 }} />
+          <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: tracking(27), color: C.chalk, padding: 0, paddingRight: kernPad(tracking(27)) }} />
           <View style={{ height: 1, backgroundColor: C.line, marginVertical: 16 }} />
           <TextInput value={createForm.subname} onChangeText={(v) => setCF({ subname: v })} placeholder={t("w.recovery.nutrition.subnamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.subname")} style={{ fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash, padding: 0 }} />
         </LinearGradient>
@@ -2781,7 +2781,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 24 }}>
           {fromComps
             ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{compTotals.kcal}</Text>
-            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0 }} />}
+            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, paddingRight: kernPad(trackFigure(fs.stat)) }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, letterSpacing: tracking(fs.body, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
         </View>
         <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.calorie")}</Text>

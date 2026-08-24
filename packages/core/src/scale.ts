@@ -602,6 +602,128 @@ export const TRACK_FIGURE_EM = -0.035;
 export const trackFigure = (size: number): number => Math.round(size * TRACK_FIGURE_EM * 10) / 10;
 
 /**
+ * THE PAD A TIGHTENED FIGURE NEEDS BACK — because a tracking is applied after
+ * the LAST glyph too, and a text field clips.
+ *
+ * `letterSpacing` is not "space BETWEEN characters". On every surface this app
+ * ships to it is kerning attached to EVERY character of the run, the final one
+ * included — iOS `NSKernAttributeName`, Android `TextView.setLetterSpacing`,
+ * CSS `letter-spacing` — so a run of n glyphs LAYS OUT at
+ *
+ *     Σ advances + n × track
+ *
+ * and still DRAWS out to `Σ advances + (n−1) × track`. With a NEGATIVE track
+ * the ink ends `|track|` past the right edge of the box that was measured for
+ * it. The tighter the figure, the further past.
+ *
+ * On a `Text` that costs nothing you can see: nothing clips a text node, so the
+ * last glyph overhangs by a point or two into space the layout was going to
+ * leave empty anyway. On a `TextInput` it is a bug you can photograph. A text
+ * field is a scrolling content view clipped to its own bounds, so the overhang
+ * is CUT — and at `trackFigure(fs.stat)`, −1.7dp, the app's largest figure and
+ * the one the workout logger puts under the cursor, that is a flat vertical
+ * shave down the right side of the last digit. The set editor drew `20 kg × 10`
+ * with both zeroes sliced, and the unit label beside each sat 1.7dp too close,
+ * which is the same defect read from the other end.
+ *
+ * IT ONLY SHOWS WHERE THE FIELD IS SIZED TO ITS CONTENT — an auto-width figure,
+ * or a `flex: 1` one whose value has filled it. A field with room to spare hides
+ * it entirely, which is why the same style clipped in the logger and looked
+ * perfect in the nutrition portion field at `minWidth: 96` until somebody typed
+ * a fourth digit. That is the argument for fixing it at the STYLE rather than
+ * per screen: whether a given field clips today is a property of what has been
+ * typed into it.
+ *
+ * The give-back is exact rather than a fudge — pad the trailing edge by the
+ * kern the layout added and never drew, and the ink lands on the box edge:
+ *
+ *     letterSpacing: trackFigure(fs.stat),
+ *     paddingRight: kernPad(trackFigure(fs.stat)),
+ *
+ * ZERO FOR A POSITIVE TRACK, and that is not an oversight. A positive track
+ * leaves a real trailing GAP inside the box, so nothing is clipped; what it
+ * breaks is CENTRING (the one-time-code fields, whose 8dp of air pushes the
+ * digits half a gap left of centre), and the compensation for that goes on the
+ * OTHER edge. Different defect, different remedy, not this function's business.
+ */
+export const kernPad = (track: number): number => Math.max(0, -track);
+
+/**
+ * THE SAME KERN FROM THE OTHER END — a POSITIVE tracking is not clipped, it is
+ * OFF CENTRE, and the give-back goes on the leading edge.
+ *
+ * Same fact as `kernPad`, opposite sign, and it took the sweep for that one to
+ * find it. A positive `letterSpacing` also lands after the LAST character, but
+ * there it adds real space INSIDE the box rather than pushing ink outside it —
+ * so nothing is ever cut. What breaks instead is centring, and only centring:
+ * the box being centred is `Σ advances + n × track` while the INK inside it
+ * stops `track` short of the right edge, so a centred run sits `track / 2` LEFT
+ * of where it looks like it should.
+ *
+ * The app has exactly one shape that does this, and it is the shape where being
+ * a few dp off centre is most visible: THE ONE-TIME-CODE FIELD. Six digits,
+ * centred, tracked wide on purpose — the tracking is semantic there, saying
+ * "these are discrete digits, read them one at a time", which is why it is the
+ * one place `tracking(size)` is deliberately not used. At the mobile field's 8dp
+ * that is 4dp of drift on a six-character string; the web field's `.3em` at
+ * `fs.headline` is about 3px. Small, constant, and exactly the kind of thing
+ * that reads as "slightly wrong" without anyone locating it.
+ *
+ * Pad the LEADING edge by the same tracking and the two ends match, which puts
+ * the ink back in the middle of the box:
+ *
+ *     letterSpacing: OTP_TRACK,
+ *     paddingLeft: kernLead(OTP_TRACK),
+ *
+ * Zero for a negative track — that one is `kernPad`'s, and it is a clip rather
+ * than a drift. The pair covers the whole of it: whichever edge the trailing
+ * kern stole from, give it back there.
+ */
+export const kernLead = (track: number): number => Math.max(0, track);
+
+/**
+ * THE THIRD TRACKING, and the only one in the system that is SEMANTIC rather
+ * than OPTICAL — `trackOtp(fs.display)` → 8.1.
+ *
+ * `tracking(size)` is a correction for how a size READS; `trackFigure(size)` is
+ * the same argument for figures. Both answer "what does this need to look
+ * right". This one answers a different question: a one-time code is SIX
+ * DISCRETE DIGITS, to be read and checked one at a time against something on
+ * another screen, and the air between them is what says so. It is the content,
+ * not a refinement of it — which is why a `tracking()` rung would delete the
+ * thing the spacing is saying, and why the code fields carried a hand-typed
+ * number for as long as the system had no name for this.
+ *
+ * IT HAD THREE SPELLINGS, which is the same failure `trackFigure` was made for
+ * one axis over. Three fields, one intent, and no two agreeing:
+ *
+ *       site                       was          in em
+ *       mobile login (fs.display)  8dp          0.286em
+ *       web login (fs.headline)    .3em         0.300em
+ *       mobile MFA (fs.subtitle)   3dp          0.167em
+ *
+ * The first two are the same decision written twice; the third is HALF of it,
+ * and nothing about that field justifies half — it is a hand-typed number that
+ * looked right in isolation, which is exactly what a shared constant exists to
+ * stop. 0.29em is the band the two agreeing sites sit in, so adopting it moves
+ * them by 0.1dp and 0.2px — under the rounding — and moves the MFA field 3 →
+ * 5.2dp, which is the one visible change and the point of doing this at all.
+ *
+ * AN EM, for the reason every tracking here is an em: the three fields are set
+ * at three different sizes (28, 22, 18), so one dp cannot serve them and one
+ * ratio can. Rounded to 0.1dp, like its two siblings.
+ *
+ * POSITIVE, so it is `kernLead`'s case and not `kernPad`'s: the tracking lands
+ * after the last digit as real space inside the box, which never clips and does
+ * pull a CENTRED code off centre. A centred code field pads its leading edge by
+ * `kernLead(trackOtp(size))`; a left-aligned one (the MFA field, which shares a
+ * row with its Confirm button) needs nothing — there the trailing gap is just a
+ * slightly wider right pad inside a box that already has one.
+ */
+export const TRACK_OTP_EM = 0.29;
+export const trackOtp = (size: number): number => Math.round(size * TRACK_OTP_EM * 10) / 10;
+
+/**
  * A FIGURE'S NUMERALS ARE TABULAR — the third figure axis, and the one that had
  * a rule and no owner.
  *

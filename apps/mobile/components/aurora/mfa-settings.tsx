@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { isValidTotpCode , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackOtp, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { APill, ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
 import { withAlpha } from "./field";
@@ -165,7 +165,7 @@ export default function MfaSettings() {
                     placeholder="000000"
                     placeholderTextColor={C.ash}
                     accessibilityLabel="Authenticator code"
-                    style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: 3, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: trackOtp(fs.subtitle), color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
                   />
                   <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? STATE_OPACITY.busy : 1 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>Confirm</Text>

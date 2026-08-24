@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { stepUpRequired, isValidTotpCode, STATE_OPACITY } from "@hybrid/core";
+import { stepUpRequired, isValidTotpCode, STATE_OPACITY, kernLead, trackOtp } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, RED, ON_ACCENT, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
@@ -163,7 +163,7 @@ export default function LoginPage() {
               autoFocus
               aria-label="Authenticator code"
               placeholder="000000"
-              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: ".3em", textAlign: "center" }}
+              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: trackOtp(fs.headline), textAlign: "center", paddingLeft: FIELD_PAD_X + kernLead(trackOtp(fs.headline)) }}
             />
             <div role="alert">
               {error && (
@@ -287,11 +287,15 @@ export default function LoginPage() {
   );
 }
 
+/** The field's own horizontal padding, named so the code field can carry it
+ *  along when it pads its leading edge. */
+const FIELD_PAD_X = 14;
+
 const inputStyle = {
   ...mono,
   fontSize: fs.bodyLg,
   width: "100%",
-  padding: "13px 14px",
+  padding: `13px ${FIELD_PAD_X}px`,
   borderRadius: 12,
   background: INK2,
   color: CHALK,
