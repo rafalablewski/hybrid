@@ -863,7 +863,11 @@ describe("geometry", () => {
     //   a raw-radius linear bar under the % that already said it — the reading
     //   is the kit's Ring around the avatar now, and the bar's radius went
     //   with the bar.
-    burnDown(hits(/borderRadius:\s*\d/g), 114, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 114 → 113: History's Trend chart stopped being a bar chart (the summary's
+    //   own no-bars rule, applied to the reading it was written next to) — the
+    //   bars' raw corner went with the bars; the marks that replaced them are
+    //   circles on RADIUS.pill.
+    burnDown(hits(/borderRadius:\s*\d/g), 113, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 

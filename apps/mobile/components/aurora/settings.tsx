@@ -86,6 +86,10 @@ export default function AuroraSettings({ landOn }: {
   const isClient = role === "client";
   // Drill-in navigation: null = the category list; a category id = its sub-page.
   const [cat, setCat] = useState<SettingsCategoryId | null>(landOn ?? null);
+  // One level deeper — the FIELD screens (Instagram's grammar): an input never
+  // sits inline in a list, it gets a row, and the row opens a screen that is
+  // only that input. Password / erase / delete each own one.
+  const [sub, setSub] = useState<null | "password" | "erase" | "delete">(null);
   const [query, setQuery] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -214,29 +218,19 @@ export default function AuroraSettings({ landOn }: {
         );
       case "security": {
         const emailProvider = !acct.provider || acct.provider === "email";
-        const pw = passwordStrength(acct.newPw);
-        const pwColor = txt(C, pw.score >= 4 ? C.lime : pw.score === 3 ? C.blue : pw.score === 2 ? C.amber : C.red);
         return (
       <>
         <MfaSettings />
         <Section label={t("w.account.settings.sec-login-recovery")}>
-          <Label color={C.ash} tight>{t("w.account.settings.change-password")}</Label>
+          {/* The password FORM does not live in this list — the row does, and
+              the row opens the one-field screen (the field-screen grammar). */}
           {!emailProvider ? (
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
-          ) : (
             <>
-              <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
-              {acct.newPw.length > 0 && (
-                <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
-                  <View style={{ flexDirection: "row", gap: 4 }}>
-                    {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
-                  </View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
-                </View>
-              )}
-              <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 12 }} />
-              {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
+              <Label color={C.ash} tight>{t("w.account.settings.change-password")}</Label>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
             </>
+          ) : (
+            <DrillRow first title={t("w.account.settings.change-password")} onPress={() => motion(() => setSub("password"))} />
           )}
           <Label color={C.ash} top>{t("w.account.settings.connected-account")}</Label>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
@@ -331,43 +325,13 @@ export default function AuroraSettings({ landOn }: {
         <Section label={t("common.signout")}>
           <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 12 }} />
         </Section>
+        {/* The destructive flows are ROWS, not inline forms (the field-screen
+            grammar): a type-to-confirm input sitting open in a list is armed
+            the moment you scroll past it. Each row opens a screen that is only
+            that decision — its explanation, its one field, its one button. */}
         <Section label={t("w.account.settings.erase-all")} tone={C.red}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.resetBody")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeReset")}</Text>
-          <TextInput
-            value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
-            accessibilityLabel={t("settings.typeReset")}
-            autoCapitalize="characters" autoCorrect={false}
-            style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
-          />
-          {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>}
-          <APill
-            label={t("w.account.settings.erase-everything")}
-            color={C.red}
-            state={busy ? "saving" : "idle"}
-            disabled={!armed || busy}
-            onPress={reset}
-            style={{ marginTop: 12 }}
-          />
-        </Section>
-        <Section label={t("settings.deleteTitle")} tone={FEEDBACK.error.text}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.deleteBody")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeDelete")}</Text>
-          <TextInput
-            value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
-            accessibilityLabel={t("settings.typeDelete")}
-            autoCapitalize="characters" autoCorrect={false}
-            style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
-          />
-          {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{delError}</Text>}
-          <APill
-            label={t("settings.deleteAccount")}
-            color={C.red}
-            state={deleting ? "saving" : "idle"}
-            disabled={!armedDelete || deleting}
-            onPress={del}
-            style={{ marginTop: 12 }}
-          />
+          <DrillRow first danger title={t("w.account.settings.erase-all")} onPress={() => motion(() => setSub("erase"))} />
+          <DrillRow danger title={t("settings.deleteTitle")} onPress={() => motion(() => setSub("delete"))} />
         </Section>
         <Section label={t("legal.section")}>
           <LegalLinks align="left" />
@@ -435,6 +399,81 @@ export default function AuroraSettings({ landOn }: {
 
   const active = cat ? SETTINGS_CATEGORIES[cat] : null;
   const results = matchSettings(query);
+
+  // ── FIELD SCREEN ── one decision, alone on its own screen, one level below
+  // the category (Instagram's grammar: a list holds rows; an input holds a
+  // screen). Back returns to the category that opened it.
+  if (active && sub) {
+    const titles = { password: t("w.account.settings.change-password"), erase: t("w.account.settings.erase-all"), delete: t("settings.deleteTitle") } as const;
+    const danger = sub !== "password";
+    const pw = passwordStrength(acct.newPw);
+    const pwColor = txt(C, pw.score >= 4 ? C.lime : pw.score === 3 ? C.blue : pw.score === 2 ? C.amber : C.red);
+    return (
+      <AuroraScreen
+        hero={{ rank: "title", title: titles[sub], accent: danger ? C.red : undefined }}
+        back={() => motion(() => setSub(null))}
+        backLabel={active.title}
+      >
+        {sub === "password" && (
+          <ACard>
+            <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" autoFocus />
+            {acct.newPw.length > 0 && (
+              <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", gap: 4 }}>
+                  {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
+                </View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
+              </View>
+            )}
+            <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 12 }} />
+            {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
+          </ACard>
+        )}
+        {sub === "erase" && (
+          <ACard>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.resetBody")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeReset")}</Text>
+            <TextInput
+              value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
+              accessibilityLabel={t("settings.typeReset")}
+              autoCapitalize="characters" autoCorrect={false}
+              style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
+            />
+            {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>}
+            <APill
+              label={t("w.account.settings.erase-everything")}
+              color={C.red}
+              state={busy ? "saving" : "idle"}
+              disabled={!armed || busy}
+              onPress={reset}
+              style={{ marginTop: 12 }}
+            />
+          </ACard>
+        )}
+        {sub === "delete" && (
+          <ACard>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.deleteBody")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeDelete")}</Text>
+            <TextInput
+              value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
+              accessibilityLabel={t("settings.typeDelete")}
+              autoCapitalize="characters" autoCorrect={false}
+              style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
+            />
+            {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{delError}</Text>}
+            <APill
+              label={t("settings.deleteAccount")}
+              color={C.red}
+              state={deleting ? "saving" : "idle"}
+              disabled={!armedDelete || deleting}
+              onPress={del}
+              style={{ marginTop: 12 }}
+            />
+          </ACard>
+        )}
+      </AuroraScreen>
+    );
+  }
 
   // ── SUB-PAGE ── a focused category with a back button.
   if (active) {
@@ -520,6 +559,24 @@ export default function AuroraSettings({ landOn }: {
         </View>
       )}
     </AuroraScreen>
+  );
+}
+
+/** A row that opens a FIELD SCREEN — the drill grammar one level below the
+ *  category rows: a title (red when destructive) and the chevron, no icon
+ *  tile. It exists so an input never has to sit open inside a list. */
+function DrillRow({ title, onPress, danger, first }: { title: string; onPress: () => void; danger?: boolean; first?: boolean }) {
+  const { palette: C } = useTheme();
+  return (
+    <PressScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 12, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
+    >
+      <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: danger ? (txt(C, C.red) as string) : C.chalk }}>{title}</Text>
+      <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
+    </PressScale>
   );
 }
 

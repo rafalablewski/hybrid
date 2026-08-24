@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { View, Text } from "react-native";
+import { RecapShareCard, recapShareText, shareCardImage } from "../../lib/share";
 import {
   fmtTonnage,
   fmtKm,
@@ -31,7 +32,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Chip, F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
-import { ACard, APressCard, ASegment, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
+import { ACard, APill, APressCard, ASegment, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -240,8 +241,32 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   const maxLoad = Math.max(1, ...weeks.flatMap((w) => w.days.map((d) => d.load)));
   const lime = txt(C, C.lime) as string;
 
+  // THE WEEK SUMMARY IS SHAREABLE. The current week's chapter already IS the
+  // summary (range, day marks, totals) — what it lacked was a way out of the
+  // app. The share captures the branded RecapShareCard (the full recap: deltas
+  // vs last week, top muscle, PRs) rather than screenshotting the chapter, so
+  // what leaves the app is the card designed to leave it. Same capture path as
+  // the session summary (lib/share shareCardImage), text fallback included.
+  const recap = useMemo(() => weeklyRecap(ctx.sessions, Date.now(), ctx.bw), [ctx.sessions, ctx.bw]);
+  const shareRef = useRef<View>(null);
+  const [sharing, setSharing] = useState(false);
+  const doShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      await shareCardImage(shareRef, recapShareText(recap, t, ctx.units), t("histview.shareWeek"));
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
+      {/* The capture node — rendered off-screen at full opacity 0 so captureRef
+          has real pixels to grab (the summary's idiom). */}
+      <View pointerEvents="none" style={{ position: "absolute", left: -10000, top: 0, opacity: 0 }}>
+        <RecapShareCard ref={shareRef} recap={recap} t={t} units={ctx.units} />
+      </View>
       {weeks.map((w) => (
         /* The current week keeps its lime-tinted hairline — that is the one
            value here that is genuinely this card's, so it is the one thing
@@ -251,10 +276,21 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
           </View>
-          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
+          {/* DAY MARKS, not a bar chart. A day trained is a discrete EVENT, so
+              it draws as a mark on a path (the session summary's instrument
+              rule: a bar is a rectangle standing in for a number and says
+              nothing about what kind of number it is). Two mark sizes carry the
+              load level, hue carries the kind (chartreuse lifting, teal
+              cardio-only), and a rest day is a faint tick — same encoding as
+              the agenda's week strip, so the two week readings agree. */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 22, marginTop: 12, marginBottom: 4 }}>
             {w.days.map((d) => {
-              const h = d.load <= 0 ? 3 : Math.max(6, Math.round((d.load / maxLoad) * 34));
-              return <View key={d.dateKey} style={{ flex: 1, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: d.load <= 0 ? withAlpha(C.ash, ALPHA.solid) : d.hasCardio && !d.hasStrength ? C.blue : C.lime }} />;
+              const size = d.load <= 0 ? 4 : d.load / maxLoad > 0.5 ? 10 : 7;
+              return (
+                <View key={d.dateKey} style={{ flex: 1, alignItems: "center" }}>
+                  <View style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: d.load <= 0 ? withAlpha(C.ash, ALPHA.line) : d.hasCardio && !d.hasStrength ? C.blue : C.lime }} />
+                </View>
+              );
             })}
           </View>
           <View style={{ flexDirection: "row", gap: 5 }}>
@@ -265,6 +301,11 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             <Chip color={C.ash}>{`${w.totals.sessions} ${t("histview.sessionsLbl")}`}</Chip>
             {w.totals.prs > 0 && <Chip color={C.lime}>{`↑ ${w.totals.prs} PR`}</Chip>}
           </View>
+          {/* The way OUT of the app for this week's story — current week only:
+              a past chapter is a record, not a report you'd post. */}
+          {w.isCurrent && w.totals.sessions > 0 && (
+            <APill label={t("histview.shareWeek")} size="compact" variant="soft" state={sharing ? "saving" : "idle"} onPress={() => void doShare()} style={{ marginTop: 8 }} />
+          )}
           {w.sessions.map((s) => {
             const key = localDayKey(s.startedAt);
             const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
@@ -390,13 +431,31 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
             {buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 16, gap: 6 }}>
-          {buckets.buckets.map((b, i) => (
-            <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
-              <View style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, backgroundColor: i === buckets.peakIndex ? C.lime : C.line }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
-            </View>
-          ))}
+        {/* A RANGE OF MARKS, not a bar chart — the session summary's own rule
+            ("a bar is the least specific picture available"), finally applied
+            to the reading it was written next to. Each bucket is one mark on a
+            shared baseline, its height the count; the peak carries its figure
+            so the one number worth reading is read, not measured by eye. A
+            zero bucket sits ON the line as a faint tick — absence drawn as
+            absence, not as a 4dp stub pretending to be a quantity. */}
+        <View style={{ height: 118, marginTop: 16 }}>
+          <View style={{ position: "absolute", left: 0, right: 0, bottom: 21, height: 1, backgroundColor: C.line }} />
+          <View style={{ flexDirection: "row", height: "100%" }}>
+            {buckets.buckets.map((b, i) => {
+              const peak = i === buckets.peakIndex && b.value > 0;
+              const size = b.value <= 0 ? 4 : peak ? 11 : 8;
+              const rise = b.value <= 0 ? 0 : Math.round((b.value / maxVal) * 74);
+              return (
+                <View key={i} style={{ flex: 1, alignItems: "center" }}>
+                  {peak && (
+                    <Text style={{ position: "absolute", bottom: 21 + rise + 12, fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) as string }}>{b.value}</Text>
+                  )}
+                  <View style={{ position: "absolute", bottom: 21 + rise - size / 2, width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: b.value <= 0 ? withAlpha(C.ash, ALPHA.line) : peak ? C.lime : withAlpha(C.lime, ALPHA.rim) }} />
+                  <Text style={{ position: "absolute", bottom: 0, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
+                </View>
+              );
+            })}
+          </View>
         </View>
       </ACard>
 
