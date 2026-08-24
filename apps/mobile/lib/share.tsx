@@ -4,11 +4,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { ALPHA, RECIPE_TINT_COLOR, brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, funFactText, muscleLabelKey, strengthPrDelta, formatSportPace, formatSportDistance, type Recipe, type SessionPanel, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit, type Mark as MarkValue } from "@hybrid/core";
-import { C, F, fs, Kicker, TABULAR } from "./ui";
+import { C, F, fs, Kicker, TABULAR, leading, space, tracking, ty } from "./ui";
 import { Glyph } from "../components/aurora/icons";
 import { Mark } from "../components/aurora/mark";
 import { withAlpha } from "../components/aurora/field";
-import { RADIUS } from "../components/aurora/kit";
+import { useTheme } from "./theme";
+import { CARD_PAD, RADIUS } from "../components/aurora/kit";
 
 export const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -515,6 +516,9 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
 export type WeekSharePage = {
   /** Small mono tag beside the brand — WHICH page of the week this is. */
   tag: string;
+  /** THE FIRST ONE LEADS. The card sets it at display size and the rest as a
+   *  pair beneath, which is the hierarchy the screen it was captured from
+   *  uses: the week's own figure over the halves that make it up. */
   stats: { label: string; value: string }[];
   /** Named results under the figures (PR lifts, cardio records). */
   rows?: { name: string; value: string; pr?: boolean }[];
@@ -523,38 +527,83 @@ export type WeekSharePage = {
 };
 
 export const WeekPageShareCard = forwardRef<View, { page: WeekSharePage; t: (k: string) => string }>(
-  ({ page, t }, ref) => (
+  ({ page, t }, ref) => {
+    // THE LIVE PALETTE, not this file's back-compat `C`. The named type styles
+    // (`ty`) resolve their ink against a full ThemePalette, and the static
+    // object here carries only the raw colours — so a card that wants the same
+    // eyebrows as the screen it was captured from has to ask the theme for
+    // them. There is one theme, so nothing about the capture changes.
+    const P = useTheme().palette;
+    return (
     <View
       ref={ref}
       collapsable={false}
-      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), borderRadius: RADIUS.field, padding: 20 }}
+      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), borderRadius: RADIUS.card, padding: CARD_PAD }}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, letterSpacing: -1 }}>
+      {/* THE NAMEPLATE — the wordmark and what this card is, on one baseline
+          and on the card's two edges. Same row the widget's name occupies on
+          the screen this was captured from. */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking(fs.headline, "wordmark"), color: C.chalk }}>
           {brand.name}
           <Text style={{ color: C.lime }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.lime, letterSpacing: 2 }}>{page.tag.toUpperCase()}</Text>
+        <Text style={ty(P, "overline")}>{page.tag}</Text>
       </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
-        {page.stats.map((s) => <Stat key={s.label} label={s.label} value={s.value} />)}
-      </View>
-      {!!page.rows?.length && (
-        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-          {page.rows.slice(0, 4).map((r) => (
-            <View key={r.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
-                {r.pr ? <Glyph name="trophy" size={fs.bodyLg} color={C.lime} label={t("w.train.logger.newPr")} /> : null}
-                <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{r.name}</Text>
-              </View>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: r.pr ? C.lime : C.chalk }}>{r.value}</Text>
+
+      {/* THE FIGURES, IN THE SCREEN'S OWN HIERARCHY — the FIRST stat leads at
+          display size and the rest follow as a pair beneath it. Three equal
+          figures across one row is what this card used to draw, and it had two
+          faults: it flattened the week into three interchangeable facts, and
+          the longest of them wrapped, which put the three on three different
+          baselines. A card that is a screenshot of an argument should make the
+          same argument. */}
+      {page.stats[0] && (
+        <View style={{ marginTop: space.xl }}>
+          <Text
+            numberOfLines={1}
+            style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: tracking(fs.hero), color: C.chalk }]}
+          >
+            {page.stats[0].value}
+          </Text>
+          <Text style={[ty(P, "kicker"), { marginTop: space.xs }]}>{page.stats[0].label}</Text>
+        </View>
+      )}
+      {page.stats.length > 1 && (
+        <View style={{ flexDirection: "row", marginTop: space.lg }}>
+          {page.stats.slice(1).map((st, i) => (
+            <View key={st.label} style={{ flex: 1, alignItems: i === 0 ? "flex-start" : "flex-end" }}>
+              <Text
+                numberOfLines={1}
+                style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.display, lineHeight: leading(fs.display, "flush"), letterSpacing: tracking(fs.display), color: C.chalk }]}
+              >
+                {st.value}
+              </Text>
+              <Text style={[ty(P, "kicker"), { marginTop: space.xs }]}>{st.label}</Text>
             </View>
           ))}
         </View>
       )}
-      {!!page.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12 }}>{page.note}</Text>}
-    </View>
-  ),
+
+      {!!page.rows?.length && (
+        <View style={{ marginTop: space.xl, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line, paddingTop: space.sm }}>
+          {page.rows.slice(0, 4).map((r) => (
+            <View key={r.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.md, marginTop: space.sm }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs, flex: 1, minWidth: 0 }}>
+                {r.pr ? <Glyph name="trophy" size={fs.body} color={C.amber} label={t("w.train.logger.newPr")} /> : null}
+                <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
+              </View>
+              <Text style={[TABULAR, { fontFamily: F.monoBold, fontSize: fs.body, color: r.pr ? C.lime : C.chalk }]}>{r.value}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {!!page.note && (
+        <Text style={[TABULAR, { fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: space.lg }]}>{page.note}</Text>
+      )}
+      </View>
+    );
+  },
 );
 WeekPageShareCard.displayName = "WeekPageShareCard";
 

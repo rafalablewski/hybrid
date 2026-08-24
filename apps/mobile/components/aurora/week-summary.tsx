@@ -17,7 +17,11 @@ import {
   kgToUnit,
   formatCardioPr,
   strengthPrProof,
+  splitFigure,
   paceClock,
+  durationParts,
+  durationUnits,
+  formatDuration,
   LABEL_GAP,
   type EnduranceSlice,
   type GymWindow,
@@ -32,7 +36,8 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, Loading, MAX_FONT_SCALE, TABULAR, fs, leading, space, tracking, ty } from "../../lib/ui";
 import { MUSCLE_LABEL, WeekPageShareCard, recapShareText, shareCardImage, type WeekSharePage } from "../../lib/share";
-import { ACard, ASection, cardStack } from "./kit";
+import { ACard, cardStack } from "./kit";
+import { AWidget, WidgetFigure, WidgetRow, WidgetSeam, durationFigure } from "./widget";
 import { HeroAction, HeroScreen } from "./hero";
 import { SHARE_MARK } from "./share-mark";
 import { Glyph } from "./icons";
@@ -76,14 +81,6 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
 /** sec/km → "5:12 /km" for a cardio pace record. */
 const paceStr = (secPerKm: number) => `${paceClock(secPerKm)} /km`;
-
-/** 257 → "4h 17m". A week's training time in minutes is a number the athlete
- *  has to convert before it says anything. */
-const clock = (minutes: number) => {
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
-  return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
-};
 
 export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
   const { palette: C } = useTheme();
@@ -151,6 +148,9 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
   };
 
   const lime = txt(C, C.lime) as string;
+  // The athlete's own h/min, from their language — core holds the two keys so a
+  // screen cannot quietly pick a different pair.
+  const units_ = useMemo(() => durationUnits(t), [t]);
   // THE COMBINED DELTA COMES FROM THE VERDICT, not from the recap's own previous
   // week — so the figure and the sentence beneath it are measured from the same
   // place. It matters most while a week is still running: the verdict truncates
@@ -159,8 +159,8 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
   const hoursDelta = useMemo(() => {
     const f = verdict && !verdict.cold ? verdict.figures.find((x) => x.metric === "hours") : null;
     if (!f || Math.round(f.value - f.previous) === 0) return null;
-    return `${f.value > f.previous ? "+" : "−"}${clock(Math.abs(Math.round(f.value - f.previous)))}`;
-  }, [verdict]);
+    return `${f.value > f.previous ? "+" : "−"}${formatDuration(Math.abs(f.value - f.previous), units_)}`;
+  }, [verdict, units_]);
 
   return (
     <HeroScreen
@@ -202,132 +202,108 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
         </ACard>
       ) : (
         <>
-          {/* ══ THE WEEK, WHOLE ══════════════════════════════════════════════
-              On the ground, not in a card. A card is a container for a thing
-              among other things, and this is what the page IS. */}
-          <View style={{ marginTop: space.sm, marginBottom: space.xl }}>
-            <Text style={ty(C, "kicker")}>{t("recap.theWeek")}</Text>
-            <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: LABEL_GAP }}>
-              {/* The weight and its SIZE on one line, which is the shape the
-                  display-band floor is read off (design-tokens.test.ts). */}
-              <Text
-                maxFontSizeMultiplier={MAX_FONT_SCALE}
-                style={{
-                  ...TABULAR,
-                  fontFamily: F.takeover, fontSize: fs.stat,
-                  lineHeight: leading(fs.stat, "flush"),
-                  letterSpacing: tracking(fs.stat),
-                  color: C.chalk,
-                }}
-              >
-                {clock(recap.minutes)}
-              </Text>
-              {hoursDelta && (
-                <Text style={{ ...TABULAR, fontFamily: F.monoBold, fontSize: fs.body, color: hoursDelta.startsWith("+") ? lime : C.ash, marginLeft: "auto" }}>
-                  {hoursDelta}
-                </Text>
-              )}
-            </View>
-            <MetaRow
-              items={[
-                [sessionCount(recap.sessions), null],
-                [`${recap.activeDays} ${t("recap.activeDays")}`, null],
-              ]}
-            />
-
-            {/* THE ONE INTERPRETIVE LINE ON THIS SCREEN. Everything else here
-                measures; this concludes. It keeps the engine's own honesty: a
-                week with nothing before it makes no claim at all. */}
-            {verdict && (
-              <Text style={[ty(C, "editorial", C.ash), { marginTop: space.md }]}>{verdictLead(verdict, t)}</Text>
+          {/* ══ THE WEEK ═════════════════════════════════════════════════════
+              The clock, because time is the one measure both halves pay into —
+              a tonnage figure here tells a lifter-who-also-runs that their week
+              was about the barbell, every week. */}
+          <AWidget
+            name={t("recap.theWeek")}
+            // HOW OFTEN and OVER HOW MANY DAYS, on the name's own row. They are
+            // the two facts that size the clock beside them, and a ledger row
+            // of its own for a single count reads as a leftover.
+            meta={`${sessionCount(recap.sessions)}   ${recap.activeDays} ${t("recap.activeDays")}`}
+            style={cardStack}
+          >
+            <WidgetFigure rank="week" {...durationFigure(durationParts(recap.minutes), units_)} delta={hoursDelta} />
+            {week && (
+              <>
+                <WidgetSeam />
+                <View style={{ marginTop: space.lg }}>
+                  <WeekMarks days={week.days} max={maxLoad} dates />
+                </View>
+              </>
             )}
-          </View>
+          </AWidget>
 
-          {/* ══ THE SHAPE OF THE WEEK ════════════════════════════════════════ */}
-          {week && (
-            <ACard style={cardStack}>
-              <WeekMarks days={week.days} max={maxLoad} dates />
-            </ACard>
+          {/* THE ONE INTERPRETIVE LINE ON THIS SCREEN — on the ground between
+              the widgets, because it is prose and every widget holds data. It
+              keeps the engine's honesty: a week with nothing before it makes no
+              claim at all. */}
+          {verdict && (
+            <Text style={[ty(C, "editorial", C.ash), { marginTop: space.xs, marginBottom: space.xl, paddingHorizontal: space.xxs }]}>
+              {verdictLead(verdict, t)}
+            </Text>
           )}
 
           {/* ══ GYM ══════════════════════════════════════════════════════════ */}
           {split.gym.totals.efforts > 0 && (
-            <>
-              <ASection title={t("recap.gym")} />
-              <ACard style={cardStack}>
-                <HalfFigure
-                  figure={fmtTonnage(split.gym.totals.tonnage, units)}
-                  delta={gymDelta(split.gym, units)}
-                  meta={[
-                    [sessionCount(split.gym.totals.efforts), null],
-                    [clock(split.gym.totals.minutes), null],
-                  ]}
-                />
-                {gymLedger(recap, t).map((row, i) => (
-                  <FigureRow key={row.label} label={row.label} value={row.value} first={i === 0} />
-                ))}
-                {recap.prs.length > 0 && (
-                  <Records>
-                    {recap.prs.map((p) => {
-                      // WHAT IT BEAT. A record with no previous best beside it
-                      // is a figure you have to remember the old one to read.
-                      // The proof comes back STRUCTURED so its two halves can
-                      // take two colours rather than one client re-parsing a
-                      // joined string.
-                      const proof = strengthPrProof(p, units);
-                      return (
-                        <RecordRow
-                          key={p.lift}
-                          name={p.lift}
-                          value={fmtWeight(p.topLoad, units)}
-                          from={proof.kind === "climb" ? `${t("recap.from")} ${proof.from}` : null}
-                          gain={proof.kind === "climb" ? proof.delta : t(proof.kind === "first" ? "summary.firstEver" : "summary.morePrReps")}
-                          gainTone={proof.kind === "climb"}
-                        />
-                      );
-                    })}
-                  </Records>
-                )}
-              </ACard>
-            </>
+            <AWidget
+              name={t("recap.gym")}
+              meta={`${sessionCount(split.gym.totals.efforts)}   ${formatDuration(split.gym.totals.minutes, units_)}`}
+              style={cardStack}
+            >
+              <WidgetFigure {...splitUnit(fmtTonnage(split.gym.totals.tonnage, units))} delta={gymDelta(split.gym, units)} />
+              <WidgetSeam />
+              {gymLedger(split.gym, recap, t).map((row) => (
+                <WidgetRow key={row.label} label={row.label} value={row.value} />
+              ))}
+              {recap.prs.length > 0 && (
+                <Records>
+                  {recap.prs.map((p) => {
+                    // WHAT IT BEAT. A record with no previous best beside it is
+                    // a figure you have to remember the old one to read. The
+                    // proof comes back STRUCTURED so its two halves can take two
+                    // colours rather than one client re-parsing a joined string.
+                    const proof = strengthPrProof(p, units);
+                    return (
+                      <RecordRow
+                        key={p.lift}
+                        name={p.lift}
+                        value={fmtWeight(p.topLoad, units)}
+                        from={proof.kind === "climb" ? `${t("recap.from")} ${proof.from}` : null}
+                        gain={proof.kind === "climb" ? proof.delta : t(proof.kind === "first" ? "summary.firstEver" : "summary.morePrReps")}
+                        gainTone={proof.kind === "climb"}
+                      />
+                    );
+                  })}
+                </Records>
+              )}
+            </AWidget>
           )}
 
           {/* ══ ENDURANCE & SPORT ════════════════════════════════════════════ */}
           {split.endurance.totals.efforts > 0 && (
-            <>
-              <ASection title={t("recap.enduranceSport")} />
-              <ACard style={cardStack}>
-                <HalfFigure
-                  figure={split.endurance.totals.distanceKm > 0 ? fmtKm(split.endurance.totals.distanceKm) : clock(split.endurance.totals.minutes)}
-                  delta={enduranceDelta(split.endurance)}
-                  meta={[
-                    [effortCount(split.endurance.totals.efforts, t), null],
-                    [clock(split.endurance.totals.minutes), null],
-                  ]}
-                />
-                {/* WHAT IT WAS MADE OF — every discipline and sport by name,
-                    biggest first, each with its own drawn mark. This is the
-                    half that used to be a single "DISTANCE" row: a week of
-                    running, swimming and squash said "8.2 km" and named none of
-                    them. */}
-                {split.endurance.slices.map((s, i) => (
-                  <SliceRow key={s.id} slice={s} first={i === 0} />
-                ))}
-                {recap.cardioPrs.length > 0 && (
-                  <Records>
-                    {recap.cardioPrs.map((p) => (
-                      <RecordRow
-                        key={`${p.move}-${p.kind}`}
-                        name={p.move}
-                        value={p.kind === "pace" ? paceStr(p.value) : fmtKm(p.value)}
-                        gain={t(p.kind === "pace" ? "summary.fastestYet" : "summary.furthestYet")}
-                        a11y={formatCardioPr(p, t("summary.firstTime"))}
-                      />
-                    ))}
-                  </Records>
-                )}
-              </ACard>
-            </>
+            <AWidget
+              name={t("recap.enduranceSport")}
+              meta={`${effortCount(split.endurance.totals.efforts, t)}   ${formatDuration(split.endurance.totals.minutes, units_)}`}
+              style={cardStack}
+            >
+              <WidgetFigure
+                {...(split.endurance.totals.distanceKm > 0
+                  ? splitUnit(fmtKm(split.endurance.totals.distanceKm))
+                  : durationFigure(durationParts(split.endurance.totals.minutes), units_))}
+                delta={enduranceDelta(split.endurance)}
+              />
+              <WidgetSeam />
+              {/* WHAT IT WAS MADE OF — every discipline and sport by name,
+                  biggest first, each with its own drawn mark. This half used to
+                  be a single "DISTANCE" row: a week of running, swimming and
+                  squash said "8.2 km" and named none of them. */}
+              {split.endurance.slices.map((sl) => <SliceRow key={sl.id} slice={sl} />)}
+              {recap.cardioPrs.length > 0 && (
+                <Records>
+                  {recap.cardioPrs.map((p) => (
+                    <RecordRow
+                      key={`${p.move}-${p.kind}`}
+                      name={p.move}
+                      value={p.kind === "pace" ? paceStr(p.value) : fmtKm(p.value)}
+                      gain={t(p.kind === "pace" ? "summary.fastestYet" : "summary.furthestYet")}
+                      a11y={formatCardioPr(p, t("summary.firstTime"))}
+                    />
+                  ))}
+                </Records>
+              )}
+            </AWidget>
           )}
         </>
       )}
@@ -335,102 +311,29 @@ export default function AuroraWeekSummary({ startKey }: { startKey: string }) {
   );
 }
 
-/* ── A HALF'S FIGURE ─────────────────────────────────────────────────────── */
-
-/** One half's own figure, a rung under the week's, with its delta and the two
- *  facts that size it — how many times, and for how long. */
-function HalfFigure({ figure, delta, meta }: { figure: string; delta: string | null; meta: [string, string | null][] }) {
-  const { palette: C } = useTheme();
-  const lime = txt(C, C.lime) as string;
-  return (
-    <View style={{ marginBottom: space.md }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-        <Text
-          maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{
-            ...TABULAR,
-            fontFamily: F.takeover, fontSize: fs.display,
-            lineHeight: leading(fs.display, "flush"),
-            letterSpacing: tracking(fs.display),
-            color: C.chalk,
-          }}
-        >
-          {figure}
-        </Text>
-        {delta && (
-          <Text style={{ ...TABULAR, fontFamily: F.monoBold, fontSize: fs.body, color: delta.startsWith("+") ? lime : C.ash, marginLeft: "auto" }}>
-            {delta}
-          </Text>
-        )}
-      </View>
-      <MetaRow items={meta} />
-    </View>
-  );
-}
-
-/** Facts side by side, separated by LAYOUT rather than by a glyph — the house
- *  rule against joining inline items with a middot, honoured by not joining
- *  them into a string at all. */
-function MetaRow({ items }: { items: [string, string | null][] }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.md, marginTop: space.xs }}>
-      {items.filter(([v]) => !!v).map(([v]) => (
-        <Text key={v} style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{v}</Text>
-      ))}
-    </View>
-  );
-}
-
 /* ── THE LEDGERS ─────────────────────────────────────────────────────────── */
 
-/** The gym half's remaining figures, in core's reading order — and without the
- *  tonnage already set above them. */
-function gymLedger(recap: WeeklyRecap, t: (k: string) => string) {
+/**
+ * The gym half's remaining figures, in core's reading order — and without the
+ * tonnage already set above them.
+ *
+ * SETS AND LIFTS COME FROM THE HALF, not from the week's recap: `recap.sets`
+ * gives every block a grain and so counts a run as one set, which is right for
+ * a whole-week figure and wrong under a heading that says GYM.
+ */
+function gymLedger(gym: GymWindow, recap: WeeklyRecap, t: (k: string) => string) {
   const rows: { label: string; value: string }[] = [];
-  if (recap.sets > 0) rows.push({ label: t("summary.sets"), value: String(recap.sets) });
-  if (recap.lifts > 0) rows.push({ label: t("histview.liftsLbl"), value: String(recap.lifts) });
+  if (gym.totals.sets > 0) rows.push({ label: t("summary.sets"), value: String(gym.totals.sets) });
+  if (gym.totals.lifts > 0) rows.push({ label: t("histview.liftsLbl"), value: String(gym.totals.lifts) });
   if (recap.topMuscle) {
     rows.push({ label: t("summary.slide.muscle"), value: MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle });
   }
   return rows;
 }
 
-/**
- * A label and its figure on one line, hairline-separated.
- *
- * NOT the readiness ring's `LedgerRow`, and deliberately not named like it: that
- * one is a row of the DEFICIT ledger — an arc's swatch, its cause and what it
- * cost, at caption size — and the one-ring guard exists to stop a second copy of
- * it appearing. This is a plain figure row, and calling it the same thing would
- * have been the first step towards the confusion that guard is about.
- */
-function FigureRow({ label, value, first }: { label: string; value: string; first?: boolean }) {
-  const { palette: C } = useTheme();
-  return (
-    <View
-      accessible
-      accessibilityLabel={`${label}, ${value}`}
-      style={{
-        flexDirection: "row", alignItems: "baseline", justifyContent: "space-between",
-        gap: space.md, paddingVertical: space.ms,
-        borderTopWidth: first ? 0 : 1, borderTopColor: C.line,
-      }}
-    >
-      <Text style={ty(C, "kicker")}>{label}</Text>
-      <Text
-        maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ ...TABULAR, fontFamily: F.monoMed, fontSize: fs.bodyLg, color: C.chalk }}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 /** One discipline or sport: its own mark, its name, and what it was — the
  *  ground it covered where it covered any, and the time it took. */
-function SliceRow({ slice, first }: { slice: EnduranceSlice; first?: boolean }) {
+function SliceRow({ slice }: { slice: EnduranceSlice }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const name = slice.labelKey ? t(slice.labelKey) : (slice.label ?? "");
@@ -443,20 +346,19 @@ function SliceRow({ slice, first }: { slice: EnduranceSlice; first?: boolean }) 
   return (
     <View
       accessible
-      accessibilityLabel={[name, dist, clock(slice.minutes), pace].filter(Boolean).join(", ")}
+      accessibilityLabel={[name, dist, formatDuration(slice.minutes), pace].filter(Boolean).join(", ")}
       style={{
         flexDirection: "row", alignItems: "center", gap: space.md,
         paddingVertical: space.ms,
-        borderTopWidth: first ? 0 : 1, borderTopColor: C.line,
       }}
     >
       <Mark mark={slice.mark} size={fs.subtitle} color={sliceColor(C, slice)} />
       <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{name}</Text>
       <View style={{ alignItems: "flex-end" }}>
-        <Text style={{ ...TABULAR, fontFamily: F.monoMed, fontSize: fs.body, color: C.chalk }}>{dist ?? clock(slice.minutes)}</Text>
+        <Text style={{ ...TABULAR, fontFamily: F.monoMed, fontSize: fs.body, color: C.chalk }}>{dist ?? formatDuration(slice.minutes)}</Text>
         {(dist || pace) && (
           <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: LABEL_GAP }}>
-            {[dist ? clock(slice.minutes) : null, pace].filter(Boolean).join("   ")}
+            {[dist ? formatDuration(slice.minutes) : null, pace].filter(Boolean).join("   ")}
           </Text>
         )}
       </View>
@@ -541,8 +443,15 @@ function enduranceDelta(e: EnduranceWindow): string | null {
   }
   const raw = e.totals.minutes - e.previous.minutes;
   if (Math.round(raw) === 0) return null;
-  return `${raw > 0 ? "+" : "−"}${clock(Math.abs(Math.round(raw)))}`;
+  return `${raw > 0 ? "+" : "−"}${formatDuration(Math.abs(raw))}`;
 }
+
+/** A formatted figure as numerals + unit, through core's own splitter — so no
+ *  screen invents a second way to cut "9.0 t" in two. */
+const splitUnit = (formatted: string) => {
+  const [value, unit] = splitFigure(formatted);
+  return { value, unit };
+};
 
 const effortCount = (n: number, t: (k: string) => string) => `${n} ${t(n === 1 ? "recap.effort" : "recap.efforts")}`;
 
@@ -585,12 +494,12 @@ function sharePage(
   t: (k: string) => string,
 ): WeekSharePage {
   const stats = [
-    { label: t("w.home.week.lHours"), value: clock(recap.minutes) },
+    { label: t("w.home.week.lHours"), value: formatDuration(recap.minutes) },
     split.gym.totals.tonnage > 0 ? { label: t("summary.volumeMoved"), value: fmtTonnage(split.gym.totals.tonnage, units) } : null,
     split.endurance.totals.distanceKm > 0
       ? { label: t("w.analyze.stats.distance"), value: fmtKm(split.endurance.totals.distanceKm) }
       : split.endurance.totals.minutes > 0
-        ? { label: t("recap.enduranceSport"), value: clock(split.endurance.totals.minutes) }
+        ? { label: t("recap.enduranceSport"), value: formatDuration(split.endurance.totals.minutes) }
         : null,
   ]
     .filter((s): s is { label: string; value: string } => s !== null)

@@ -86,7 +86,9 @@ describe("the week summary", () => {
     const { container } = renderScreen(<AuroraWeekSummary startKey={START} />);
     // 60 + 45 + 75 = 180 minutes. The clock leads because a tonnage hero would
     // tell a lifter-who-also-runs their week was about the barbell every week.
-    expect(container.textContent).toContain("3h 00m");
+    // The numerals and their units are separate nodes on one baseline — the
+    // figure is laid out, not printed as a string — so the text runs together.
+    expect(container.textContent).toContain("3h00min");
   });
 
   it("SPLITS the week — the gym and the sport are both named, and apart", () => {
@@ -112,7 +114,10 @@ describe("the week summary", () => {
 
   it("keeps the gym ledger to gym facts, and does not restate the half's figure", () => {
     const { queryAllByLabelText } = renderScreen(<AuroraWeekSummary startKey={START} />);
-    expect(queryAllByLabelText(/^sets,/i).length).toBe(1);
+    // TWO squat sets — not four. The week's own set count gives every block a
+    // grain and so counts the run and the tennis match, which is right for a
+    // whole-week figure and wrong under a heading that says GYM.
+    expect(queryAllByLabelText(/^SETS, 2$/).length).toBe(1);
     // The tonnage is set at size above the ledger; a row for it would be the
     // grid-of-tiles habit coming back one row at a time.
     expect(queryAllByLabelText(/^VOLUME,/)).toHaveLength(0);

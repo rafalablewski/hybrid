@@ -68,6 +68,10 @@ describe("weekSplit — the two halves are a partition", () => {
     // The gym half holds the tonnage and none of the ground.
     expect(s.gym.totals.tonnage).toBe(2 * 100 * 5 + 2 * 120 * 5);
     expect(s.gym.totals.efforts).toBe(2);
+    // STRENGTH sets, not every block given a grain: the run and the tennis
+    // match are not sets of anything, and `WeeklyRecap.sets` would count them.
+    expect(s.gym.totals.sets).toBe(4);
+    expect(s.gym.totals.lifts).toBe(1);
     // The endurance half holds the ground, AND the timed sport that covered
     // none — a week that was three squash matches must not read as empty.
     expect(s.endurance.totals.distanceKm).toBeCloseTo(8.2, 5);

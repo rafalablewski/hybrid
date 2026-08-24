@@ -47,6 +47,7 @@ import {
 } from "./activity-window";
 import { enduranceWindow, type EnduranceWindow } from "./endurance-window";
 import type { BodyweightInput } from "./bodyweight";
+import { deviceTrueSessions } from "./device-truth";
 import type { LoggedSession } from "./engines/session";
 
 /** What the OTHER half owns. Everything else is the gym's — see the partition
@@ -60,6 +61,18 @@ export interface GymTotals {
   minutes: number;
   /** kg. */
   tonnage: number;
+  /**
+   * STRENGTH sets, and only those.
+   *
+   * `WeeklyRecap.sets` counts a cardio block as one set — which is right for a
+   * whole-week figure that has to give every block a grain, and WRONG the
+   * moment it is printed under a heading that says GYM. A week of two squat
+   * sets, a run and a tennis match reported "4 sets" in the gym half, two of
+   * them things nobody did a set of.
+   */
+  sets: number;
+  /** Distinct lifts trained. */
+  lifts: number;
 }
 
 export interface GymWindow {
@@ -71,7 +84,7 @@ export interface GymWindow {
   previous: GymTotals;
 }
 
-const ZERO: GymTotals = { efforts: 0, minutes: 0, tonnage: 0 };
+const ZERO: GymTotals = { efforts: 0, minutes: 0, tonnage: 0, sets: 0, lifts: 0 };
 
 function gymSlice(sessions: LoggedSession[], range: ActivityRange, bw: BodyweightInput | undefined): GymTotals {
   const sum = activitySummary(sessions, range, bw);
@@ -82,10 +95,28 @@ function gymSlice(sessions: LoggedSession[], range: ActivityRange, bw: Bodyweigh
   const ids = new Set<string>();
   for (const g of [...hours, ...tonnage]) for (const it of g.items) ids.add(it.sessionId);
 
+  // SETS AND LIFTS have no summary to slice — `ActivityTotals` does not carry
+  // them, because they are not measures every kind of training has. They are
+  // counted here from the strength blocks of the sessions the slice already
+  // named, which keeps them a fact about the same window rather than a second
+  // opinion about a different one.
+  const grain = { sets: 0, lifts: new Set<string>() };
+  for (const s of deviceTrueSessions(sessions)) {
+    const t = new Date(s.startedAt).getTime();
+    if (!Number.isFinite(t) || t < range.from || t >= range.through || !ids.has(s.id)) continue;
+    for (const b of s.blocks) {
+      if (b.kind !== "strength") continue;
+      grain.sets += b.sets.length;
+      grain.lifts.add(b.name);
+    }
+  }
+
   return {
     efforts: ids.size,
     minutes: hours.reduce((n, g) => n + g.value, 0),
     tonnage: tonnage.reduce((n, g) => n + g.value, 0),
+    sets: grain.sets,
+    lifts: grain.lifts.size,
   };
 }
 

@@ -84,9 +84,14 @@ const GROUPED: Record<string, Grouped> = {
       "The sheet's TITLE + SUBTITLE, so the sheet announces itself as one heading when it opens. The close control, the scroller and everything the caller renders inside are siblings of it.",
   },
   "components/aurora/week-summary.tsx": {
-    sites: 3,
+    sites: 2,
     why:
-      "THREE ROWS, all leaves, all for the same reason — a label and its figures sit on one line and are one fact, and read apart they are several unrelated utterances. (1) The LEDGER row: 'Sets, 22' rather than 'Sets' … '22'. (2) The RECORD row: the trophy, the lift's name, where it came from and what it now stands at, which apart is four. (3) The DISCIPLINE row in the endurance half: the sport's mark, its name, the ground it covered, the time and the pace — five nodes describing one activity. None can contain a control: they render Marks, Glyphs and Texts, and the screen's only controls — the share circle and the nav button — live in the hero rail, not in any of these lists.",
+      "TWO ROWS, both leaves, both for the same reason — a label and its figures sit on one line and are one fact, and read apart they are several unrelated utterances. (1) The RECORD row: the trophy, the lift's name, where it came from and what it now stands at, which apart is four. (2) The DISCIPLINE row in the endurance half: the sport's mark, its name, the ground it covered, the time and the pace — five nodes describing one activity. Neither can contain a control: they render Marks, Glyphs and Texts, and the screen's only controls — the share circle and the nav button — live in the hero rail. (The ledger row that used to be the third is `WidgetRow` now, registered with the widget it belongs to.)",
+  },
+  "components/aurora/widget.tsx": {
+    sites: 1,
+    why:
+      "WidgetRow — a label and its value on one line, which is one fact: 'Sets, 22' rather than 'Sets' … '22'. It is a leaf by construction (two Texts and an optional third), and a widget's controls are never inside its rows: a summary widget carries a reading, and anything tappable on those screens lives in the hero rail.",
   },
   "components/aurora/protocol.tsx": {
     sites: 1,
