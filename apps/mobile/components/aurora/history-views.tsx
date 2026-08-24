@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { View, Text } from "react-native";
-import { RecapShareCard, recapShareText, shareCardImage } from "../../lib/share";
+import { WeekRecapPager } from "./week-recap";
 import {
   fmtTonnage,
   fmtKm,
@@ -32,7 +32,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Chip, F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
-import { ACard, APill, APressCard, ASegment, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
+import { ACard, APressCard, ASegment, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -241,32 +241,12 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   const maxLoad = Math.max(1, ...weeks.flatMap((w) => w.days.map((d) => d.load)));
   const lime = txt(C, C.lime) as string;
 
-  // THE WEEK SUMMARY IS SHAREABLE. The current week's chapter already IS the
-  // summary (range, day marks, totals) — what it lacked was a way out of the
-  // app. The share captures the branded RecapShareCard (the full recap: deltas
-  // vs last week, top muscle, PRs) rather than screenshotting the chapter, so
-  // what leaves the app is the card designed to leave it. Same capture path as
-  // the session summary (lib/share shareCardImage), text fallback included.
-  const recap = useMemo(() => weeklyRecap(ctx.sessions, Date.now(), ctx.bw), [ctx.sessions, ctx.bw]);
-  const shareRef = useRef<View>(null);
-  const [sharing, setSharing] = useState(false);
-  const doShare = async () => {
-    if (sharing) return;
-    setSharing(true);
-    try {
-      await shareCardImage(shareRef, recapShareText(recap, t, ctx.units), t("histview.shareWeek"));
-    } finally {
-      setSharing(false);
-    }
-  };
-
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
-      {/* The capture node — rendered off-screen at full opacity 0 so captureRef
-          has real pixels to grab (the summary's idiom). */}
-      <View pointerEvents="none" style={{ position: "absolute", left: -10000, top: 0, opacity: 0 }}>
-        <RecapShareCard ref={shareRef} recap={recap} t={t} units={ctx.units} />
-      </View>
+      {/* THE WEEK'S SUMMARY LEADS — paged like the session summary, one page
+          per aspect of the week, the share capturing the page in view. The
+          chapters below stay the archive; the pager is the report. */}
+      <WeekRecapPager sessions={ctx.sessions} units={ctx.units} bw={ctx.bw} />
       {weeks.map((w) => (
         /* The current week keeps its lime-tinted hairline — that is the one
            value here that is genuinely this card's, so it is the one thing
@@ -301,11 +281,6 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             <Chip color={C.ash}>{`${w.totals.sessions} ${t("histview.sessionsLbl")}`}</Chip>
             {w.totals.prs > 0 && <Chip color={C.lime}>{`↑ ${w.totals.prs} PR`}</Chip>}
           </View>
-          {/* The way OUT of the app for this week's story — current week only:
-              a past chapter is a record, not a report you'd post. */}
-          {w.isCurrent && w.totals.sessions > 0 && (
-            <APill label={t("histview.shareWeek")} size="compact" variant="soft" state={sharing ? "saving" : "idle"} onPress={() => void doShare()} style={{ marginTop: 8 }} />
-          )}
           {w.sessions.map((s) => {
             const key = localDayKey(s.startedAt);
             const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
@@ -402,7 +377,6 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const buckets = useMemo(() => sessionBuckets(ctx.sessions, range), [ctx.sessions, range]);
   const recap = useMemo(() => weeklyRecap(ctx.sessions, Date.now(), ctx.bw), [ctx.sessions, ctx.bw]);
   const hasData = ctx.sessions.length > 0;
-  const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   /* `cardStyle` is gone: it was ACard's base style hoisted into a const and
      spread into two Views, which is the copy one step further along — the
@@ -424,45 +398,16 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
           equal-width switch in the app ("one entry point, ONE rendering"). */}
       <ASegment options={TREND_RANGES.map((rg) => ({ id: rg.id, label: t(rg.key) }))} value={range} onPick={setRange} />
 
-      <ACard>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.stats.sessions")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
-            {buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}
-          </Text>
-        </View>
-        {/* A RANGE OF MARKS, not a bar chart — the session summary's own rule
-            ("a bar is the least specific picture available"), finally applied
-            to the reading it was written next to. Each bucket is one mark on a
-            shared baseline, its height the count; the peak carries its figure
-            so the one number worth reading is read, not measured by eye. A
-            zero bucket sits ON the line as a faint tick — absence drawn as
-            absence, not as a 4dp stub pretending to be a quantity. */}
-        <View style={{ height: 118, marginTop: 16 }}>
-          <View style={{ position: "absolute", left: 0, right: 0, bottom: 21, height: 1, backgroundColor: C.line }} />
-          <View style={{ flexDirection: "row", height: "100%" }}>
-            {buckets.buckets.map((b, i) => {
-              const peak = i === buckets.peakIndex && b.value > 0;
-              const size = b.value <= 0 ? 4 : peak ? 11 : 8;
-              const rise = b.value <= 0 ? 0 : Math.round((b.value / maxVal) * 74);
-              return (
-                <View key={i} style={{ flex: 1, alignItems: "center" }}>
-                  {peak && (
-                    <Text style={{ position: "absolute", bottom: 21 + rise + 12, fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) as string }}>{b.value}</Text>
-                  )}
-                  <View style={{ position: "absolute", bottom: 21 + rise - size / 2, width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: b.value <= 0 ? withAlpha(C.ash, ALPHA.line) : peak ? C.lime : withAlpha(C.lime, ALPHA.rim) }} />
-                  <Text style={{ position: "absolute", bottom: 0, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      </ACard>
-
+      {/* NO CHART HERE, by decision. The window is four FIGURES, each on its
+          own tile — a chart in this slot was a picture of a number the tiles
+          already state, and it went (first from bars to marks, then entirely).
+          Core figure-order.ts: the session count leads, active days sit with
+          it, then time, then the ground covered. */}
       <View style={{ flexDirection: "row", gap: 10 }}>
-        {/* Core figure-order.ts: active days sit with the session count they
-            are a fact about, then time, then the ground covered. */}
+        <Mini label={t("w.analyze.stats.sessions")} value={hasData ? String(buckets.total) : "—"} />
         <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 10 }}>
         <Mini label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} />
         <Mini label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} />
       </View>
