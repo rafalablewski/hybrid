@@ -342,6 +342,12 @@ function SwipeCard({ C, busy, actions, onPress, children }: {
         // cannot be open.
         animateRef.current(revealRef.current > 0 && p < -revealRef.current * swipe.openAt);
       },
+      // ONCE THIS CARD HAS THE GESTURE IT KEEPS IT — the same guard SwipeRow
+      // carries, and for the same reason: the default hands the responder back
+      // the moment the enclosing list's own recognizer starts, which a thumb
+      // arcing rather than travelling straight makes it do constantly, and the
+      // card then springs back to where the drag began mid-swipe.
+      onPanResponderTerminationRequest: () => false,
       onPanResponderTerminate: () => animateRef.current(openRef.current),
     }),
   ).current;

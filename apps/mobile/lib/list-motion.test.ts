@@ -50,6 +50,15 @@ function decl(name: string): string {
 /** The door itself — the one place allowed to write a set array unanimated. */
 const DOOR = "sets: fn(x.sets)";
 
+/** One top-level function's source, from its declaration to the next one.
+ *  Bounded by the code rather than by a character count, so a comment can be
+ *  as long as it needs to be without moving what a guard can see. */
+function component(source: string, name: string): string {
+  const from = source.indexOf(`function ${name}(`);
+  const next = source.indexOf("\nfunction ", from + 1);
+  return source.slice(from, next === -1 ? undefined : next);
+}
+
 /** Set-writing paths that deliberately do NOT animate, and why. */
 const EXEMPT: { marker: string; why: string }[] = [
   {
@@ -57,8 +66,8 @@ const EXEMPT: { marker: string; why: string }[] = [
     why: "setTypeTo — swaps a row's badge. The row stays exactly where it is, so there is no layout change to travel.",
   },
   {
-    marker: "sets: x.sets.filter((_, j) => j !== i)",
-    why: "removeSet — its only caller is a SwipeRow, and closing the gap after a swipe belongs to the gesture that opened it (see components/swipe-row.tsx).",
+    marker: "sets: x.sets.filter((t) => (s.uid ? t.uid !== s.uid : t !== s))",
+    why: "removeSet — the SWIPE's path, and closing the gap after a swipe belongs to the gesture that opened it (see components/swipe-row.tsx). Its other callers, the ⋯ menu's Delete row and the bare − beside ＋ Add set, go through removeSetTravelling, which arms the motion itself: those are taps, and nothing else on the screen is moving to explain the change.",
   },
   {
     marker: "sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s))",
@@ -74,6 +83,7 @@ const EXEMPT: { marker: string; why: string }[] = [
 const MUST_TRAVEL = [
   "addSet",
   "applyPreset",
+  "repeatLast",
   "addDropSet",
   "addWarmupSet",
   "addCooldownSet",
@@ -191,16 +201,27 @@ describe("live logger — every set-list mutation travels", () => {
   it("the banked row animates without asking native — a component, so it mounts", () => {
     expect(src, "the ledger row must be rendered as <BankedSetRow>, not an inline <View>: React reconciles two <View> branches as one view and updates in place, so nothing mounts and no entrance can fire")
       .toContain("<BankedSetRow");
-    const comp = src.slice(src.indexOf("function BankedSetRow("));
-    expect(comp.slice(0, 900), "BankedSetRow must run useRowEntrance").toContain("useRowEntrance()");
-    expect(comp.slice(0, 900), "BankedSetRow's root must be an Animated.View carrying that entrance").toContain("<Animated.View");
+    // The WHOLE component, not its first 900 characters. That window was a
+    // magic number measuring nothing about the code, and it duly fired the
+    // first time a prop arrived with a docblock explaining itself — a guard
+    // that fails on comment length teaches the next reader to write less.
+    const comp = component(src, "BankedSetRow");
+    expect(comp, "BankedSetRow must run useRowEntrance").toContain("useRowEntrance()");
+    expect(comp, "BankedSetRow's entrance must ride an Animated.View").toContain("<Animated.View");
+    // AND IT MUST NOT SHARE A VIEW WITH THE HOLD'S LIFT. The lift is
+    // native-driven and the entrance is deliberately not (see the next test),
+    // so one transform array cannot carry both — and merging them is worse
+    // than an error, because a style array's later transform silently REPLACES
+    // the earlier one and the entrance's travel just stops happening.
+    expect(comp, "the hold's lift needs a view of its own — its driver is not the entrance's")
+      .not.toMatch(/style=\{\[[^\]]*hold\.liftStyle[^\]]*enter/);
   });
 
   it("the RPE disclosure animates without asking native either", () => {
     expect(src, "the pill row must be wrapped in <RpeScaleRow> so it carries an entrance").toContain("<RpeScaleRow>");
-    const comp = src.slice(src.indexOf("function RpeScaleRow("));
-    expect(comp.slice(0, 500)).toContain("useRowEntrance(");
-    expect(comp.slice(0, 500)).toContain("<Animated.View");
+    const comp = component(src, "RpeScaleRow");
+    expect(comp).toContain("useRowEntrance(");
+    expect(comp).toContain("<Animated.View");
   });
 
   it("the entrance stays on the JS driver, and honours Reduce Motion", () => {

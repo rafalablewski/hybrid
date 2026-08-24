@@ -139,6 +139,7 @@ import { FeelPrompt } from "../components/feel-prompt";
 import { scheduleRecoveryReminder } from "../lib/recovery-reminder";
 import SwipeRow from "../components/swipe-row";
 import HoldDragRow from "../components/hold-drag-row";
+import { useHoldMenu, type HoldMenuItem } from "../components/hold-menu";
 import { useDragReorder } from "../lib/use-drag-reorder";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
@@ -149,13 +150,13 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, Mono, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty, useRowEntrance} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, Mono, PressScale as Pressable, fs, kernPad, leading, space, trackFigure, tracking, ty, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
 import type { AuroraIconName } from "@hybrid/core";
-import { AuroraField, withAlpha, ACard, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
-import { GlassSelectMenu, GlassToolbarGroup, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
+import { AuroraField, withAlpha, ACard, ASegment, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
+import { GlassMenuButton, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
 import ASatellite from "../components/aurora/satellite";
 import { SHARE_MARK } from "../components/aurora/share-mark";
 import { HeroNav } from "../components/aurora/hero";
@@ -193,6 +194,12 @@ const DEFAULT_REST = 90;
 /** The rest durations, in one place: the capsule's inline picker and the rest
  *  banner's preset row are the same four numbers and must not drift. */
 const REST_PRESETS = [60, 90, 120, 180] as const;
+// The header's ⋯ — the height the toolbar lozenge had when it was two leaves,
+// kept as its diameter now that it is one, so collapsing the pair changed the
+// rail's weight in no other way. It is deliberately short of HeroNav's 40pt
+// circle on the other end: the chevron LEAVES the session, this only opens a
+// menu, and the rail should not read as two equal exits.
+const TOOLBAR = 34;
 /** "What kind of set" — the picker section, then the rows that follow it.
  *  One question, one menu: these three tables replaced a ＋ that cycled, a ⚡
  *  tile and a ⋯ zone. */
@@ -212,6 +219,16 @@ const SET_SCHEMES = [
 const SET_EXTRAS: { key: string; k: string }[] = [
   { key: "ramp", k: "workout.warmupRampTitle" },
   ...SET_SCHEMES.map((p) => ({ key: p.key, k: p.k })),
+];
+/** The set menu's destructive row. Named rather than inlined because the Glass
+ *  menu and the RN panel both carry it, and a literal in two places is how two
+ *  menus stop agreeing about what they offer. */
+const DELETE_SET_KEY = "deleteSet";
+/** The collapsed set row's hold menu. Built from `t` at the call site rather
+ *  than held as a constant, because the label is translated and the dictionary
+ *  is not available at module scope. */
+const SET_ROW_MENU = (t: (k: string) => string): HoldMenuItem[] => [
+  { key: DELETE_SET_KEY, label: t("workout.deleteSet"), destructive: true },
 ];
 
 const REST_OPTIONS: { id: string; label: string }[] = [
@@ -279,21 +296,27 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
 
 
 /**
- * Carry a lift's last session forward as its opening queue.
+ * Last session's WORKING sets, as a queue this session could adopt — or `null`
+ * when there is nothing worth adopting (a new lift, or a last time that was a
+ * single empty set).
  *
- * Only the WORKING sets, and only their numbers — the previous session's
- * warm-up ramp is not this session's plan, and nothing is marked done. If the
- * lift is new, or last time was a single empty set, the exercise arrives as it
- * always did: one blank set to type into.
+ * Only the working sets, and only their numbers: the previous session's warm-up
+ * ramp is not this session's plan, and nothing arrives marked done.
+ *
+ * THIS IS OFFERED, NEVER APPLIED. A new exercise used to arrive with these
+ * already filled in, on the argument that the default is the answer. It is not:
+ * the numbers that showed up were last week's, in chalk, indistinguishable from
+ * ones the athlete had just typed — so the set they actually did got banked at
+ * whatever the previous session happened to be unless they noticed and
+ * corrected every field. A default you have to check is worse than a blank one,
+ * because a blank one cannot be wrong. The card arrives EMPTY, the "last time"
+ * line beneath the name says what was done, and tapping that line lays it out.
  */
-const seedFromLast = (x: WExercise, last?: StrengthBlock): WExercise => {
-  if (x.kind !== "strength" || !last) return x;
+const setsFromLast = (kind: WKind, last?: StrengthBlock): WSet[] | null => {
+  if (kind !== "strength" || !last) return null;
   const carried = last.sets.filter((s) => setType(s) === "working" && (s.reps || s.load));
-  if (!carried.length) return x;
-  return {
-    ...x,
-    sets: carried.map((s) => ({ uid: uid(), load: s.load ?? "", reps: s.reps ?? "", rpe: "", done: false })),
-  };
+  if (!carried.length) return null;
+  return carried.map((s) => ({ uid: uid(), load: s.load ?? "", reps: s.reps ?? "", rpe: "", done: false }));
 };
 
 type Summ = {
@@ -763,15 +786,10 @@ export default function Workout() {
     const clean = picks.map((p) => ({ ...p, name: p.name.trim() })).filter((p) => p.name);
     if (!clean.length) return;
     animateListChange(reducedMotion);
-    // SEEDED FROM LAST TIME. A lift you have done before arrives with its last
-    // session's sets already queued and their numbers filled IN — chalk, not a
-    // grey placeholder zero — so logging set one is a single tap instead of a
-    // tap, a keyboard, a number and a dismissal. The default is the answer;
-    // it is also, unlike a 0, a true statement about your training.
-    setExercises((xs) => [
-      ...xs,
-      ...clean.map((p) => seedFromLast(newExercise(p.name, p.kind), lastByLift.get(p.name))),
-    ]);
+    // AN EXERCISE ARRIVES EMPTY. Not blank-because-nobody-thought-about-it: see
+    // `setsFromLast` for why last session's numbers are OFFERED on the card's
+    // "last time" line rather than typed into the fields for you.
+    setExercises((xs) => [...xs, ...clean.map((p) => newExercise(p.name, p.kind))]);
     setPickerOpen(false);
   };
   const removeExercise = (u: string) => {
@@ -920,6 +938,14 @@ export default function Workout() {
       const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
       return [...done, ...work];
     });
+  // REPEAT LAST TIME — the "last time" line under the lift's name is the button.
+  // Lays out that session's working sets as this session's queue, in one tap,
+  // which is the whole reason the fields are allowed to arrive empty: the offer
+  // is visible, it is legible (it says what it will do before you take it), and
+  // taking it is deliberate. Banked sets are kept and the un-banked plan is
+  // replaced — the same contract as a preset, because it is the same move.
+  const repeatLast = (u: string, sets: WSet[]) =>
+    commitSets(u, (cur) => [...cur.filter((s) => s.done), ...sets.map((s) => ({ ...s, uid: uid() }))]);
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
     commitSets(u, (sets) => [...sets, { ...emptySet(), drop: true }]);
@@ -966,10 +992,25 @@ export default function Workout() {
     animateListChange(reducedMotion);
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
   };
-  // No animateListChange here: the only caller is a SwipeRow, and closing the
-  // gap after a swipe-delete belongs to SwipeRow itself now.
-  const removeSet = (u: string, i: number) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
+  // BY THE SET, not by its index. The row that carries this delete is keyed by
+  // uid, so it SURVIVES the removal of a set above it — and an index is only
+  // ever right for as long as nothing above the row has moved. (The gesture
+  // used to hand this a frozen index for a second reason too, fixed in
+  // swipe-row.tsx; both had to go, because either one alone still deletes the
+  // wrong set.) Identity is the fallback for a draft restored from storage
+  // before sets carried uids.
+  //
+  // No animateListChange here when a SwipeRow calls it: closing the gap after a
+  // swipe-delete belongs to the gesture that opened it. The MENU and the −
+  // arrive through removeSetTravelling below, which does arm it — they are
+  // taps, and nothing else on the screen is moving to explain the change.
+  const removeSet = (u: string, s: WSet) =>
+    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((t) => (s.uid ? t.uid !== s.uid : t !== s)) } : x)));
+  const removeSetTravelling = (u: string, s: WSet) => {
+    animateListChange(reducedMotion);
+    haptic.warning();
+    removeSet(u, s);
+  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
@@ -1250,17 +1291,17 @@ export default function Workout() {
   const restLeft = restSince != null && restTarget != null ? restTarget - restNow : null;
   const restReadout =
     restLeft != null ? (restLeft > 0 ? mmss(restLeft) : `+${mmss(-restLeft)}`) : mmss(prefs.restSeconds);
-  const toggleRestArmed = () => {
-    const next = !prefs.restTimer;
-    haptic.light();
-    setLoggerPref("restTimer", next);
-    if (!next) stopRest();
-  };
+  // ONE handler for the rest timer, because it is ONE decision: a duration, or
+  // Off. The header used to carry a separate arm/disarm tap beside the menu —
+  // a second pill for the half of the choice the picker already had.
   const pickRestPref = (v: string) => {
+    haptic.light();
     if (v === "off") { setLoggerPref("restTimer", false); stopRest(); return; }
     setLoggerPref("restTimer", true);
     setLoggerPref("restSeconds", Number(v));
   };
+  const restChoices = REST_OPTIONS.map((o) => ({ id: o.id, label: o.id === "off" ? t("common.off") : o.label }));
+  const restChoice = prefs.restTimer ? String(prefs.restSeconds) : "off";
   // Bank the session's active set — what the docked primary does.
   const logActiveSet = () => {
     if (!cursor || !cursorEx || !canLog) return;
@@ -1325,64 +1366,45 @@ export default function Workout() {
             {mmss(elapsed)}{paused ? ` – ${t("workout.paused").toUpperCase()}` : ""}
           </Text>
         </View>
-        {/* THE TOOLBAR CAPSULE — the rest timer and the way in to everything
-            that must not be one tap, fused into one lozenge of glass. The
-            timer keeps its own tap because you arm it mid-workout; its
-            DURATION is a preference, so it sits one level in, in the menu
-            beside it. Finish is not here any more: it lives in the dock with
-            Pause, where the thumb is. */}
+        {/* THE ⋯ — ONE control, and the whole of what must not be one tap.
+            It used to be TWO pills fused into a lozenge: a rest-timer toggle
+            beside this menu. Two circles side by side in a 44pt rail read as
+            two equals, and they were not — arming a rest timer is a
+            PREFERENCE, and its value already lived one level in, as the menu's
+            own picker. So the toggle folded into that picker ("Off" is the
+            disarm) and the pair became one mark. Nothing was lost with it: the
+            state the toggle carried is read where it is used, off the dock's
+            hint line, which names the armed duration and turns into the live
+            countdown while a rest runs. */}
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
           {LIQUID_GLASS_RENDERED ? (
-            <GlassToolbarGroup
-              // ONE mark, `timer` — SF Symbols 7 has no `timer.slash`, and two
-              // different drawings for one control would read as two controls.
-              // The state is carried by colour and, for anyone not reading
-              // colour, by the accessibility label naming the value.
-              toggleGlyph="timer"
-              toggleReadout={prefs.restTimer ? restReadout : undefined}
-              toggleColor={prefs.restTimer ? txt(C, C.blue) : C.ash}
-              toggleLabel={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
-              onToggle={toggleRestArmed}
-              menuLabel={t("workout.sessionOptions")}
-              options={REST_OPTIONS.map((o) => ({ id: o.id, label: o.id === "off" ? t("common.off") : o.label }))}
-              value={prefs.restTimer ? String(prefs.restSeconds) : "off"}
-              onPick={pickRestPref}
-              actions={[
+            /* The shared overflow leaf, wearing the glassed circle — not a
+               second owner of the system Menu drawn to this screen's taste. */
+            <GlassMenuButton
+              label={t("workout.sessionOptions")}
+              glyphColor={C.ash}
+              size={TOOLBAR}
+              circle={TOOLBAR}
+              select={{ options: restChoices, value: restChoice, onPick: pickRestPref }}
+              items={[
                 { key: "rpe", label: t("w.train.blocks.whatsRpe") },
                 { key: "discard", label: t("workout.discardSession"), destructive: true },
               ]}
-              onAction={(k) => (k === "rpe" ? setRpeHelp(true) : discard())}
-              glyphColor={C.ash}
-              fontFamily={F.mono}
+              onSelect={(k) => (k === "rpe" ? setRpeHelp(true) : discard())}
             />
           ) : (
-            /* The capsule's floor wears the SATELLITE rim — it is the same
-               material as the buttons in the dock, so it is the same fill and
-               the same ring, not a third pair of alphas. */
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(C.chalk, SATELLITE.alpha.stroke), backgroundColor: withAlpha(C.chalk, SATELLITE.alpha.fill), padding: 3 }}>
-              <Pressable
-                onPress={toggleRestArmed}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityState={{ selected: prefs.restTimer }}
-                accessibilityLabel={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
-                style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 28, paddingHorizontal: 10, borderRadius: RADIUS.pill }}
-              >
-                <AuroraIcon name="stopwatch" size={13} color={prefs.restTimer ? txt(C, C.blue) : C.ash} />
-                {prefs.restTimer ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>{restReadout}</Text>
-                ) : null}
-              </Pressable>
-              <Pressable
-                onPress={() => setMenuOpen(true)}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel={t("workout.sessionOptions")}
-                style={{ height: 28, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderRadius: RADIUS.pill }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking(fs.subtitle, "label") }}>⋯</Text>
-              </Pressable>
-            </View>
+            /* The floor wears the SATELLITE rim — it is the same material as
+               the buttons in the dock, so it is the same fill and the same
+               ring, not a third pair of alphas. */
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={t("workout.sessionOptions")}
+              style={{ width: TOOLBAR, height: TOOLBAR, alignItems: "center", justifyContent: "center", borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(C.chalk, SATELLITE.alpha.stroke), backgroundColor: withAlpha(C.chalk, SATELLITE.alpha.fill) }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking(fs.subtitle, "label") }}>⋯</Text>
+            </Pressable>
           )}
         </View>
       </View>
@@ -1568,12 +1590,41 @@ export default function Workout() {
                 {(() => {
                   // "Last time" reference — the most recent prior session's sets
                   // for this lift, so progressive overload has a target to beat.
+                  //
+                  // AND IT IS THE WAY TO REPEAT IT. The line already states the
+                  // thing a "repeat" control would have to name, so a second
+                  // control beside it would print the same sentence twice; the
+                  // reading IS the offer, and tapping takes it. Bare ＋, no ring,
+                  // in ash — the exit rule's grammar: this GROWS the queue in
+                  // place, it does not open anything, and the accent on this
+                  // screen belongs to Log set alone.
+                  //
+                  // Not tappable when there is nothing to lay out (last time was
+                  // warm-ups, or empty sets): an affordance that does nothing on
+                  // press is worse than none.
                   const last = lastByLift.get(x.name);
-                  return last ? (
-                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginBottom: 8 }}>
-                      {t("workout.lastTime")} – {blockSummary(last)}
+                  if (!last) return null;
+                  const carried = setsFromLast(x.kind, last);
+                  const line = `${t("workout.lastTime")} – ${blockSummary(last)}`;
+                  const label = (
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+                      {line}
                     </Text>
-                  ) : null;
+                  );
+                  if (!carried) return <View style={{ marginBottom: 8 }}>{label}</View>;
+                  return (
+                    <Pressable
+                      onPress={() => { haptic.light(); repeatLast(x.uid, carried); }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t("workout.repeatLast")} — ${line}`}
+                      accessibilityHint={t("workout.repeatLastHint")}
+                      hitSlop={8}
+                      style={{ flexDirection: "row", alignItems: "center", gap: space.xs, marginBottom: 8 }}
+                    >
+                      {label}
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>＋</Text>
+                    </Pressable>
+                  );
                 })()}
                 {/* A bilateral dumbbell lift takes ONE dumbbell's weight;
                     tonnage counts both bells. Guide the athlete so the doubled
@@ -1595,6 +1646,17 @@ export default function Workout() {
                   const measureLabel = sp?.measure === "time" ? "s" : sp?.measure === "distance" ? "m" : "reps";
                   const total = x.sets.length;
                   const planned = !addSetIsNext(x.sets); // a queue sits below → show "of N"
+                  // ONE SPELLING FOR BOTH FIGURES — they are the same field
+                  // twice (load, then reps), and they had been two identical
+                  // literals, which is how the load one gets a fix the reps
+                  // one does not.
+                  //
+                  // `paddingRight` is not decoration and it is not a gap: it
+                  // is the trailing kern `trackFigure` adds to the LAST digit
+                  // and never draws, given back so the text field — which
+                  // clips to its bounds, unlike a Text — stops shaving the
+                  // right side off it. See `kernPad` in core's scale.ts.
+                  const figureField = { fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, paddingRight: kernPad(trackFigure(fs.stat)), textAlign: "center", minWidth: 44 } as const;
                   return x.sets.map((s, i) => {
                     const focus = setFocus(x.sets, i);
                     const st = setType(s);
@@ -1604,7 +1666,7 @@ export default function Workout() {
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
                     return (
                       <View key={s.uid ?? i}>
-                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)} background="transparent">
+                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, s)} background="transparent">
                         {focus === "active" ? (
                           // FLAT active section — no inner card (the exercise card
                           // is the one surface): the set you're on reads as focus
@@ -1667,8 +1729,15 @@ export default function Workout() {
                                     options={SET_TYPE_OPTIONS.map((o) => ({ id: o.id, label: t(o.k) }))}
                                     value={st}
                                     onPick={(v) => setTypeTo(x.uid, i, v)}
-                                    extras={SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) }))}
-                                    onExtra={(k) => runSetExtra(x.uid, k)}
+                                    // DELETE IS IN THE MENU, and it is the point of
+                                    // this row rather than an extra on it: the swipe
+                                    // was the ONLY way to remove a set, and a gesture
+                                    // with nothing on screen saying it is there is not
+                                    // a door — it is also one VoiceOver cannot make.
+                                    // Last, in the destructive slot, exactly where the
+                                    // hold-menu puts its own.
+                                    extras={[...SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) })), { key: DELETE_SET_KEY, label: t("workout.deleteSet"), destructive: true }]}
+                                    onExtra={(k) => (k === DELETE_SET_KEY ? removeSetTravelling(x.uid, s) : runSetExtra(x.uid, k))}
                                   />
                                 ) : (
                                   <Pressable
@@ -1702,7 +1771,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={figureField}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1717,7 +1786,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={figureField}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>
@@ -1823,6 +1892,13 @@ export default function Workout() {
                               done={s.done}
                               dim={focus === "done" ? 0.62 : 0.72}
                               onReopen={s.done ? () => toggleDone(x.uid, i, false) : undefined}
+                              // ONE ROW, because the tap already re-opens a
+                              // banked set — a menu that offers what the row
+                              // does anyway is a second door to the same place.
+                              // What the collapsed row had NO door to is
+                              // removal, so that is what the hold carries.
+                              menu={SET_ROW_MENU(t)}
+                              onMenu={(k) => { if (k === DELETE_SET_KEY) removeSetTravelling(x.uid, s); }}
                               C={C}
                             />
                           );
@@ -1841,6 +1917,21 @@ export default function Workout() {
                     too: schemes and special sets are answers to "what kind of
                     set", which is one question and now one menu, on the set
                     row itself. */}
+                {/* ADD SET, and only Add. A − sat here briefly, and it went:
+                    two bare glyphs of opposite consequence 9dp apart read as
+                    one control, and the separations that would have fixed that
+                    each cost something real (see the Add/Remove options deck —
+                    distance, ownership, rank, axis, altitude, mode, time,
+                    arithmetic, consequence). The decision was the tenth: don't
+                    draw the second control. Removing a set is a SWIPE — it acts
+                    on a specific set, it is nowhere near this row, and it can
+                    no longer be confused with adding one. The ⋯ menu's Delete
+                    row and the collapsed rows' hold menu are the doors for
+                    anyone the gesture does not reach.
+                    THE − WAS A WORKAROUND FOR A BROKEN SWIPE and it outlived
+                    the problem: it arrived in the same change that fixed the
+                    swipe, at a moment when the swipe was still the only way to
+                    remove a set at all. */}
                 <Pressable
                   onPress={() => addSet(x.uid)}
                   accessibilityRole="button"
@@ -1888,6 +1979,18 @@ export default function Workout() {
                         <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t(e.k)}</Text>
                       </Pressable>
                     ))}
+                    {/* The same destructive row the Glass menu carries, in the
+                        same last position, drawn in the red TEXT channel per
+                        the palette rule that red is kept strictly for risk. */}
+                    {ai >= 0 && (
+                      <Pressable
+                        onPress={() => { removeSetTravelling(x.uid, x.sets[ai]!); setSpecialUid(null); }}
+                        accessibilityRole="button"
+                        style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: C.line }}
+                      >
+                        <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.red) }}>{t("workout.deleteSet")}</Text>
+                      </Pressable>
+                    )}
                   </View>
                   );
                 })()}
@@ -2240,14 +2343,21 @@ export default function Workout() {
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
 
-      {/* The ⋯ menu. One row today, and that is the point: the header carries a
-          single top-level exit, and the irreversible one is reached through a
-          menu and then a confirm. Anything added here later inherits that
-          protection for free. */}
+      {/* The ⋯ menu — what the native Menu carries on iOS 26, for everywhere
+          else, and now that means the rest timer too: the header's second pill
+          folded in here rather than standing beside the mark that opens this.
+          The header carries a single top-level exit, and the irreversible thing
+          is reached through a menu and then a confirm. */}
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.sessionOptions")}>
-        {/* What the native Menu carries on iOS 26, for everywhere else. The
-            rest DURATIONS live in the rest banner's preset row; the arm/disarm
-            is the capsule's own tap. */}
+        {/* THE REST TIMER, arm and duration as ONE control — which is what it
+            always was: "Off" is the disarm, and the native Menu's picker has
+            read it that way since it shipped. `surface="card"` because a Sheet
+            panel is ink2, and so is the segment's default track. */}
+        <Text style={{ ...ty(C, "overline"), marginBottom: 10 }}>{t("workout.armRest")}</Text>
+        <ASegment options={restChoices} value={restChoice} onPick={pickRestPref} surface="card" />
+        {/* The rows below separate from the segment by whitespace — a rule here
+            would be the divider the section markers retired. */}
+        <View style={{ height: space.sm }} />
         <Pressable
           onPress={() => { setMenuOpen(false); setRpeHelp(true); }}
           accessibilityRole="button"
@@ -2528,7 +2638,7 @@ function RpeScaleRow({ children }: { children: React.ReactNode }) {
  * animation can reach. This makes the ARRIVING row travel, on the native driver,
  * whether or not the request was granted.
  */
-function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, C }: {
+function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, menu, onMenu, C }: {
   badge: string;
   badgeColor: string;
   summary: string;
@@ -2540,10 +2650,29 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
   /** Resting opacity — banked reads quieter than queued. */
   dim: number;
   onReopen?: () => void;
+  /** HOLD THE ROW. A collapsed set's only affordance was a tap that re-opens
+   *  it, so removing one in the MIDDLE of an exercise meant the swipe and
+   *  nothing else — the app's own hold-menu docblock is about exactly this
+   *  gap ("the app could REMEMBER without being able to FORGET"), and a swipe
+   *  is both undiscoverable and unavailable to a screen reader. The menu's
+   *  rows ride the VoiceOver rotor through `a11yActions`, which is the half a
+   *  gesture can never provide. */
+  menu?: HoldMenuItem[];
+  onMenu?: (key: string) => void;
   C: Palette;
 }) {
   const enter = useRowEntrance();
+  const hold = useHoldMenu({ items: menu ?? [], onSelect: (k) => onMenu?.(k), disabled: !onMenu });
+  // The hold arms on the row's OWN pressable, the nutrition rows' idiom: an
+  // inner Pressable keeps the touch, so a hold on the summary never reaches a
+  // wrapper. The LIFT sits on a view of its own rather than merging into the
+  // entrance's style: the lift is native-driven and the entrance is not, and
+  // one transform array cannot be both (the later one would also simply
+  // replace the earlier, silently dropping the entrance's travel).
+  const held = { onLongPress: hold.holdProps.onLongPress, delayLongPress: hold.holdProps.delayLongPress };
   return (
+    <>
+    <Animated.View ref={hold.anchorRef} collapsable={false} style={hold.liftStyle}>
     <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6) }, enter, { opacity: Animated.multiply(enter.opacity, dim) }]}>
       <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: badgeColor }}>{badge}</Text>
       {/* A collapsed row SIGNALS; the expanded one explains. A plausibility
@@ -2554,7 +2683,13 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
           The effort rides INSIDE the re-open target, not beside it: the number
           you want to correct is the most likely reason to tap this row, so it
           had better be part of the button. */}
-      <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={onReopen}>
+      <Pressable
+        style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }}
+        onPress={onReopen}
+        {...held}
+        accessibilityActions={hold.a11yActions}
+        onAccessibilityAction={hold.onA11yAction}
+      >
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: summaryColor }}>{summary}</Text>
         {effortLabel ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: effortColor }}>{effortLabel}</Text>
@@ -2562,6 +2697,9 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.body, color: done ? txt(C, C.lime) : C.ash }}>{done ? "✓" : "○"}</Text>
     </Animated.View>
+    </Animated.View>
+    {hold.menu}
+    </>
   );
 }
 

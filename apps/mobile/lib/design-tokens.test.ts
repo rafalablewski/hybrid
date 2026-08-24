@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COVER_SCREENS, fs, lh, resolveText, text } from "@hybrid/core";
+import { COVER_SCREENS, fs, lh, resolveText, text, trackFigure, trackOtp, tracking } from "@hybrid/core";
 import { FACE, faceFor } from "./faces";
 
 /**
@@ -612,16 +612,134 @@ describe("leading and tracking", () => {
     //     rungs of the app ladder, so its tracking belongs to that card's own
     //     system.
     //
-    //   The one-time-code fields (login.tsx, mfa-settings.tsx) — letterSpacing
-    //     at 8 and 3 is doing SEMANTIC work: it says the characters are
-    //     discrete digits, to be read one at a time. A rung would delete the
-    //     thing the spacing is saying.
+    // ONE EXEMPTION NOW, and the second one's removal is the more useful note.
     //
-    // Both are narrow and named. A third wanting to be added is the signal that
-    // the rule is wrong, not that the call site is.
-    const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
+    //   The one-time-code fields (login.tsx, mfa-settings.tsx) were exempt
+    //     because their tracking is SEMANTIC — it says "six discrete digits,
+    //     read one at a time" — and a `tracking()` rung would delete the thing
+    //     the spacing is saying. That was the right reading of the call site
+    //     and the wrong conclusion about the system: the answer to "the ladder
+    //     has no name for this intent" is to NAME it, not to step around the
+    //     rule. Unnamed, one intent had three spellings and no two agreed —
+    //     0.286em, 0.300em and 0.167em, the last of them half of the other two
+    //     for no reason anybody wrote down. `trackOtp(size)` is the third
+    //     tracking function and those three sites derive from it now, so the
+    //     exemption has nothing left to cover.
+    //
+    // An exemption is a claim that the SYSTEM does not govern a call site. It
+    // is occasionally true (share.tsx below) and it is the most comfortable
+    // wrong answer available, because it closes the question without changing
+    // anything. Prefer a new token; reach for this only when the sizes really
+    // do belong to another system.
+    const OWN_SCALE = ["lib/share.tsx"];
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
     expect(raw, 'letterSpacing → tracking(size) / tracking(size, "label"|"caps"), or trackFigure(size) for a figure').toEqual([]);
+  });
+
+  it("HARD — a tracked TextInput gives the trailing kern back", () => {
+    // THE ONE PLACE A TIGHTENING IS DESTRUCTIVE RATHER THAN OPTICAL.
+    //
+    // `letterSpacing` is kerning on EVERY glyph of the run, the last one
+    // included, so a run lays out `|track|` NARROWER than it draws. A `Text`
+    // does not care — nothing clips it, and the overhang lands in space the
+    // layout was leaving empty. A `TextInput` is a scrolling content view
+    // clipped to its own bounds, so the overhang is CUT: at
+    // `trackFigure(fs.stat)` the workout logger's set editor shaved a flat
+    // vertical slice off the right of the last digit of `20 kg × 10`, on both
+    // fields, on every phone, for as long as the fields have existed.
+    //
+    // IT IS INVISIBLE UNTIL IT ISN'T, which is why this is a rule and not a
+    // fix. A field only clips once its content has filled it, so an identical
+    // style clipped in the logger (auto-width) and looked perfect in the
+    // nutrition portion field (`minWidth: 96`) until somebody typed a fourth
+    // digit. "Does this field clip?" is a question about what has been typed
+    // into it, and no screenshot answers it.
+    //
+    // `kernPad(track)` (core's scale.ts) is the give-back, and it is exact
+    // rather than a fudge: pad the trailing edge by the kern the layout added
+    // and never drew. It returns 0 for a positive track — that one leaves a
+    // real GAP and is a centring problem for the other edge, which is why the
+    // one-time-code fields are not caught here (their letterSpacing is a raw
+    // positive, named and exempted by the rule above).
+    // A field's style may be hoisted to a local const — the logger's two
+    // figures share one, which is the point of hoisting it — so the element's
+    // own text is not always where the tracking is written. Follow
+    // `style={ident}` to `const ident = { … }` in the same file and read both.
+    const styleOf = (text: string, el: string): string => {
+      const ref = el.match(/style=\{([A-Za-z_$][\w$]*)\}/);
+      if (!ref) return el;
+      const at = text.indexOf(`const ${ref[1]} = {`);
+      if (at < 0) return el;
+      let depth = 0;
+      for (let i = text.indexOf("{", at); i < text.length; i++) {
+        if (text[i] === "{") depth++;
+        else if (text[i] === "}" && --depth === 0) return el + text.slice(at, i + 1);
+      }
+      return el;
+    };
+    // WHICH EDGE, IF ANY — resolved rather than guessed. The three tracking
+    // functions do not have fixed signs: `trackFigure` is always negative,
+    // `trackOtp` always positive, and `tracking(size)` is EITHER (it opens up
+    // below the 16dp reference and tightens above it, and the two uppercase
+    // roles are positive at every size). A rule that sorted them by name would
+    // demand a clip pad for a field that cannot clip, so it computes the value.
+    const RESOLVE: Record<string, (n: number, role?: string) => number> = {
+      trackFigure,
+      trackOtp,
+      tracking: (n, role) => tracking(n, (role ?? "text") as Parameters<typeof tracking>[1]),
+    };
+    const resolve = (expr: string): number | null => {
+      const call = /^(trackFigure|trackOtp|tracking)\(\s*(?:fs\.([a-zA-Z]+)|([0-9.]+))\s*(?:,\s*"([a-z]+)"\s*)?\)$/.exec(expr);
+      if (call) {
+        const size = call[2] ? fs[call[2] as keyof typeof fs] : Number(call[3]);
+        return size ? RESOLVE[call[1]]!(size, call[4]) : null;
+      }
+      return /^[0-9.]+$/.test(expr) ? Number(expr) : null;
+    };
+
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      // The lookahead is what keeps `useRef<TextInput | null>` out of this:
+      // a type argument is not an element, and without it the scan ran on from
+      // that ref to the next `/>` and reported whatever field it landed in.
+      for (const m of text.matchAll(/<TextInput(?=\s*\/>|\s+[A-Za-z{])[\s\S]{0,3000}?\/>/g)) {
+        const style = styleOf(text, m[0]);
+        const at = `${path}:${text.slice(0, m.index).split("\n").length}`;
+
+        // A tracking arriving through a TYPE TOKEN. No field takes its style
+        // from `ty()` today, and that is exactly why this is here: the clip
+        // does not care whether the number was typed at the call site, so a
+        // rule that only read call sites would pass the day one does.
+        const token = style.match(/ty\(\s*[A-Za-z_$][\w$]*\s*,\s*"([a-zA-Z]+)"/);
+        if (token && resolveText(token[1] as Parameters<typeof resolveText>[0]).letterSpacing < 0 && !style.includes("kernPad(")) {
+          bad.push(`${at} — ty(…, "${token[1]}") resolves to a negative tracking with no kernPad`);
+          continue;
+        }
+
+        // THE WHOLE VALUE, not just the shapes this rule can read. Matching
+        // only the recognised forms let `letterSpacing: SOME_LOCAL` fall out
+        // of the scan silently — which is the one outcome a guard must never
+        // have, since it looks exactly like a pass. The call form is tried
+        // first so `tracking(fs.nano, "caps")` is not cut at its comma.
+        const written = style.match(/letterSpacing:\s*((?:tracking|trackFigure|trackOtp)\([^)]*\)|[^,}\n]+)/);
+        if (!written) continue;
+        const expr = written[1]!.trim();
+        const track = resolve(expr);
+        if (track === null) { bad.push(`${at} — letterSpacing: ${expr} — this rule cannot resolve that; take one of the three tracking functions`); continue; }
+
+        // NEGATIVE → the ink runs PAST the box and a text field clips it.
+        if (track < 0 && !style.includes(`kernPad(${expr})`)) {
+          bad.push(`${at} — letterSpacing: ${expr} (${track}) needs paddingRight: kernPad(${expr})`);
+        }
+        // POSITIVE → nothing clips, but the trailing gap is inside the box, so
+        // a CENTRED run sits half a gap left. A left-aligned field is fine as
+        // it is: there the gap is just a slightly wider right pad.
+        if (track > 0 && /textAlign:\s*"center"/.test(style) && !style.includes(`kernLead(${expr})`)) {
+          bad.push(`${at} — centred letterSpacing: ${expr} (${track}) needs paddingLeft: kernLead(${expr})`);
+        }
+      }
+    }
+    expect(bad, `\nthe trailing kern goes back on the edge it was stolen from — see kernPad / kernLead in core's scale.ts:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 
@@ -2410,7 +2528,11 @@ describe("spacing", () => {
     // and the three 1dp/3dp optical nudges the new rows were first written with
     // went on the ladder rather than into this number — a burn-down that RISES
     // to accommodate the change being made is not a burn-down.
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 559, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    // 559 → 556 landing against main: the logger's header toolbar collapsed
+    // from two pills to one ⋯, and the lozenge that held them took its
+    // hand-measured geometry with it (the 2pt inter-leaf gap, the 3pt floor
+    // pad, the 28pt leaf height) — 565 → 562 on that branch, disjoint sites.
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 556, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**

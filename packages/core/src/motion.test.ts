@@ -12,6 +12,8 @@ import {
   swipe,
   rubberBand,
   projectSwipe,
+  swipeCommitAt,
+  swipeTravel,
   sheetGesture,
   resolveSheetRelease,
   releaseVelocity,
@@ -422,6 +424,63 @@ describe("swipe actions", () => {
 
   it("commits a full swipe further out than it commits a reveal", () => {
     expect(swipe.fullAt).toBeGreaterThan(swipe.openAt);
+  });
+
+  // THE BUG THIS BLOCK EXISTS FOR. The row used to be DRAWN against a 120px
+  // ceiling and JUDGED against 60% of its own width — ~197px on a logger row —
+  // so it stalled dead under the finger and then jumped ~77px sideways the
+  // frame the finger crossed the line, in both directions, buzzing on each
+  // crossing. Nothing caught it: both halves were correct on their own, and
+  // only their RELATIONSHIP was wrong. So the relationship is what is asserted.
+  //
+  // The widths are real: 319 (iPhone SE), 329 (iPhone 15), 366 (Pro Max), each
+  // a row inside the logger's card (screen − 24 gutter − 40 CARD_PAD), plus a
+  // deliberately short one for the floor.
+  describe("travel", () => {
+    const WIDTHS = [140, 240, 319, 329, 366, 430];
+
+    it("is continuous at the commit point — the row can REACH what judges it", () => {
+      for (const w of WIDTHS) {
+        const commit = swipeCommitAt(w);
+        // Step across the line one pixel at a time; no crossing may move the
+        // row further than the finger moved.
+        for (let raw = -(commit + 4); raw <= -(commit - 4); raw += 1) {
+          const step = Math.abs(swipeTravel(raw, commit) - swipeTravel(raw - 1, commit));
+          expect(step).toBeLessThanOrEqual(1.0001);
+        }
+        // And at the line itself the row's edge is exactly on it.
+        expect(swipeTravel(-commit, commit)).toBeCloseTo(-commit, 6);
+      }
+    });
+
+    it("tracks the finger 1:1 up to the commit, then resists", () => {
+      const commit = swipeCommitAt(329);
+      expect(swipeTravel(-40, commit)).toBe(-40);
+      expect(swipeTravel(-commit + 1, commit)).toBe(-commit + 1);
+      // Past it: still moving, still monotonic, never past commit + resist.
+      const over = Math.abs(swipeTravel(-commit - 200, commit));
+      expect(over).toBeGreaterThan(commit);
+      expect(over).toBeLessThan(commit + swipe.resist);
+      expect(Math.abs(swipeTravel(-commit - 80, commit)))
+        .toBeGreaterThan(Math.abs(swipeTravel(-commit - 20, commit)));
+    });
+
+    it("never commits before the action has finished showing itself", () => {
+      // A short row's 60% lands inside the reveal, which would delete on the
+      // gesture that was only meant to open the button.
+      for (const w of WIDTHS) {
+        const commit = swipeCommitAt(w);
+        expect(commit).toBeGreaterThan(swipe.action);
+        // …but never further out than the row is wide, or it is unreachable.
+        expect(commit).toBeLessThanOrEqual(w);
+      }
+    });
+
+    it("mirrors on the leading side", () => {
+      const commit = swipeCommitAt(329);
+      expect(swipeTravel(60, commit)).toBe(60);
+      expect(swipeTravel(commit + 200, commit)).toBeCloseTo(-swipeTravel(-commit - 200, commit), 6);
+    });
   });
 });
 

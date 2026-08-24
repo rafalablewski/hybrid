@@ -7,7 +7,7 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, kernLead, trackOtp, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading , RADIUS} from "./kit";
 import { LegalLinks } from "../legal-links";
 
@@ -141,7 +141,7 @@ export default function AuroraLogin() {
             placeholder="000000"
             placeholderTextColor={palette.ash}
             accessibilityLabel={t("w.account.login.verify-title")}
-            style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
+            style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: trackOtp(fs.display), paddingLeft: kernLead(trackOtp(fs.display)), textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
           />
           {!!error && (
             <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>

@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, trackOtp, kernPad, kernLead, TRACK_FIGURE_EM, TRACK_OTP_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
 import { FIGURE_INK_EM, SOHNE } from "./theme/face-metrics";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
@@ -226,6 +226,73 @@ describe("tracking", () => {
     // Rounded to 0.1dp — RN takes fractional letterSpacing, and at this size
     // the tenth is visible.
     expect(trackFigure(46)).toBe(Math.round(46 * TRACK_FIGURE_EM * 10) / 10);
+  });
+
+  it("kernPad gives back exactly the kern a negative tracking never draws", () => {
+    // The defect it exists for: a tracking is applied after the LAST glyph
+    // too, so a run lays out |track| narrower than it draws, and a TextInput
+    // — which clips to its bounds, unlike a Text — cuts the difference off the
+    // last character. At the app's biggest figure that is 1.7dp of the last
+    // digit, which is what the workout logger's set editor was shaving.
+    expect(kernPad(trackFigure(fs.stat))).toBe(1.7);
+    expect(kernPad(trackFigure(fs.stat))).toBe(-trackFigure(fs.stat));
+    // EXACT, not a fudge — the pad IS the tracking, negated, at every size.
+    for (const size of [27, 30, 46, 49, 68]) {
+      expect(kernPad(trackFigure(size)), `${size}dp`).toBe(-trackFigure(size));
+      expect(kernPad(tracking(size)), `${size}dp`).toBe(-tracking(size));
+    }
+    // ZERO FOR A POSITIVE TRACK, and that is the definition rather than a
+    // clamp on a bad input: a positive tracking leaves a real trailing gap
+    // inside the box, so nothing is clipped. What it breaks is centring, and
+    // that compensation belongs to the opposite edge.
+    expect(kernPad(8)).toBe(0);
+    expect(kernPad(tracking(fs.nano, "label"))).toBe(0);
+    expect(kernPad(0)).toBe(0);
+  });
+
+  it("kernLead is the same kern from the other end — the centring half", () => {
+    // A positive tracking is never clipped; the trailing gap lands INSIDE the
+    // box, so a centred run sits half a gap left of centre. The one-time-code
+    // fields are the only shape in the app that does it, and 8dp of tracking
+    // on six centred digits is 4dp of drift.
+    expect(kernLead(8)).toBe(8);
+    expect(kernLead(3)).toBe(3);
+    // ZERO FOR A NEGATIVE TRACK — that one is kernPad's, and it is a clip, not
+    // a drift. The pair is exhaustive and never both non-zero: whichever edge
+    // the trailing kern took from, exactly one of them gives it back.
+    expect(kernLead(trackFigure(fs.stat))).toBe(0);
+    for (const track of [-1.7, -0.3, 0, 3, 8]) {
+      expect(Math.min(kernPad(track), kernLead(track)), `${track}`).toBe(0);
+      expect(kernPad(track) + kernLead(track), `${track}`).toBe(Math.abs(track));
+    }
+  });
+
+  it("trackOtp is the third tracking — semantic, and one em for three sites", () => {
+    // ONE INTENT, THREE SPELLINGS, no two agreeing: mobile login 8dp at 28
+    // (0.286em), web login .3em at 22, mobile MFA 3dp at 18 (0.167em). The
+    // first two are the same decision written twice; the third is half of it
+    // for no reason anybody wrote down. 0.29em is the band the two agreeing
+    // sites sit in, which is why adopting it costs them nothing.
+    expect(trackOtp(fs.display)).toBe(8.1);   // was 8   — under the rounding
+    expect(trackOtp(fs.headline)).toBe(6.4);  // was 6.6 — .3em at 22
+    // AND THE ONE SITE THAT MOVES, which is the point of doing this at all.
+    expect(trackOtp(fs.subtitle)).toBe(5.2);  // was 3
+    // Proportional, like its two siblings — one dp cannot serve 18, 22 and 28.
+    expect(trackOtp(28) / 28).toBeCloseTo(trackOtp(18) / 18, 3);
+    expect(trackOtp(46)).toBe(Math.round(46 * TRACK_OTP_EM * 10) / 10);
+    // POSITIVE at every size, so it is kernLead's case and never kernPad's —
+    // a code field cannot clip, it can only sit off centre.
+    for (const size of [10, 18, 22, 28, 49]) {
+      expect(trackOtp(size), `${size}dp`).toBeGreaterThan(0);
+      expect(kernPad(trackOtp(size)), `${size}dp`).toBe(0);
+    }
+    // WIDER THAN THE OPTICAL TRACKINGS AT EVERY SIZE, which is the whole
+    // reason it is its own function: it is not a refinement of how the text
+    // reads, it is the thing the text is saying.
+    for (const size of [18, 22, 28]) {
+      expect(trackOtp(size), `${size}dp`).toBeGreaterThan(Math.abs(tracking(size)));
+      expect(trackOtp(size), `${size}dp`).toBeGreaterThan(tracking(size, "caps"));
+    }
   });
 
   it("codifies the two eyebrow trackings already in use", () => {
