@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildMacrocycle } from "@hybrid/core";
+import { buildMacrocycle, goalIdToStore } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -26,9 +26,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // "Your plan today" exactly as written; null = engine-prescribed by goal).
   const planId = typeof b.planId === "string" && b.planId.trim() ? b.planId.trim() : null;
 
-  const macro = buildMacrocycle(b.goal.trim());
+  // Normalised to a goal id when the library knows it. A coach typing their own
+  // goal ("Return from ACL, phase 2") is stored verbatim and displays as written.
+  const goal = goalIdToStore(b.goal);
+  const macro = buildMacrocycle(goal);
   const macrocycle = await prisma.macrocycle.create({
-    data: { userId: link.clientId, goal: b.goal.trim(), planId, eventDate: null, blocks: macro.blocks as object },
+    data: { userId: link.clientId, goal, planId, eventDate: null, blocks: macro.blocks as object },
   });
   return NextResponse.json({ macrocycle }, { status: 201 });
 }

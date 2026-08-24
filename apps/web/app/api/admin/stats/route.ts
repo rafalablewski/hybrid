@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { costUsd } from "@hybrid/core";
+import { costUsd, goalLabel } from "@hybrid/core";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 
@@ -37,7 +37,12 @@ export async function GET(request: Request) {
     // COUNT(DISTINCT ...) in SQL instead of fetching every distinct row to .length in JS.
     prisma.$queryRaw<{ n: number }[]>`SELECT count(DISTINCT "coachId")::int AS n FROM "CoachLink" WHERE "status" = 'ACTIVE'`,
     prisma.$queryRaw<{ n: number }[]>`SELECT count(DISTINCT "userId")::int AS n FROM "Session" WHERE "startedAt" >= ${since30}`,
-    prisma.macrocycle.groupBy({ by: ["goal"], _count: { goal: true }, orderBy: { _count: { goal: "desc" } }, take: 6 }),
+    // NO `take` HERE, deliberately. The column holds goal IDS now and rows
+    // written earlier hold display NAMES (see core goal-id.ts), so the same goal
+    // can be two groups — "hybrid" and "Hybrid Athlete" — and truncating before
+    // they are merged would drop a real bar and rank the rest wrongly. Grouped
+    // whole, merged by label below, then cut to six.
+    prisma.macrocycle.groupBy({ by: ["goal"], _count: { goal: true }, orderBy: { _count: { goal: "desc" } } }),
     prisma.user.groupBy({ by: ["language"], _count: { language: true } }),
     prisma.user.groupBy({ by: ["role"], _count: { role: true } }),
     prisma.coachLink.count({ where: { status: "ACTIVE" } }),
@@ -93,11 +98,25 @@ export async function GET(request: Request) {
     coaches: activeCoaches[0]?.n ?? 0,
     mau: recentSessionUsers[0]?.n ?? 0,
     activeLinks,
-    planPopularity: plansByGoal.map((p) => ({ goal: p.goal, n: p._count.goal })),
+    planPopularity: mergeByGoalLabel(plansByGoal),
     langSplit: usersByLang
       .map((l) => ({ lang: l.language, n: l._count.language }))
       .sort((a, b) => b.n - a.n),
     roleSplit: roleSplit.map((r) => ({ role: r.role, n: r._count.role })),
     growth: weeks,
   });
+}
+
+/** Goal counts by DISPLAY NAME, merging the id and legacy-name rows for the same
+ *  goal into one bar. Six most popular, descending. */
+function mergeByGoalLabel(rows: { goal: string; _count: { goal: number } }[]): { goal: string; n: number }[] {
+  const totals = new Map<string, number>();
+  for (const r of rows) {
+    const label = goalLabel(r.goal) || r.goal;
+    totals.set(label, (totals.get(label) ?? 0) + r._count.goal);
+  }
+  return [...totals.entries()]
+    .map(([goal, n]) => ({ goal, n }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 6);
 }

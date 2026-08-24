@@ -11,6 +11,7 @@ import {
   type OnboardingQuestion,
   type OnboardingAnswerMap,
   type OnboardingPlan,
+  type ClientPersona,
 } from "@hybrid/core";
 import { fetchOnboardingQuestions, submitOnboarding as apiSubmit } from "./api";
 import { setClientPersona } from "./persona";
@@ -24,9 +25,10 @@ export type AnswerValue = string | number | string[];
  *  track answers, derive the recommendation. Falls back to the @hybrid/core
  *  built-in defaults when the API is unreachable. */
 export function useOnboarding() {
-  const [questions, setQuestions] = useState<OnboardingQuestion[]>(() =>
-    onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS),
-  );
+  /** The admin-editable set as fetched, BEFORE the persona filter. Kept whole so
+   *  changing the persona answer re-derives the wizard rather than needing a
+   *  refetch — and so going back and switching restores the questions. */
+  const [rows, setRows] = useState<OnboardingQuestion[]>(DEFAULT_ONBOARDING_QUESTIONS);
   const [answers, setAnswers] = useState<OnboardingAnswerMap>({});
   /**
    * WHICH ANSWERS THE ATHLETE ACTUALLY GAVE.
@@ -50,10 +52,29 @@ export function useOnboarding() {
   useEffect(() => {
     let alive = true;
     fetchOnboardingQuestions()
-      .then((rows) => { if (alive && rows) setQuestions(onboardingQuestionsForClient(rows)); })
+      .then((fetched) => {
+        if (alive && fetched) {
+          const normalized = onboardingQuestionsForClient(fetched);
+          if (normalized.length) setRows(normalized);
+        }
+      })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, []);
+
+  /**
+   * THE FORK. The persona question decides which of two intakes the athlete is
+   * in, so the wizard is re-derived from its answer rather than being one fixed
+   * list. Before it is answered every question is shown, which is what makes
+   * the persona step itself always the first one.
+   */
+  const persona = useMemo<ClientPersona | null>(() => {
+    const q = rows.find((r) => r.engineKey === "persona");
+    const v = q ? answers[q.key] : undefined;
+    return v === "casual" || v === "athlete" ? v : null;
+  }, [rows, answers]);
+
+  const questions = useMemo(() => onboardingQuestionsForClient(rows, persona), [rows, persona]);
 
   useEffect(() => {
     setAnswers((prev) => {
@@ -70,9 +91,16 @@ export function useOnboarding() {
     setAnswers((p) => ({ ...p, [key]: value }));
     setTouched((p) => (p.has(key) ? p : new Set(p).add(key)));
   };
-  const plan = useMemo<OnboardingPlan | null>(() => recommendFromAnswers(questions, answers), [questions, answers]);
+  // NO PLAN FOR A TRACKER, and this is the half of the fork that matters most:
+  // a null plan is what stops finishOnboarding sending a goal, which is what
+  // stops the server enrolling a season. Someone who declined the goal product
+  // used to get one anyway.
+  const plan = useMemo<OnboardingPlan | null>(
+    () => (persona === "casual" ? null : recommendFromAnswers(questions, answers)),
+    [questions, answers, persona],
+  );
 
-  return { questions, answers, touched, setAnswer, plan, loading };
+  return { questions, answers, touched, setAnswer, plan, loading, persona };
 }
 
 /**
@@ -133,7 +161,7 @@ export async function finishOnboarding(
     await AsyncStorage.setItem("hybrid.equipment", extractEngineAnswers(questions, answers).equipment);
   } catch { /* ignore */ }
 
-  const ok = await apiSubmit(answers as Record<string, unknown>, plan ? { goalLabel: plan.goalLabel, planId: plan.planId } : null);
+  const ok = await apiSubmit(answers as Record<string, unknown>, plan ? { goalId: plan.goalId, planId: plan.planId } : null);
   try { await AsyncStorage.setItem("hybrid.onboarded", "1"); } catch { /* ignore */ }
   return ok;
 }

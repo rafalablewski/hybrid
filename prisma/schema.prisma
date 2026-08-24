@@ -1310,6 +1310,14 @@ model Macrocycle {
   id        String    @id @default(cuid())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  // The GOAL_TREE id (e.g. "hybrid", "power"), NOT the display name — see
+  // packages/core/src/goal-id.ts. It held the display name until Aug 2026,
+  // which meant a rename or a translation silently re-routed the periodization
+  // model and split the column into two values for one goal. Every write path
+  // normalises through `goalIdToStore`, so an older client sending a name still
+  // lands an id. Rows written before that hold names and are read through
+  // `goalLabel` (reference/sql-macrocycle-goal-id.sql normalises them when the
+  // operator chooses to). A COACH-AUTHORED goal is free text and stays verbatim.
   goal      String
   // The enrolled NAMED plan id (e.g. "bb-fb4"), when the athlete picked a real
   // plan from the library — drives "Your plan today". Null for a goal-only
@@ -1597,6 +1605,24 @@ model OnboardingQuestion {
   required     Boolean  @default(false)
   enabled      Boolean  @default(true)
   system       Boolean  @default(false)
+  // WHICH INTAKE ASKS THIS — [] or null means both. The persona question forks
+  // the wizard (packages/core/src/onboarding.ts), so a question can belong to
+  // the goal intake, the tracker intake, or both. A BUILT-IN's scope is locked
+  // to the code default and this column is ignored for it: persona scope is
+  // structural rather than copy, and a stored row that could widen it would
+  // silently un-fork the wizard. Custom questions own theirs.
+  // reference/sql-onboarding-scope-grouping.sql.
+  personas     String[] @default([])
+  // WHICH SCREEN THIS SHARES. Adjacent questions with the same group id are
+  // asked together instead of one each — sex + birth + body mass are one
+  // screen, "A little about you". NULL means "inherit the code default";
+  // an EMPTY STRING is an explicit ungrouping, which is how an admin takes a
+  // built-in off a shared screen. Grouping is PRESENTATION, so unlike
+  // `personas` an admin may set it on a built-in: it changes how many screens
+  // the intake takes, never who is asked or what reads the answer.
+  // reference/sql-onboarding-scope-grouping.sql.
+  groupKey     String?
+  groupTitle   String?
   order        Int      @default(0)
   authorId     String?
   authorEmail  String?

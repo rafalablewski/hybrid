@@ -1587,6 +1587,9 @@ export async function fetchEfficacyCard(planId: string): Promise<import("@hybrid
   }
 }
 
+/** Enrol a season. `goal` is a GOAL_TREE **id** (see core goal-id.ts) — the
+ *  server normalises a display name from an older build, but new callers send
+ *  the id so the column stays joinable. */
 export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/macrocycles`, {
@@ -1650,13 +1653,13 @@ export async function fetchOnboardingQuestions(): Promise<unknown[] | null> {
  *  plan in the same call. Mirrors the web POST /api/onboarding. */
 export async function submitOnboarding(
   answers: Record<string, unknown>,
-  plan?: { goalLabel: string; planId: string } | null,
+  plan?: { goalId: string; planId: string } | null,
 ): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/onboarding`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ answers, ...(plan ? { goal: plan.goalLabel, planId: plan.planId } : {}) }),
+      body: JSON.stringify({ answers, ...(plan ? { goal: plan.goalId, planId: plan.planId } : {}) }),
     });
     return res.ok;
   } catch {

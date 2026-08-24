@@ -16,7 +16,7 @@ import {
   type QuestionKey,
 } from "./questionnaire";
 import { VOLUME_PROFILE_FIELDS } from "./engines/athlete-profile";
-import { DEFAULT_ONBOARDING_QUESTIONS, onboardingQuestionsForClient } from "./onboarding";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_ENGINE_KEYS, onboardingQuestionsForClient } from "./onboarding";
 import { personalizeLandmarks, sanitizeVolumeProfile, effectiveAgeYears, type AthleteVolumeProfile } from "./engines/landmark-profile";
 
 /** A legal answer to any question, for the round-trip and factor checks. */
@@ -262,10 +262,19 @@ describe("what setup already asked", () => {
     const p = questionnaireFromAnswers(qs, {
       persona: "athlete", goal: "hybrid", experience: "advanced",
       sex: "F", birth: "1992-04", bodyweight: 61.5, days: 5, equipment: "full",
+      sleep: 4, stress: 2,
     }, { now: NOW });
-    // The date is stored as given, and body mass is not here at all — it is a
-    // dated measurement and goes to the body log.
-    expect(p).toEqual({ experience: "advanced", sex: "F", birthYear: 1992, birthMonth: 4, daysPerWeek: 5 });
+    // The date is stored as given, and body mass is not here at all — a dated
+    // measurement, so it goes to the body log.
+    // Neither TRAINING AGE nor SLEEP is here, though an answer for each was
+    // passed in: both are measured (off the bar, and off the daily check-in),
+    // and in both cases a stored value outranks the measurement — so setup, the
+    // one moment with nothing to measure yet, must not write either.
+    // THREE MEASURED FIELDS ARE ABSENT though an answer for each was passed in:
+    // training age (read off the bar), sleep (the check-in's mean) and training
+    // frequency (the log's median). Each resolves stored-over-measured, so
+    // setup — the one moment with nothing to measure yet — must write none.
+    expect(p).toEqual({ sex: "F", birthYear: 1992, birthMonth: 4, stress: 2 });
     expect(effectiveAgeYears(p, NOW)).toBe(34);
     expect(bodyMassFromAnswers(qs, { bodyweight: 61.5 })).toBe(61.5);
   });
@@ -356,19 +365,61 @@ describe("what setup already asked", () => {
    */
   it("reaches the estimate — an intake answer moves the multipliers", () => {
     const bare = personalizeLandmarks({});
-    const fromIntake = personalizeLandmarks(questionnaireFromAnswers(qs, { experience: "advanced", days: 5 }));
-    expect(fromIntake.stimulus).not.toBe(bare.stimulus);
+    const fromIntake = personalizeLandmarks(
+      questionnaireFromAnswers(qs, { stress: 1, birth: "1998-04" }, { now: NOW }),
+    );
     expect(fromIntake.recovery).toBeGreaterThan(bare.recovery);
   });
 
-  it("takes an athlete most of the way before their first session", () => {
-    const answers = { experience: "intermediate", sex: "M", birth: "1998-04", bodyweight: 79, days: 4 };
+  /**
+   * TRAINING AGE IS NOT ONE OF THE ANSWERS ANY MORE, and this is the guard.
+   *
+   * It is the strongest single input to the model — the only one that scales
+   * the STIMULUS end — and it used to come from one tap at setup. Self
+   * assessment is unreliable in both directions, engines/fitness-level.ts
+   * measures it from the log instead, and `resolveExperience` gives a STATED
+   * answer permanent priority over that measurement. So an answer typed before
+   * the athlete had logged anything outranked their own training forever.
+   *
+   * Setup no longer asks. The questionnaire screen still lets someone overrule
+   * the estimate deliberately; what is gone is the version of that override
+   * given by an athlete with no evidence either way.
+   */
+  it("never writes a measured field onto the profile", () => {
+    const p = questionnaireFromAnswers(qs, { experience: "advanced", sleep: 5, days: 6 });
+    expect(p.experience, "training age is read off the bar").toBeUndefined();
+    expect(p.sleep, "sleep is the mean of the daily check-in").toBeUndefined();
+    expect(p.daysPerWeek, "frequency is the log's own median").toBeUndefined();
+    for (const k of ["experience", "sleep"]) {
+      expect(qs.some((q) => q.engineKey === k), k).toBe(false);
+    }
+    // Frequency IS asked, of the goal intake, and still must not land here.
+    expect(qs.some((q) => q.engineKey === "daysPerWeek")).toBe(true);
+  });
+
+  /**
+   * SETUP NO LONGER TAKES AN ATHLETE MOST OF THE WAY, and that is the design
+   * rather than a regression. It contributes only what the athlete can uniquely
+   * say about their body; the three heaviest remaining inputs — training age,
+   * sleep and training frequency — are MEASURED, and each arrives as soon as
+   * there is a log or a check-in to read.
+   *
+   * So the figure this asserts is not what the Volume screen shows either:
+   * `useVolumeModel` measures completeness on the profile it hands the model,
+   * which carries the measured three.
+   */
+  it("contributes what only the athlete can say, and the log does the rest", () => {
+    const answers = { sex: "M", birth: "1998-04", bodyweight: 79, stress: 2 };
     const p = questionnaireFromAnswers(qs, answers, { now: NOW });
     // Body mass reaches the profile the way it does in the app: setup logs a
     // weigh-in, and the measured layer merges the newest one back in.
-    const resolved = { ...p, bodyweightKg: bodyMassFromAnswers(qs, answers) };
-    // experience .27 + sex .08 + age .13 + mass .17 + days .11 = .76
-    expect(questionnaireProgress(resolved, [], { now: NOW }).score).toBe(0.76);
+    const told = { ...p, bodyweightKg: bodyMassFromAnswers(qs, answers) };
+    const fromSetup = questionnaireProgress(told, [], { now: NOW }).score;
+    expect(fromSetup).toBeGreaterThan(0.35);
+
+    // …and the measured layer more than doubles it, without a further question.
+    const measured = { ...told, experience: "intermediate" as const, sleep: 4, daysPerWeek: 4 };
+    expect(questionnaireProgress(measured, [], { now: NOW }).score).toBeGreaterThan(fromSetup * 2);
   });
 
   /** The age question counts as answered from the birth year alone — the form
@@ -398,8 +449,17 @@ describe("what setup already asked", () => {
 
   it("asks every question whose engine key is a questionnaire field", () => {
     const asked = new Set(qs.map((q) => q.engineKey).filter(Boolean));
-    for (const k of ["experience", "sex", "birthYear", "bodyweightKg", "daysPerWeek"]) {
+    for (const k of ["sex", "birthYear", "bodyweightKg", "stress"]) {
       expect(asked, k).toContain(k);
+    }
+    // …and neither of the two whose ONLY reader was the profile. Both stay
+    // legal engine keys so an operator can re-add either question; they are
+    // simply not shipped, because a typed answer would outrank the measurement
+    // rather than fill a gap in it. (Frequency is still asked — see the fork
+    // tests — because the plan recommender reads it. It just never lands here.)
+    for (const k of ["experience", "sleep"]) {
+      expect(asked, k).not.toContain(k);
+      expect(ONBOARDING_ENGINE_KEYS, k).toContain(k);
     }
   });
 

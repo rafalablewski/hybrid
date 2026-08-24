@@ -151,8 +151,14 @@ export interface PlanProgramToday {
   discipline: PlanDiscipline;
   /** the day's label, e.g. "Week 2, Legs" (week prefix only for multi-week plans). */
   day: string;
-  /** 0-based position among the plan's TRAINING days (rest days excluded). */
+  /** 0-based position among the plan's TRAINING days (rest days excluded).
+   *  CLAMPED at the last day once the programme is finished — it used to wrap
+   *  back to zero, which is how a plan came to have no end. */
   dayIndex: number;
+  /** The programme has been worked through: `dayIndex` is held at the last day
+   *  and the caller should be showing a finished season rather than a next
+   *  session. */
+  complete: boolean;
   totalDays: number;
   /** "Active rest" / "Competition" for a non-ordinary day, else null. */
   kindLabel: string | null;
@@ -327,7 +333,13 @@ export function planProgramToday(
   if (!training.length) return null;
 
   const n = Number.isFinite(sessionsLogged) ? Math.max(0, Math.floor(sessionsLogged)) : 0;
-  const dayIndex = n % training.length;
+  // IT USED TO WRAP. `n % training.length` meant that the day after an athlete
+  // finished the last session of a twelve-week programme, the card silently
+  // offered day one again — no summary, no acknowledgement, no next block. A
+  // plan had no end; it looped. It CLAMPS now and says it is finished, and the
+  // caller decides what to show for a season that is over.
+  const complete = n >= training.length;
+  const dayIndex = Math.min(n, training.length - 1);
   const d = training[dayIndex]!;
 
   return {
@@ -336,6 +348,7 @@ export function planProgramToday(
     discipline: cal.discipline,
     day: `${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`,
     dayIndex,
+    complete,
     totalDays: training.length,
     kindLabel: d.kindLabel,
     rows: d.rows,

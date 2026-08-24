@@ -75,7 +75,15 @@ export const HISTORY_VIEWS: ReadonlyArray<{ id: HistoryViewId; labelKey: string 
  *  "list", "heatmap", "journal" and "blocks" ids a device may still have
  *  stored — fall back to the agenda. */
 export const normalizeHistoryView = (v: unknown): HistoryViewId =>
-  HISTORY_VIEWS.some((x) => x.id === v) ? (v as HistoryViewId) : "agenda";
+  isHistoryView(v) ? v : "agenda";
+
+/** Whether `v` NAMES a live view — which is a different question from what to
+ *  fall back to. A deep link carrying `?view=trend` has to be told apart from
+ *  one carrying nothing at all: the first should show the trend, the second
+ *  should show whatever the athlete last chose. `normalizeHistoryView` answers
+ *  "agenda" to both. */
+export const isHistoryView = (v: unknown): v is HistoryViewId =>
+  HISTORY_VIEWS.some((x) => x.id === v);
 
 // ============================================================
 //  Session headline — the ONE number a session leads with

@@ -7,6 +7,7 @@ export * from "./heat";
 export * from "./fuel";
 export * from "./progression";
 export * from "./periodization";
+export * from "./season-load";
 export * from "./prescription";
 export * from "./reconcile";
 export * from "./signals";

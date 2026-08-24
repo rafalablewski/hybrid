@@ -357,11 +357,31 @@ export function questionnaireFromAnswers(
   // type to carry it.
   const birth = parseBirth(read("birthYear"));
   return sanitizeVolumeProfile({
-    experience: read("experience"),
+    // NO `experience`. Setup no longer asks for it, and it would not belong here
+    // if it did: the profile's training age is MEASURED from the log
+    // (engines/fitness-level.ts, resolved by useVolumeModel), and a value
+    // written here would outrank that measurement permanently, because
+    // `resolveExperience` gives a stated answer priority by design. The
+    // questionnaire screen is where an athlete can still overrule the estimate
+    // deliberately; setup is not, because at setup there is nothing to overrule.
     sex: read("sex"),
     birthYear: birth?.year,
     birthMonth: birth?.month,
-    daysPerWeek: n(read("daysPerWeek")),
+    // NO daysPerWeek. Measured from the log (landmark-context `measuredProfile`
+    // → habits `trainingDaysPerWeek`), and `withMeasured` resolves
+    // `stored ?? measured` — so a number typed at setup would outrank every
+    // week of training after it, which is the same trap sleep and training age
+    // were removed from.
+    // STRESS ONLY. Sleep is deliberately absent even though it is a legal
+    // engine key: `withMeasured` resolves `stored.sleep ?? measured.sleep`, so
+    // anything written here would outrank the mean of every daily check-in
+    // permanently — the same way a typed training age outranked the log.
+    // Setup is the one place that must not write it, because at setup there is
+    // nothing to overrule.
+    //
+    // `read` applies no default, so a question stepped past contributes nothing
+    // rather than writing a middling 3 that reads back as an answer.
+    stress: n(read("stress")),
     // BODY MASS IS DELIBERATELY ABSENT. It is a reading with a date, not a
     // standing answer, so setup writes it to the BODY LOG — the same store the
     // scale, the nutrition maintenance fit and every bodyweight-aware tonnage

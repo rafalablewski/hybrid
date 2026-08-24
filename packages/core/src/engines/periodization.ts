@@ -1,4 +1,5 @@
 import type { Macrocycle, MacroBlock, Phase, Microcycle } from "./types";
+import { goalProfile, type TrainingEmphasis } from "../goal-profile";
 
 /**
  * Periodization engine. A macrocycle (season) is built from mesocycles (phase
@@ -26,25 +27,63 @@ export const PHASE_MODELS: Record<string, { name: string; phases: Phase[] }> = {
       { key: "deload", label: "Deload", weeks: 2, intensity: 35, volume: 35, color: "#8a9691", focus: "Supercompensate", pattern: "easy" },
     ],
   },
+  // BOTH QUALITIES AT ONCE, which is its own problem rather than the average of
+  // the other two: the interference effect means a concurrent athlete cannot
+  // specialise either half for long, so the blocks are shorter and neither
+  // quality is ever fully set down. This is the model a Hybrid Athlete, a
+  // CrossFitter, a tactical athlete and a field-sport athlete were all missing —
+  // every one of them fell through to the powerlifting progression.
+  concurrent: {
+    name: "Concurrent model",
+    phases: [
+      { key: "base", label: "Base", weeks: 4, intensity: 55, volume: 85, color: "#2f7893", focus: "Aerobic base and general strength together", pattern: "3 load / 1 deload" },
+      { key: "build", label: "Build", weeks: 4, intensity: 75, volume: 70, color: "#c3d363", focus: "Heavy lifting alongside threshold work", pattern: "3 load / 1 deload" },
+      { key: "sharpen", label: "Sharpen", weeks: 3, intensity: 88, volume: 50, color: "#daa51d", focus: "Power and race-pace work under fatigue", pattern: "2 load / 1 deload" },
+      { key: "taper", label: "Taper", weeks: 1, intensity: 75, volume: 35, color: "#ec935e", focus: "Shed fatigue, hold sharpness", pattern: "event week" },
+      { key: "deload", label: "Deload", weeks: 2, intensity: 35, volume: 35, color: "#8a9691", focus: "Supercompensate", pattern: "easy" },
+    ],
+  },
+  // NO PEAK AND NO TAPER, and their absence is the whole model. General fitness,
+  // fat loss, mobility and pre/postnatal training have no event to arrive at, so
+  // a ramp to a maximal test week is not a plan — it is an instruction nobody
+  // asked for, and for a pregnant or postpartum athlete it is the wrong one.
+  // What these goals need is a progression they can repeat indefinitely.
+  general: {
+    name: "General model",
+    phases: [
+      { key: "foundation", label: "Foundation", weeks: 4, intensity: 50, volume: 80, color: "#2f7893", focus: "Movement quality and work capacity", pattern: "3 load / 1 easy" },
+      { key: "progress", label: "Progress", weeks: 5, intensity: 65, volume: 85, color: "#c3d363", focus: "Steady progressive overload", pattern: "4 load / 1 easy" },
+      { key: "consolidate", label: "Consolidate", weeks: 4, intensity: 70, volume: 70, color: "#daa51d", focus: "Hold the gains, refine technique", pattern: "3 load / 1 easy" },
+      { key: "recovery", label: "Easy week", weeks: 1, intensity: 35, volume: 45, color: "#8a9691", focus: "Rest and regenerate", pattern: "easy" },
+    ],
+  },
 };
 
-/** goals/sports → which phase model. */
-export const MODEL_FOR: Record<string, "endurance" | "strength"> = {
-  Running: "endurance",
-  Cycling: "endurance",
-  Swimming: "endurance",
-  Hyrox: "endurance",
-  Triathlon: "endurance",
-  Bodybuilding: "strength",
-  Powerlifting: "strength",
-  Climbing: "strength",
-  BJJ: "strength",
-  Boxing: "strength",
-  Hybrid: "strength",
-};
-
+/**
+ * Which phase model a goal is built from.
+ *
+ * THIS USED TO BE A TABLE HERE, `MODEL_FOR`, and it is worth recording what was
+ * wrong with it because the shape of the mistake is more instructive than the
+ * mistake. It was keyed by DISPLAY NAME; it named four sports that are not
+ * goals at all (Climbing, BJJ, Boxing, Hybrid) left over from a taxonomy the
+ * goal tree replaced; it covered seven of the nineteen goals; and everything it
+ * missed fell through a silent `?? "strength"`. So twelve goals were quietly
+ * periodised as powerlifters — including `Hybrid Athlete`, the flagship, which
+ * missed by a single word, and `Pre & Postnatal`, which was handed a ramp to a
+ * maximal test week.
+ *
+ * None of that was visible, because a lookup with a default never has to
+ * account for its coverage. The classification now lives in ONE place that all
+ * three consumers read (goal-profile.ts), is keyed by goal id, has no default,
+ * and has a test that fails if the library gains a goal it does not name.
+ */
 export function modelFor(goalOrSport: string): { name: string; phases: Phase[] } {
-  return PHASE_MODELS[MODEL_FOR[goalOrSport] ?? "strength"]!;
+  return PHASE_MODELS[modelKeyFor(goalOrSport)]!;
+}
+
+/** The phase-model key for a goal, given as an id or a legacy display name. */
+export function modelKeyFor(goalOrSport: string): TrainingEmphasis {
+  return goalProfile(goalOrSport).model;
 }
 
 /**

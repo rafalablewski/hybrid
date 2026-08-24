@@ -22,6 +22,17 @@ import type { AuroraIconName } from "@hybrid/core";
 //
 // The rule this exception is written against: if a section is on both, keep the
 // two in step. If a section is web-only, it must say so here, with why.
+//
+// WEB-ONLY, DECLARED:
+//   • The AI group (Agent HQ, AI agents) — an agent-operations console has no
+//     business compiled into the app an athlete downloads, role gate or not.
+//   • ONBOARDING QUESTIONS (/admin → Onboarding). Authoring the questionnaire
+//     is a desk task: it is long-form copy in three locales, per-question
+//     options, an order, an intake scope and an engine key, and every edit
+//     changes the first thing every new athlete sees. It wants a keyboard and a
+//     wide screen, and it is one URL away from the same operator. Nothing about
+//     it is time-critical in the way moderation or a feature flag can be, which
+//     is the test the sections below are chosen by.
 export type AdminSectionId =
   | "overview"
   | "users"

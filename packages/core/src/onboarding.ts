@@ -9,6 +9,7 @@
  */
 
 import { GOAL_TREE, GOAL_GROUPS, type GoalPlan, type GoalCategory } from "./plans";
+import type { ClientPersona } from "./nav";
 
 /** A main goal id — always one of the plan library's goal (GOAL_TREE) ids. */
 export type OnboardingGoal = string;
@@ -17,7 +18,9 @@ export type Equipment = "full" | "home" | "minimal";
 
 export interface OnboardingAnswers {
   goal: OnboardingGoal;
-  experience: Experience;
+  /** Optional since Aug 2026: setup no longer asks. It is measured from the log
+   *  (engines/fitness-level.ts) and only ever narrows a tie here. */
+  experience?: Experience;
   daysPerWeek: number;
   equipment?: Equipment;
   sessionMin?: number;
@@ -107,6 +110,14 @@ export type OnboardingQuestionKind = (typeof ONBOARDING_QUESTION_KINDS)[number];
 export const ONBOARDING_ENGINE_KEYS = [
   "persona", "goal", "experience", "daysPerWeek", "equipment",
   "sex", "birthYear", "bodyweightKg",
+  // BOTH REMAIN LEGAL KEYS, and only one is still shipped as a question.
+  //
+  // `sleep` is MEASURED from the daily check-in (sleepFromCheckins) and a typed
+  // value outranks the measurement, so setup does not ask — the questionnaire
+  // screen keeps the row for an athlete who wants to overrule it deliberately.
+  // `stress` is the one recovery input nothing measures, so it is asked, of the
+  // goal intake only.
+  "sleep", "stress",
 ] as const;
 
 /**
@@ -148,6 +159,47 @@ export interface OnboardingQuestion {
   enabled: boolean;
   /** Built-in question: protected from deletion; key/kind/engineKey are locked. */
   system?: boolean;
+  /**
+   * WHICH INTAKE THIS QUESTION BELONGS TO. Omitted means both.
+   *
+   * The first question asks which of two products the athlete wants — "Just
+   * track my training" or "Train for a goal" — and until Aug 2026 the wizard
+   * did not branch on the answer. Everyone was asked all eight questions, the
+   * goal question was `required` with no skip, and the server enrolled a
+   * periodised season for anyone with a goal. So both answers produced
+   * IDENTICAL server state, and the only difference between the two products
+   * was a flag in device storage that hid some menu rows. Someone who asked for
+   * the simple tracker got a twelve-week programme laid across their calendar
+   * and an upsell offering to make it adapt.
+   *
+   * A tracker needs to be asked who they are, because the volume and readiness
+   * models read it. It does not need to be asked what it is training for.
+   */
+  personas?: ClientPersona[];
+  /**
+   * WHICH SCREEN THIS QUESTION SHARES. Questions with the same group id, and
+   * ADJACENT in `order`, are asked on one screen instead of one each.
+   *
+   * The wizard's default is one question per screen and that is right for most
+   * of them: a goal is a decision, a body mass is a measurement, and putting
+   * either beside something else invites a skim. But three short questions
+   * about the same subject — sex, birth date, body mass — are one thing being
+   * asked, and asking them across three screens is three transitions for one
+   * answer. On the intake most people will walk, that is most of the intake.
+   *
+   * ADJACENCY IS REQUIRED, not incidental: a group is a screen, and a screen
+   * cannot be assembled from questions with something else between them. A
+   * group whose members are separated by an ungrouped question renders as two
+   * screens, which is the honest reading of the order it was given.
+   *
+   * Presentation rather than structure, which is why — unlike `personas` — an
+   * admin may set it on a BUILT-IN. Regrouping changes how many screens the
+   * intake takes; it cannot change who is asked or what reads the answer.
+   */
+  group?: string;
+  /** The heading for a grouped screen, taken from its FIRST member. Ignored on
+   *  any other member, and on an ungrouped question. */
+  groupTitle?: string;
   /** Display order (ascending). */
   order: number;
 }
@@ -158,27 +210,79 @@ export const ONBOARDING_PERSONA_CHOICES: OnboardingChoice[] = [
   { value: "athlete", label: "Train for a goal — give me the data", blurb: "Plans, sport S&C, velocity, performance & technique. The full toolkit — a paid upgrade." },
 ];
 
-/** The five built-in questions, in display order. Seed + fallback. */
+/**
+ * The built-in questions, in display order. Seed + fallback.
+ *
+ * THE FORK IS THE OUTCOME, NOT THE DATA — and the first cut of it got this
+ * exactly backwards, so it is worth stating plainly.
+ *
+ * That cut marked the experience tier, days per week and equipment as
+ * athlete-only, on the reasoning that all three "exist to match and shape a
+ * plan". They do not. `questionnaireFromAnswers` maps experience and
+ * daysPerWeek straight onto the volume profile, where experience is a STIMULUS
+ * multiplier and training frequency is a RECOVERY factor, and both are counted
+ * in `personalizeLandmarks`' confidence divisor. Dropping them did not shorten
+ * a tracker's setup so much as permanently degrade their model: two of seven
+ * confidence inputs gone, for every athlete who chose the simple product.
+ *
+ * The whole argument for this app is that it learns THIS person — that two
+ * athletes doing twenty sets of chest a week are not the same athlete, and only
+ * their own logged response can say which is which. An intake that collects
+ * less from half the user base is an intake working against the engine.
+ *
+ * So: EVERY question about the person is asked of BOTH intakes. The only
+ * athlete-only question is the GOAL, because a tracker has told us they are not
+ * training for one — and the only thing the fork changes at the end is whether
+ * a plan is recommended and a season enrolled.
+ */
 export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   {
     id: "persona", key: "persona", kind: "persona", engineKey: "persona", system: true, enabled: true, order: 0,
     title: "How do you want to use HYBRID?", subtitle: "You can switch anytime in Settings.",
-    choices: ONBOARDING_PERSONA_CHOICES, defaultValue: "casual",
+    // NO DEFAULT, and it is the only choice question without one. Every other
+    // answer is seeded from its default so the recommender has a complete set
+    // and a choice step opens with something shown as picked. This one decides
+    // WHICH PRODUCT the athlete is in, so a seeded value would be the app
+    // choosing for them and then reporting the choice back as theirs. It is
+    // also the question the whole wizard forks on: leaving "casual" pre-selected
+    // meant an athlete who never looked at this screen was silently placed in
+    // the tracker. Unanswered has to stay unanswered until it is answered.
+    choices: ONBOARDING_PERSONA_CHOICES,
+    required: true,
   },
   {
     id: "goal", key: "goal", kind: "goal", engineKey: "goal", system: true, enabled: true, order: 1, required: true,
+    personas: ["athlete"],
     title: "What's your main goal?", subtitle: "We'll shape your first plan around it.",
   },
-  {
-    id: "experience", key: "experience", kind: "single", engineKey: "experience", system: true, enabled: true, order: 2,
-    title: "What's your experience?", subtitle: "So we set the right starting load.",
-    defaultValue: "beginner",
-    choices: [
-      { value: "beginner", label: "Beginner" },
-      { value: "intermediate", label: "Intermediate" },
-      { value: "advanced", label: "Advanced" },
-    ],
-  },
+  // NO EXPERIENCE QUESTION, and its absence is a decision worth reading.
+  //
+  // Training age is the strongest single input to the volume model — the only
+  // one that scales the STIMULUS end, so it moves MEV as well as MRV — and it
+  // came from one tap on this screen. Self-assessment is unreliable in both
+  // directions: eight hard months reads as "intermediate", a decade of
+  // unprogressive gym-going reads as "advanced".
+  //
+  // engines/fitness-level.ts already measures it instead, from relative
+  // strength on five benchmark lifts against published standards, shifted for
+  // sex and age. That estimator shipped, and it reached the model — but only
+  // through `resolveExperience`, where the STATED answer always wins. So one
+  // tap at setup permanently outranked the measurement, and the log's only
+  // recourse was to report that it `disagrees` on a screen four taps deep. An
+  // answer given once, before the athlete had logged anything, governed their
+  // volume ceiling forever.
+  //
+  // The question is gone rather than demoted. With no answer, `resolveExperience`
+  // returns the derived value; with no log to derive from, it returns nothing
+  // and `personalizeLandmarks` simply omits the factor and reports lower
+  // confidence — the population table, honestly labelled. That is the same rule
+  // the body questions already keep: "we don't know" must stay distinguishable
+  // from "we guessed", and a guess about this one is expensive.
+  //
+  // It remains an `engineKey`, so an operator can re-add it as an explicit
+  // question, and it remains editable on the questionnaire screen where an
+  // athlete who wants to overrule the estimate still can. What it no longer is
+  // is something we ask for before we have any way to check it.
   // ── THE THREE BODY QUESTIONS ────────────────────────────────────────────
   // NONE OF THEM CARRIES A `defaultValue`, and that is the whole design. The
   // client seeds every answer from its default before the athlete touches
@@ -188,7 +292,12 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // with. Unanswered has to stay unanswered. The controls open at a plausible
   // figure; nothing is stored until it is moved.
   {
-    id: "sex", key: "sex", kind: "single", engineKey: "sex", system: true, enabled: true, order: 3,
+    id: "sex", key: "sex", kind: "single", engineKey: "sex", system: true, enabled: true, order: 2,
+    // THE ONE GROUPED SCREEN. These three are what a tracker is asked, in full,
+    // and they are one question in three parts: who is this body. Asked one per
+    // screen they were three transitions for a single answer, on the intake
+    // most people will walk.
+    group: "body", groupTitle: "A little about you",
     title: "Male or female?",
     subtitle: "Every strength and pace standard is published for men. Without this we hold you to the men's bar.",
     choices: [
@@ -204,21 +313,79 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // "YYYY-MM" — or "YYYY" while only the year has been given, since the month
   // is optional in the model; `questionnaireFromAnswers` parses both.
   {
-    id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 4,
+    id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 3,
+    group: "body",
     title: "When were you born?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",
   },
   {
-    id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 5,
+    id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 4,
+    group: "body",
     title: "What do you weigh?", subtitle: "It sets how much you have to recover from per set — and your working loads.",
     min: 25, max: 300, step: 0.5,
   },
+  // ── THE TWO RECOVERY QUESTIONS ──────────────────────────────────────────
+  // Same 1-5 scale as the daily check-in, deliberately: the athlete meets the
+  // question in the same shape wherever it is asked, and the engine reads one
+  // scale. Both carry a default because mid-scale is an honest population prior
+  // for them — unlike sex or body mass, where a default would be a fabricated
+  // measurement — but the profile still records only what was TOUCHED, so a
+  // skipped one stays unknown rather than becoming a 3 nobody chose.
+  // NO SLEEP QUESTION, for the reason the training-age question went: the app
+  // MEASURES it. `sleepFromCheckins` takes the mean of the daily check-in's own
+  // sleep answer over a rolling window, and `withMeasured` resolves
+  // `stored.sleep ?? measured.sleep` — the STORED value first. So a figure
+  // typed once at setup would permanently suppress the mean of every check-in
+  // the athlete ever gives, which is the same defect as a self-assessed
+  // training age and costs more, because sleep is the largest recovery factor
+  // in the table. It was briefly asked here and should not have been.
+  //
+  // The check-in asks it every day, of every persona, on this same 1-5 scale.
+  // Nothing is lost by not asking it once, badly, on day zero.
+  {
+    id: "stress", key: "stress", kind: "number", engineKey: "stress", system: true, enabled: true, order: 5,
+    // THE ONE RECOVERY INPUT NOTHING CAN MEASURE. The check-in captures mood and
+    // energy and deliberately does not relabel either as life stress, so this
+    // genuinely has to be asked or go unknown.
+    //
+    // Asked of the goal intake only. Someone who came to log their training
+    // does not need a question about their job on the way in — the volume
+    // ceiling it feeds is a thing they meet later, if at all, and it is a row on
+    // the questionnaire screen whenever they want it.
+    personas: ["athlete"],
+    title: "How stressful is life right now?",
+    subtitle: "1 is calm, 5 is very stressed. It costs recovery the same way a hard training week does.",
+    min: 1, max: 5, step: 1, defaultValue: 3,
+  },
   {
     id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 6,
-    title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
+    // A PLAN QUESTION NOW, AND ONLY A PLAN QUESTION. It had two readers: the
+    // recommender, which picks the plan whose weekly frequency is closest to
+    // the answer, and the volume profile, where it was a recovery factor.
+    //
+    // The second reader is gone. `trainingDaysPerWeek` measures frequency from
+    // the log — the median of the last four weeks' distinct training days —
+    // and that beats the answer in two ways: it is a HABIT where this asks for
+    // an INTENTION, and the two diverge exactly where it matters, on the
+    // athlete who plans five and trains three. `withMeasured` resolves
+    // `stored ?? measured`, so a number typed here would have outranked every
+    // week of training after it.
+    //
+    // The recommender is a real reader and cannot measure anything yet, so the
+    // question stays — asked of the intake that is getting a plan, and no
+    // longer written onto the profile (see questionnaire.ts).
+    personas: ["athlete"],
+    title: "How many days a week can you train?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
     id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 7,
+    // ASKED OF THE GOAL INTAKE ONLY, because it has no consumer for the other
+    // one. Equipment decides which movements may be PRESCRIBED — and a tracker
+    // is never prescribed anything: with no plan enrolled, Today's quick start
+    // opens the empty logger rather than the engine's session. Asking someone
+    // what kit they own in order to shape prescriptions they will not receive
+    // is a screen that buys nothing.
+    personas: ["athlete"],
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [
@@ -266,18 +433,142 @@ export function normalizeOnboardingQuestion(raw: unknown): OnboardingQuestion | 
     required: !!r.required,
     enabled: r.enabled === undefined ? true : !!r.enabled,
     system: !!r.system,
+    // WHICH INTAKE, and for a BUILT-IN this is locked to the code default the
+    // same way `kind` and `engineKey` are.
+    //
+    // It has to be. The admin editor stores rows that REPLACE the defaults
+    // wholesale — `onboardingQuestionsForClient` prefers the DB set whenever it
+    // is non-empty — and those rows have no persona column. So an admin who had
+    // ever touched the questionnaire would have silently un-forked the wizard:
+    // every athlete asked for a goal again, and every tracker enrolled in a
+    // season again, with nothing in the editor to show why. Persona scope is
+    // structural rather than copy, so it belongs to the code, not the row.
+    //
+    // An unrecognised entry is dropped, and an EMPTY result becomes undefined
+    // ("both") rather than "nobody" — a question no persona can see is a
+    // question that has deleted itself, which is the failure mode `kind` and
+    // `engineKey` each shipped with once already.
+    // A BUILT-IN'S SCOPE IS THE CODE'S, WHATEVER THE ROW SAYS — not merely when
+    // the row is silent, which is what an earlier cut of this did. The
+    // difference is the whole guarantee: `?? default` locks nothing, because a
+    // row carrying a valid list wins it. The admin API happens never to send
+    // one for a built-in, so the hole was unreachable through the editor and
+    // would have stayed invisible until something else wrote a row.
+    personas: key in DEFAULT_PERSONAS_BY_KEY
+      ? DEFAULT_PERSONAS_BY_KEY[key]
+      : normalizePersonas(r.personas),
+    // GROUP. A row that carries no value at all inherits the code default (a
+    // stored row written before grouping existed, or by an editor that does not
+    // send the field). An EMPTY STRING is an explicit "no group" — which is how
+    // an admin ungroups a built-in, and why the two cases cannot be collapsed.
+    group: r.group === undefined || r.group === null
+      ? DEFAULT_GROUP_BY_KEY[key]
+      : (String(r.group).trim() || undefined),
+    groupTitle: r.groupTitle === undefined || r.groupTitle === null
+      ? DEFAULT_GROUP_TITLE_BY_KEY[key]
+      : (String(r.groupTitle).trim() || undefined),
     order: typeof r.order === "number" ? r.order : 0,
   };
 }
 
+const CLIENT_PERSONAS: ClientPersona[] = ["casual", "athlete"];
+
+/** Persona scope of each BUILT-IN question, by key — the code-owned default a
+ *  stored row inherits. */
+const DEFAULT_PERSONAS_BY_KEY: Record<string, ClientPersona[] | undefined> = Object.fromEntries(
+  DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.personas]),
+);
+
+const DEFAULT_GROUP_BY_KEY: Record<string, string | undefined> = Object.fromEntries(
+  DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.group]),
+);
+const DEFAULT_GROUP_TITLE_BY_KEY: Record<string, string | undefined> = Object.fromEntries(
+  DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.groupTitle]),
+);
+
+function normalizePersonas(raw: unknown): ClientPersona[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const list = raw.filter((v): v is ClientPersona => CLIENT_PERSONAS.includes(v as ClientPersona));
+  return list.length ? [...new Set(list)] : undefined;
+}
+
+/**
+ * ONE SCREEN OF THE WIZARD — one question, or a group of them.
+ *
+ * The wizard used to step over `questions` directly, which made "a question"
+ * and "a screen" the same thing and left no way to say otherwise. They are not
+ * the same thing: sex, birth date and body mass are three questions and one
+ * screen, because they are three parts of asking who this body is.
+ */
+export interface OnboardingStep {
+  /** Stable id for the step — the group id, or the lone question's key. */
+  key: string;
+  /** The heading. A group's own title, else the single question's. */
+  title: string;
+  /** Shown under the heading. Absent on a group: each member carries its own
+   *  subtitle beside its own control, so one at the top would be describing
+   *  whichever question happened to be first. */
+  subtitle?: string;
+  /** True when this screen carries more than one question. */
+  grouped: boolean;
+  questions: OnboardingQuestion[];
+}
+
+/**
+ * Group an ordered question list into the screens the wizard actually walks.
+ *
+ * ADJACENT MEMBERS ONLY. A group is a screen, and a screen cannot be assembled
+ * out of questions with something else between them — so a group whose members
+ * are separated by an ungrouped question becomes two screens rather than one
+ * screen that silently reorders the intake. The order it was given is the order
+ * it is asked in, always.
+ */
+export function onboardingSteps(questions: OnboardingQuestion[]): OnboardingStep[] {
+  const steps: OnboardingStep[] = [];
+  for (const q of questions) {
+    const last = steps[steps.length - 1];
+    if (q.group && last && last.key === q.group && last.grouped) {
+      last.questions.push(q);
+      continue;
+    }
+    steps.push(
+      q.group
+        ? { key: q.group, title: q.groupTitle?.trim() || q.title, grouped: true, questions: [q] }
+        : { key: q.key, title: q.title, subtitle: q.subtitle, grouped: false, questions: [q] },
+    );
+  }
+  // A group that ended up with ONE member is not a group — it renders as the
+  // question it is, with its own title and subtitle, rather than under a
+  // heading written for a set it no longer has. Reachable whenever a persona
+  // filter or a disabled row leaves a single member standing.
+  return steps.map((st) =>
+    st.grouped && st.questions.length === 1
+      ? { key: st.questions[0]!.key, title: st.questions[0]!.title, subtitle: st.questions[0]!.subtitle, grouped: false, questions: st.questions }
+      : st,
+  );
+}
+
+/** Whether `q` is asked of `persona`. No `personas` means both, and no persona
+ *  chosen yet means show everything — the wizard re-filters as soon as the
+ *  first question is answered. */
+export const questionAppliesTo = (q: OnboardingQuestion, persona?: ClientPersona | null): boolean =>
+  !persona || !q.personas || q.personas.includes(persona);
+
 /** The list a client should render: enabled questions, ascending order. Falls
  *  back to the built-in defaults when `rows` is empty (table empty/unmigrated). */
-export function onboardingQuestionsForClient(rows: unknown[] | null | undefined): OnboardingQuestion[] {
+export function onboardingQuestionsForClient(
+  rows: unknown[] | null | undefined,
+  /** The persona chosen so far. Omitted → every question, which is the state
+   *  before the first answer. */
+  persona?: ClientPersona | null,
+): OnboardingQuestion[] {
   const list = (rows ?? [])
     .map(normalizeOnboardingQuestion)
     .filter((q): q is OnboardingQuestion => !!q);
   const usable = list.length ? list : DEFAULT_ONBOARDING_QUESTIONS;
-  return usable.filter((q) => q.enabled).sort((a, b) => a.order - b.order);
+  return usable
+    .filter((q) => q.enabled && questionAppliesTo(q, persona))
+    .sort((a, b) => a.order - b.order);
 }
 
 /** Pull the engine-relevant answers out of a raw answer map, applying defaults
@@ -285,7 +576,7 @@ export function onboardingQuestionsForClient(rows: unknown[] | null | undefined)
 export function extractEngineAnswers(
   questions: OnboardingQuestion[],
   answers: OnboardingAnswerMap,
-): { goal?: string; experience: Experience; daysPerWeek: number; equipment: Equipment } {
+): { goal?: string; experience?: Experience; daysPerWeek: number; equipment: Equipment } {
   const byEngine = (k: OnboardingEngineKey) => questions.find((q) => q.engineKey === k);
   const read = (k: OnboardingEngineKey): unknown => {
     const q = byEngine(k);
@@ -295,13 +586,16 @@ export function extractEngineAnswers(
   };
   const exps: Experience[] = ["beginner", "intermediate", "advanced"];
   const equips: Equipment[] = ["full", "home", "minimal"];
-  const rawExp = String(read("experience") ?? "beginner");
+  // UNDEFINED WHEN NOT ASKED, rather than "beginner". This function's job is to
+  // hand the recommender a usable set, and a fabricated tier is not usable — it
+  // is the same claim the removed question used to make, restated as a default.
+  const rawExp = read("experience");
   const rawEquip = String(read("equipment") ?? "full");
   const rawGoal = read("goal");
   const days = Number(read("daysPerWeek"));
   return {
     goal: typeof rawGoal === "string" && rawGoal ? rawGoal : undefined,
-    experience: exps.includes(rawExp as Experience) ? (rawExp as Experience) : "beginner",
+    experience: exps.includes(rawExp as Experience) ? (rawExp as Experience) : undefined,
     daysPerWeek: Number.isFinite(days) && days > 0 ? days : 3,
     equipment: equips.includes(rawEquip as Equipment) ? (rawEquip as Equipment) : "full",
   };
@@ -335,13 +629,25 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
     const dx = Math.abs(x.sessions - days);
     const dy = Math.abs(y.sessions - days);
     if (dx !== dy) return dx - dy;
-    return expRank[a.experience] >= 2 ? y.sessions - x.sessions : x.sessions - y.sessions;
+    // THE TIE-BREAK, and it is all `experience` was ever used for here. With no
+    // stated tier — which is now the normal case at setup — it breaks toward
+    // FEWER sessions, which is this screen's own stated principle ("a plan
+    // you'll actually finish beats an ideal one") rather than a guess that the
+    // athlete is a beginner.
+    return a.experience && expRank[a.experience] >= 2
+      ? y.sessions - x.sessions
+      : x.sessions - y.sessions;
   })[0] as GoalPlan | undefined;
 
   if (!pick) return null;
 
+  // The sentence NAMES A TIER ONLY IF ONE WAS GIVEN. It used to assert one
+  // unconditionally, which — with the question gone and `extractEngineAnswers`
+  // defaulting to "beginner" — would have told every athlete in the app that
+  // they were a beginner, in the one paragraph they read before starting.
+  const asTier = a.experience ? ` as ${a.experience === "advanced" ? "an" : "a"} ${a.experience}` : "";
   const why =
-    `For ${node.name.toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +
+    `For ${node.name.toLowerCase()}, training ${days}×/week${asTier} — ` +
     `${pick.name} (${pick.sessions}×/wk) fits best: ${pick.desc}`;
 
   return {

@@ -472,6 +472,17 @@ export function performanceTrajectory(
    *  rolling intake window is a read of NOW, and there is no stored history of
    *  what it read a week ago to replay against a past point. */
   fuelAdj = 0,
+  /**
+   * The freshness weighting — the athlete's, from their goal (goal-profile.ts).
+   *
+   * IT HAS TO BE THE SAME ONE THE HEADLINE USES. The card prints
+   * computePerformanceState(...).hpi.score as a figure and draws this series
+   * underneath it, so a weighting applied to one and not the other puts two
+   * different numbers for the same day eight pixels apart — which is precisely
+   * the defect the last Performance rebuild existed to fix, reintroduced by a
+   * parameter added to one function and not its neighbour.
+   */
+  weights: HpiWeights = HYBRID_WEIGHTS,
 ): TrajectoryPoint[] {
   const out: TrajectoryPoint[] = [];
   for (let n = days - 1; n >= 0; n--) {
@@ -484,7 +495,7 @@ export function performanceTrajectory(
     const todayFuel = n === 0 ? fuelAdj : 0;
     out.push({
       daysAgo: n,
-      hpi: computeHpi(fatigue, today).score,
+      hpi: computeHpi(fatigue, today, weights).score,
       readiness: computeReadiness(fatigue, today, todayHeat, todayFuel).score,
     });
   }

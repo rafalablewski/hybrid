@@ -1,6 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES, onboardingQuestionsForClient, onboardingSteps } from "@hybrid/core";
+
+/** The intake each persona actually walks — DERIVED, so adding a question to
+ *  the shipped set changes these tests' step counts instead of breaking them. */
+const intake = (p: "casual" | "athlete") => onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, p);
+
+/** The SCREENS the wizard walks after the fork — not the questions. Sex, birth
+ *  and body mass share one, so a question's index is no longer its step's. */
+const wiz = (p: "casual" | "athlete") =>
+  onboardingSteps(intake(p).filter((x) => x.engineKey !== "persona"));
+/** Which screen carries the question with this engine key. */
+const stepWith = (p: "casual" | "athlete", engineKey: string) =>
+  wiz(p).findIndex((st) => st.questions.some((q) => q.engineKey === engineKey));
+/**
+ * A SCREEN IS NOT A TAP EITHER, now that a grouped screen reveals its questions
+ * one at a time: the first is shown, and each press of the primary control
+ * opens the next until the screen is full and the press travels. So the tests
+ * below count PRESSES, derived the same way the progress rail counts segments —
+ * one per question on a grouped screen, one per screen otherwise.
+ */
+const tapsOver = (p: "casual" | "athlete", from: number, to: number) =>
+  wiz(p).slice(from, to).reduce((n, st) => n + (st.grouped ? st.questions.length : 1), 0);
+/** How many presses until the question with this engine key is on screen. */
+const tapsToSee = (p: "casual" | "athlete", engineKey: string) => {
+  const steps = wiz(p);
+  const si = stepWith(p, engineKey);
+  const st = steps[si]!;
+  return tapsOver(p, 0, si) + (st.grouped ? st.questions.findIndex((q) => q.engineKey === engineKey) : 0);
+};
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
 import { SCRUB_UNSET } from "../components/aurora/kit";
@@ -47,7 +75,12 @@ vi.mock(import("../lib/weigh-in"), async (importOriginal) => ({
 
 /** The second persona card — the one that starts UNSELECTED (the answer map is
  *  seeded with the question's `casual` default). */
-const UNPICKED = ONBOARDING_PERSONA_CHOICES[1]!.label;
+/** An AChoice OPTION ROW, which the goal step is made of. It used to be a
+ *  persona card, and could not stay one: the persona choice is its own screen
+ *  now (PersonaFork) and is drawn as full cards rather than as the shared row,
+ *  so asserting the row's invariant there would have been asserting a different
+ *  component that happens to sit in the same place. */
+const UNPICKED = ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label;
 
 /** The birth question, as the app ships it — asked fifth, and a DATE rather
  *  than an age, so it cannot go stale the day after it is answered. */
@@ -67,6 +100,8 @@ const surface = (el: HTMLElement) => el.firstElementChild as HTMLElement;
 describe("the onboarding wizard's option row", () => {
   it("draws the same tree picked and unpicked", () => {
     const { container } = render(<Onboarding />);
+    // Past the fork, onto the goal step — the first screen made of option rows.
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     const idle = row(container, UNPICKED);
     const nodes = idle.querySelectorAll("*").length;
     const restColour = surface(idle).style.borderTopColor;
@@ -116,14 +151,17 @@ describe("a date the athlete has not answered", () => {
 
   it("offers a year and twelve months, with no figure until touched", () => {
     const { container } = render(<Onboarding />);
-    // persona → goal → experience → sex → BORN. Only the goal is `required`, so
-    // it is the one step Next will not leave until something is picked; the
-    // rest carry defaults or are deliberately skippable.
-    next(container);
+    // persona → goal → experience → sex → BORN. The persona must be CHOSEN
+    // rather than left on its seeded "casual" default: the wizard forks on that
+    // answer now, and the tracker intake is not asked for a goal at all.
+    // The fork is a screen: picking IS the advance, so no Next follows it.
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    next(container); // → experience
-    next(container); // → sex
-    next(container); // → born
+    // Derived, and it is a PRESS count: the birth question shares its screen
+    // with sex and body mass and is revealed second, so the walk is "past the
+    // goal screen, then one press into the body screen" rather than a step
+    // index either of questions or of screens.
+    for (let i = 0; i < tapsToSee("athlete", "birthYear"); i++) next(container);
     const body = container.textContent ?? "";
     // Non-vacuity: the assertions below are trivially true on any screen that
     // is not this one, so prove we arrived. The title is core's own — the mock
@@ -172,25 +210,92 @@ describe("what setup writes down", () => {
     written.mockClear();
     weighed.mockClear();
     const { container } = render(<Onboarding />);
-    fireEvent.click(cta(container)); // persona → goal (its "casual" default stands)
+    // The ATHLETE intake, chosen: the wizard forks on this answer, and only
+    // this branch is asked the five plan-shaping questions this test steps past.
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label)); // → goal
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    fireEvent.click(cta(container)); // → experience
-    // The three experience choices are short, so the wizard draws them as a
-    // segmented control rather than option rows — a tab, not a button.
-    const seg = Array.from(container.querySelectorAll('[role="tab"]')).find((e) => e.textContent === "Intermediate");
+    // STRESS is the question this proves the rule on: it carries a default (a
+    // mid-scale prior is honest to SHOW) and it reaches the profile, which is
+    // exactly the pair the rule is about. Experience used to play this part,
+    // then sleep did, and neither is asked any more — the app measures training
+    // age off the bar and sleep off the daily check-in. Stress is the one
+    // recovery input nothing can measure.
+    const stressAt = stepWith("athlete", "stress");
+    for (let i = 0; i < tapsToSee("athlete", "stress"); i++) fireEvent.click(cta(container));
+    // A 1–5 range draws as segments rather than a scrub, so the pick is a tab.
+    const seg = Array.from(container.querySelectorAll('[role="tab"]'))
+      .find((e) => (e.textContent ?? "").startsWith("4"));
     fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
-    // Past sex, born, weight, days, equipment without touching any of them.
-    for (let i = 0; i < 6; i++) fireEvent.click(cta(container));
+    // Past every remaining screen without touching any of them, then commit.
+    for (let i = stressAt; i < wiz("athlete").length; i++) fireEvent.click(cta(container));
     fireEvent.click(cta(container)); // the plan step's commit
 
     await waitFor(() => expect(written).toHaveBeenCalled());
     const profile = written.mock.calls.at(-1)![0] as Record<string, unknown>;
-    expect(profile.experience).toBe("intermediate");
+    expect(profile.stress, "the answer that was given").toBe(4);
+    // Never a measured field, whatever the wizard shows.
+    expect(profile.experience, "a training age nobody can self-assess").toBeUndefined();
+    expect(profile.sleep, "sleep is the check-in's to measure").toBeUndefined();
     // `days` carries defaultValue 3 and `sex`/`birth`/`bodyweight` carry none —
     // every one of them was stepped past, so none of them may be on the profile.
     expect(profile.daysPerWeek, "a frequency nobody chose").toBeUndefined();
     expect(profile.sex).toBeUndefined();
     expect(profile.birthYear).toBeUndefined();
     expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * THE FORK, AT THE SCREEN.
+ *
+ * The first question offers two products and the wizard did not branch on the
+ * answer: everyone was asked all eight questions, the goal step was `required`
+ * with no skip control, and the run ended on a button reading "Start this
+ * plan". Someone who chose the tracker was enrolled in a twelve-week season
+ * they had just declined, one screen after declining it.
+ */
+describe("choosing the tracker", () => {
+  const cta = (container: HTMLElement) => {
+    const all = container.querySelectorAll('[role="button"]');
+    return all[all.length - 1] as HTMLElement;
+  };
+
+  it("is never asked for a goal, and never ends on a plan", () => {
+    const { container } = render(<Onboarding />);
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
+    // persona → sex → born → weight, and then it commits. Four steps, not nine.
+    for (let i = 0; i < 3; i++) fireEvent.click(cta(container));
+    const body = container.textContent ?? "";
+    expect(body, "the goal step is in the tracker's wizard").not.toContain(
+      ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label,
+    );
+    expect(body, "the tracker was offered a plan").not.toContain("Start this plan");
+  });
+
+  it("is asked everything the engine learns from, and only skips the goal", () => {
+    // THE FORK IS THE OUTCOME, NOT THE DATA. An earlier cut dropped experience,
+    // days per week and equipment from this intake, which fed the volume model
+    // rather than the plan matcher — so a tracker's ceiling lost a stimulus
+    // multiplier, a recovery factor and two of seven confidence inputs.
+    const { container } = render(<Onboarding />);
+    // The FORK is its own screen in front of the wizard, so the persona
+    // question is asked here rather than as step one — capture it, then walk.
+    const seen: string[] = [container.textContent ?? ""];
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
+    // One capture per PRESS, not per screen: the tracker's whole intake is a
+    // single grouped screen that reveals one question at a time, so a walk that
+    // counted screens would see the first question and call it the intake.
+    const taps = tapsOver("casual", 0, wiz("casual").length);
+    for (let i = 0; i < taps; i++) {
+      seen.push(container.textContent ?? "");
+      if (i < taps - 1) fireEvent.click(cta(container)); // the last commits
+    }
+    const all = seen.join(" ");
+    for (const q of intake("casual")) {
+      expect(all, `the tracker was not asked "${q.title}"`).toContain(q.title);
+    }
+    // And the one thing it genuinely does not need.
+    const goal = DEFAULT_ONBOARDING_QUESTIONS.find((x) => x.key === "goal")!;
+    expect(all, "the tracker was asked for a goal").not.toContain(goal.title);
   });
 });

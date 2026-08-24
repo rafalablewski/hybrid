@@ -38,6 +38,8 @@ export * from "./tissue-axis";
 export * from "./volume-view";
 export * from "./questionnaire";
 export * from "./plans";
+export * from "./goal-id";
+export * from "./goal-profile";
 export * from "./plan-day";
 export * from "./plan-program";
 export * from "./plan-programs";

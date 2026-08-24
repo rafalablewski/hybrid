@@ -45,13 +45,28 @@ describe("planProgramToday", () => {
     expect(today!.rows.every((r) => r.name.length > 0 && r.detail.length >= 0)).toBe(true);
   });
 
-  it("advances the day by how many sessions the athlete has logged (cycling)", () => {
+  it("advances the day by how many sessions the athlete has logged", () => {
     const d0 = planProgramToday("bb-ppl-6day", 0)!;
     const d1 = planProgramToday("bb-ppl-6day", 1)!;
-    expect(d1.dayIndex).toBe(1 % d0.totalDays);
-    // logging a full cycle returns to day 0
-    const wrap = planProgramToday("bb-ppl-6day", d0.totalDays)!;
-    expect(wrap.dayIndex).toBe(0);
+    expect(d1.dayIndex).toBe(1);
+    expect(d0.complete).toBe(false);
+    expect(d1.complete).toBe(false);
+  });
+
+  it("ENDS rather than looping once the programme is worked through", () => {
+    // It used to be `dayIndex = n % training.length`, so the day after an
+    // athlete finished a twelve-week block the card silently offered day one
+    // again — no summary, no acknowledgement, no next block. A plan had no end.
+    const d0 = planProgramToday("bb-ppl-6day", 0)!;
+    const last = planProgramToday("bb-ppl-6day", d0.totalDays - 1)!;
+    expect(last.dayIndex).toBe(d0.totalDays - 1);
+    expect(last.complete).toBe(false);
+
+    const past = planProgramToday("bb-ppl-6day", d0.totalDays)!;
+    expect(past.complete).toBe(true);
+    // Clamped at the final day rather than wrapped to the first.
+    expect(past.dayIndex).toBe(d0.totalDays - 1);
+    expect(planProgramToday("bb-ppl-6day", d0.totalDays * 3)!.complete).toBe(true);
   });
 
   it("derives working kg from the athlete's maxes when supplied (percent program)", () => {

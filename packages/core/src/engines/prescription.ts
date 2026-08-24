@@ -11,6 +11,9 @@ import { computeReadiness } from "./readiness";
 import { progressionSignal } from "./progression";
 import { velocityAtLoad, type LoadVelocityProfile } from "./velocity";
 import { readinessLoadFactor, type ReadinessFeeling } from "../readiness-feeling";
+import { goalProfile, type GoalPrescriptionBias } from "../goal-profile";
+import { seasonBlockLabel, type SeasonAdjust } from "./season-load";
+import { goalLabel } from "../goal-id";
 
 export interface RunTarget {
   /** km */
@@ -111,7 +114,39 @@ export interface PrescribeOptions {
    * wired to the food log prescribes exactly what it prescribed before.
    */
   fuelAdj?: number;
+  /**
+   * WHAT THE ATHLETE IS TRAINING FOR — a GOAL_TREE id, or the display name a
+   * legacy row holds (goal-profile.ts resolves either).
+   *
+   * This engine had no goal input at all until Aug 2026, which is the single
+   * largest thing that was wrong with the product: the goal was the most
+   * prominent decision in onboarding, it was written to one database column,
+   * and the engine that designs the athlete's session could not read it. A
+   * powerlifter and a triathlete with the same recent log were prescribed the
+   * same session.
+   *
+   * It biases rather than overrules, in the same currency the `experience` tier
+   * already uses — a set, a few percent of e1RM, a couple of conditioning
+   * rounds. The readiness and progression signals still decide the session; the
+   * goal shapes it. Absent → exactly what this engine prescribed before.
+   */
+  goal?: string | null;
+  /**
+   * WHERE THE ATHLETE IS IN THEIR SEASON (engines/season-load.ts).
+   *
+   * `buildMacrocycle` has produced a per-week intensity and volume for every
+   * microcycle since it was written, stored it on every enrolment, and nothing
+   * read it — so an athlete in a scheduled recovery week was prescribed exactly
+   * what they got in the loading week before it, and the deload existed only as
+   * a drawing on /periodize. Absent → prescribes as before.
+   */
+  season?: SeasonAdjust | null;
 }
+
+/** No goal supplied: what every athlete got before the goal reached here. */
+const NEUTRAL_BIAS: GoalPrescriptionBias = {
+  setAdj: 0, pctAdj: 0, condRoundsAdj: 0, preferAerobic: false,
+};
 
 /**
  * The prescription engine — the moat made real. Picks the most-recovered heavy
@@ -137,6 +172,13 @@ export function prescribeSession(
 
   const experience = opts?.experience ?? "intermediate";
   const equipment = opts?.equipment ?? "full";
+  // The goal's shaping of the session (goal-profile.ts). Neutral when absent,
+  // so an un-wired caller prescribes exactly what it prescribed before.
+  const bias = opts?.goal ? goalProfile(opts.goal).bias : NEUTRAL_BIAS;
+  // The season's own instruction for this week. A deload here is a REAL
+  // deload — it takes load off the bar and sheds a set — because that is
+  // what the block the athlete enrolled in actually says to do.
+  const season = opts?.season ?? null;
   // Bodyweight tier has no external load — the strength block is rep/RPE-driven.
   const bodyweight = equipment === "minimal";
 
@@ -177,7 +219,9 @@ export function prescribeSession(
   const expPctAdj = experience === "beginner" ? -0.05 : experience === "advanced" ? 0.03 : 0;
   const expSetAdj = experience === "beginner" ? -1 : experience === "advanced" ? 1 : 0;
   const expRepAdj = experience === "beginner" ? 2 : 0;
-  const pct = clampN(basePct + expPctAdj, 0.55, 0.9);
+  // The goal moves the bar in the same direction its emphasis implies, inside
+  // the same clamp the experience tier is held to.
+  const pct = clampN(basePct + expPctAdj + bias.pctAdj + (season?.pctAdj ?? 0), 0.55, 0.9);
 
   // VBT autoregulation (loaded tiers only): anchor the load to the velocity-
   // estimated 1RM when a fitted profile exists. Bodyweight has no external load.
@@ -194,7 +238,7 @@ export function prescribeSession(
   const readinessSetAdj = opts?.subjectiveReadiness === "wrecked" ? -1 : 0;
   const baseSets =
     primary.sig.action === "progress" ? 5 : primary.sig.action === "deload" ? 3 : 4;
-  const sets = clampN(baseSets + expSetAdj + readinessSetAdj, 2, 6);
+  const sets = clampN(baseSets + expSetAdj + readinessSetAdj + bias.setAdj + (season?.setAdj ?? 0), 2, 6);
   // Bodyweight is rep-driven (no kg); loaded tiers keep the heavy 3–5 scheme.
   const reps =
     (bodyweight ? (primary.sig.action === "deload" ? 8 : 12) : primary.sig.action === "deload" ? 3 : 5) +
@@ -217,7 +261,14 @@ export function prescribeSession(
   const sysOrder = (
     Object.entries(fatigue.systems) as [EnergySystem, number][]
   ).sort((a, b) => a[1] - b[1]);
-  const pickSys = sysOrder[0]![0];
+  // FRESHEST FIRST, unless the athlete's goal IS the aerobic engine — a runner
+  // whose aerobic system is merely second-freshest should still be running, and
+  // rotating them onto the bike because the bike is fresher trains the wrong
+  // thing. The one exception is the day their aerobic system is the MOST
+  // fatigued of the three, where the rotation is the point.
+  const aerobicIsMostFatigued = sysOrder[sysOrder.length - 1]![0] === "aerobic";
+  const pickSys =
+    bias.preferAerobic && !aerobicIsMostFatigued ? ("aerobic" as EnergySystem) : sysOrder[0]![0];
   const aerobic = pickSys === "aerobic";
   const machineCond =
     pickSys === "aerobic"
@@ -271,7 +322,7 @@ export function prescribeSession(
           format: condFormat,
           work: 40,
           rest: 20,
-          rounds: 8,
+          rounds: clampN(8 + bias.condRoundsAdj, 4, 12),
         },
   ];
 
@@ -284,10 +335,17 @@ export function prescribeSession(
         : `${Math.round(pct * 100)}% e1RM`;
 
   // A one-liner on how the session was tailored to the athlete's intake.
+  // The GOAL is named here, and that is the point of naming it: a session
+  // shaped by something the athlete chose should say so, or the shaping is
+  // indistinguishable from the engine being inconsistent.
   const setupNote =
     ` Dialed for ${experience} level${
       equipment !== "full" ? ` and ${equipment === "home" ? "home (dumbbell)" : "minimal (bodyweight)"} equipment` : ""
-    }.`;
+    }${opts?.goal ? `, aimed at ${goalLabel(opts.goal)}` : ""}.${
+      season
+        ? ` You're in ${seasonBlockLabel(season)}${season.deload ? " — a scheduled deload, so load and a set come off" : ""}.`
+        : ""
+    }`;
 
   const why =
     `Readiness ${readiness}/100. ` +
