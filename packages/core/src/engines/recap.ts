@@ -3,7 +3,8 @@ import { localDayKey, localMondayMs, addLocalDays } from "../day-key";
 import { sessionVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { deviceTrueSessions } from "../device-truth";
-import { roundKm } from "../distance";
+import { roundKm, kmValue } from "../distance";
+import { groupFigure, kgToUnit, type WeightUnit } from "../units";
 import {
   newPrsInSession,
   newCardioPrsInSession,
@@ -39,6 +40,19 @@ export interface WeeklyRecap {
   prs: PrHit[]; // records set this week (best per lift)
   cardioPrs: CardioPrHit[]; // cardio records set this week (distance/pace)
   topMuscle: MuscleVolume | null;
+  /**
+   * The ONE cardio move that covered ground this week, or null when more than
+   * one did — a week of running and swimming sums to a true 23 km and a
+   * meaningless headline, because nobody trains "23 km" of running-and-swimming.
+   * `weekHeadline` reads it to decide whether the distance may lead.
+   *
+   * It counts only the blocks that actually COVERED GROUND, which is where it
+   * parts company with `DoneReceipt.cardioLead` (that one counts every cardio
+   * block). A week of runs plus a tennis match has one kind of kilometre in it;
+   * the tennis ate time, not distance, and it has no claim on a figure it
+   * contributed nothing to.
+   */
+  cardioLead: string | null;
   prevSessions: number;
   prevVolume: number;
   sessionsDelta: number;
@@ -137,6 +151,8 @@ function recapWindow(
   let distanceKm = 0;
   const days = new Set<string>();
   const lifts = new Set<string>();
+  /** The cardio moves that covered GROUND — one of them may headline the week. */
+  const moved = new Set<string>();
   const blocks: SessionBlock[] = [];
   for (const s of thisWeek) {
     volume += sessionVolume(s.blocks, false, bwAt(bw, s.startedAt));
@@ -148,7 +164,10 @@ function recapWindow(
         lifts.add(b.name);
       } else {
         sets += 1;
-        if (b.kind === "cardio" && b.distance && b.distance > 0) distanceKm += b.distance;
+        if (b.kind === "cardio" && b.distance && b.distance > 0) {
+          distanceKm += b.distance;
+          moved.add(b.name);
+        }
       }
     }
     if (s.completedAt) minutes += Math.max(0, Math.round((ms(s.completedAt) - ms(s.startedAt)) / 60000));
@@ -195,6 +214,7 @@ function recapWindow(
     // The week's blocks span several dates; the current weight is a fair basis
     // for a coarse "top muscle" headline (bodyweight lifts now count, not 0).
     topMuscle: volumeByMuscle(blocks, false, bwAt(bw))[0] ?? null,
+    cardioLead: moved.size === 1 ? [...moved][0]! : null,
     prevSessions: prevWeek.length,
     prevVolume,
     sessionsDelta: thisWeek.length - prevWeek.length,
@@ -220,6 +240,84 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
 export function calendarWeekRecap(sessions: LoggedSession[], mondayMs: number, bw?: BodyweightInput): WeeklyRecap {
   const monday = localMondayMs(mondayMs);
   return recapWindow(sessions, monday, addLocalDays(monday, 7), addLocalDays(monday, -7), monday, bw);
+}
+
+/**
+ * THE ONE FIGURE THE WEEK WAS ABOUT — the week's answer to `sessionHeadline`
+ * and `doneReceiptHero`, and the third and last surface that needed one.
+ *
+ * Three equal figures is three focal points, which is none. A week summary that
+ * sets tonnage, sessions, minutes and distance at one size states four facts
+ * and leads with nothing; the athlete has to read all four to find out what
+ * their week was. So one figure earns display size and the rest drop to a
+ * ledger, and WHICH one is not a matter of taste — it is the same priority the
+ * day card and the History rows already use, so the three can never headline
+ * different facts about the same training: TONNAGE if anything was lifted, else
+ * DISTANCE, else the TIME on the clock.
+ *
+ * `sets`, `lifts`, `activeDays` and the records never lead. The first two are
+ * tonnage's grain rather than a quantity of their own, active days is a fact
+ * about the calendar and not about the work, and a record is an EVENT — it gets
+ * its own chapter further down the screen rather than standing in for the week.
+ *
+ * DISTANCE ONLY LEADS ON ONE KIND OF KILOMETRE (`recap.cardioLead`) — the same
+ * caution `doneReceiptHero` applies to a day and `sessionHeadline` applies to a
+ * pace. A week of swimming and running sums to a distance nobody trained.
+ *
+ * Null for a week with nothing in it: an untrained week has no subject, and a
+ * hero reading "0.0 t" is a claim that it does.
+ */
+export interface WeekHeadline {
+  kind: "tonnage" | "distance" | "hours";
+  /** The numeral alone — "9.0", "23.4", "4.3". Apart from its unit so a client
+   *  can set the two at two sizes on one baseline, exactly as the done receipt's
+   *  hero does; a client that has to split a string will eventually split it
+   *  differently. */
+  figure: string;
+  /** "t" | "lb" | "km" | "h" | "min" */
+  unit: string;
+  /** i18n key naming the figure. */
+  labelKey: string;
+  /** The canonical metric this figure IS, so a caller can find its own delta in
+   *  `activityVerdict`'s figures rather than working one out here.
+   *
+   *  THE DELTA IS DELIBERATELY NOT ON THIS OBJECT. It was, briefly, computed
+   *  against the previous CALENDAR week — and a screen that carried both this
+   *  and the verdict's sentence then made two different comparisons at once: a
+   *  week in progress was measured against seven whole days by the figure and
+   *  against the same elapsed days by the sentence. Both are defensible; having
+   *  both on one screen is not. `activityVerdict` already answers "against the
+   *  period before", it truncates the comparison fairly while a week is still
+   *  running, and it is what Today's card uses — so it answers here too. */
+  metric: "tonnage" | "distance" | "hours";
+}
+
+export function weekHeadline(recap: WeeklyRecap, units: WeightUnit, locale?: string): WeekHeadline | null {
+  if (recap.sessions === 0) return null;
+
+  if (recap.volume > 0) {
+    const kg = units === "kg";
+    const [figure, unit] = kg
+      ? [groupFigure(Math.round((recap.volume / 1000) * 10) / 10, 1, locale), "t"]
+      : [groupFigure(Math.round(kgToUnit(recap.volume, "lb")), 0, locale), "lb"];
+    return { kind: "tonnage", metric: "tonnage", figure, unit, labelKey: "summary.volumeMoved" };
+  }
+
+  if (recap.distanceKm > 0 && recap.cardioLead) {
+    return { kind: "distance", metric: "distance", figure: kmValue(recap.distanceKm), unit: "km", labelKey: "w.analyze.stats.distance" };
+  }
+
+  // The clock is the last honest resort, and it reads in HOURS once there is
+  // more than one of them: "257" is a number an athlete has to convert before
+  // it means anything about their week.
+  const hours = recap.minutes >= 60;
+  return {
+    kind: "hours",
+    metric: "hours",
+    figure: hours ? groupFigure(Math.round((recap.minutes / 60) * 10) / 10, 1, locale) : String(recap.minutes),
+    unit: hours ? "h" : "min",
+    labelKey: "w.analyze.stats.minutes",
+  };
 }
 
 /**

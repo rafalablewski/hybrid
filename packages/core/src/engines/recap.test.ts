@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { weeklyRecap, calendarWeekRecap, weekAdherence } from "./recap";
+import { weeklyRecap, calendarWeekRecap, weekAdherence, weekHeadline } from "./recap";
 import { localMondayMs, addLocalDays } from "../day-key";
 import type { LoggedSession } from "./session";
 
@@ -160,5 +160,68 @@ describe("calendarWeekRecap", () => {
     expect(r.sessions).toBe(0);
     expect(r.volume).toBe(0);
     expect(r.prs).toEqual([]);
+  });
+});
+
+describe("weekHeadline", () => {
+  const on = (dayOffset: number, hour: number, mins = 60) => {
+    const mon = localMondayMs(new Date(2026, 5, 10, 12).getTime());
+    const a = new Date(addLocalDays(mon, dayOffset)); a.setHours(hour, 0, 0, 0);
+    const b = new Date(a.getTime() + mins * 60_000);
+    return [a.toISOString(), b.toISOString()] as const;
+  };
+  const MON = localMondayMs(new Date(2026, 5, 10, 12).getTime());
+  const run = (id: string, dayOffset: number, km: number, mins: number, name = "Run"): LoggedSession => {
+    const [a, b] = on(dayOffset, 7, mins);
+    return { id, title: "Run", startedAt: a, completedAt: b, blocks: [{ kind: "cardio", name, minutes: mins, distance: km }] };
+  };
+
+  it("tonnage leads whenever anything was lifted", () => {
+    const [a, b] = on(1, 9);
+    const week = [sess("a", a, b, [squat("100", "5")]), run("r", 2, 10, 50)];
+    const h = weekHeadline(calendarWeekRecap(week, MON), "kg")!;
+    expect(h).toMatchObject({ kind: "tonnage", figure: "0.5", unit: "t" });
+  });
+
+  it("a pure endurance week leads with the ground it covered", () => {
+    const h = weekHeadline(calendarWeekRecap([run("r", 2, 10.4, 55)], MON), "kg")!;
+    expect(h).toMatchObject({ kind: "distance", figure: "10.4", unit: "km" });
+  });
+
+  it("two kinds of kilometre cannot headline, so the clock takes it", () => {
+    // Nobody trains "16 km" of running-and-swimming.
+    const week = [run("r", 2, 10, 55), run("s", 4, 6, 90, "Swimming")];
+    const h = weekHeadline(calendarWeekRecap(week, MON), "kg")!;
+    expect(h.kind).toBe("hours");
+    expect(h).toMatchObject({ figure: "2.4", unit: "h" });
+  });
+
+  it("under an hour it stays in minutes rather than printing 0.7 h", () => {
+    const [a, b] = on(1, 9, 40);
+    const week: LoggedSession[] = [{ id: "t", title: "Tennis", startedAt: a, completedAt: b, blocks: [{ kind: "cardio", name: "Tennis", minutes: 40 }] }];
+    const h = weekHeadline(calendarWeekRecap(week, MON), "kg")!;
+    expect(h).toMatchObject({ kind: "hours", figure: "40", unit: "min" });
+  });
+
+  it("names the canonical metric, so its delta is looked up rather than recomputed", () => {
+    // The headline carries no delta of its own ON PURPOSE — `activityVerdict`
+    // owns "against the period before", and two answers to one question is how
+    // a screen ends up comparing a part-week against a whole one in the figure
+    // and against the same elapsed days in the sentence.
+    const [a, b] = on(1, 9);
+    const h = weekHeadline(calendarWeekRecap([sess("a", a, b, [squat("100", "5")])], MON), "kg")!;
+    expect(h.metric).toBe("tonnage");
+    expect("delta" in h).toBe(false);
+  });
+
+  it("an untrained week has no subject", () => {
+    expect(weekHeadline(calendarWeekRecap([], MON), "kg")).toBeNull();
+  });
+
+  it("lb weeks headline in pounds", () => {
+    const [a, b] = on(1, 9);
+    const h = weekHeadline(calendarWeekRecap([sess("a", a, b, [squat("100", "5")])], MON), "lb")!;
+    expect(h.unit).toBe("lb");
+    expect(Number(h.figure.replace(/[^\d]/g, ""))).toBeGreaterThan(1000);
   });
 });

@@ -122,6 +122,23 @@ const build = (
 };
 
 /**
+ * THE CALENDAR WEEK CONTAINING `at` — the arbitrary-week twin of
+ * `resolveActivityRange("week")`, which can only ever answer for the week `now`
+ * falls in.
+ *
+ * It exists because the week summary screen is opened from a chapter that may
+ * be months old, and it wants the same verdict sentence Today's card carries.
+ * `now` stays the REAL now on purpose: it is what decides whether the window is
+ * still running, so a finished week is summed whole and the week in progress is
+ * still truncated to today. Passing an instant inside the target week as `now`
+ * — the obvious shortcut — would truncate every past week to a Monday.
+ */
+export const activityWeekRange = (at: number, now = Date.now()): ActivityRange => {
+  const monday = localMondayMs(at);
+  return build("week", "week", monday, addLocalDays(monday, 7), "w.home.act.rWeek", now);
+};
+
+/**
  * An id → a concrete window. Unknown ids (including a month the athlete no
  * longer has, or one in the future) fall back to the current calendar week
  * rather than throwing: a stale preference must never blank the card.

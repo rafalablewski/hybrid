@@ -257,6 +257,14 @@ describe("the editorial voice", () => {
   const SANCTIONED = [
     "components/aurora/week-verdict.tsx",
     "components/aurora/nutrition-panels.tsx",
+    // THE WEEK SUMMARY, added Aug 2026 with the screen's design pass. It earns
+    // the voice on the same argument the other two did: it is a screen whose
+    // whole job is to conclude something, the sentence is the only line on it
+    // that interprets rather than measures, and it is the SAME sentence the
+    // week verdict sets — one engine (activityVerdict), one window, one voice,
+    // so the two surfaces cannot conclude different things about one week. It
+    // is not a during-training screen; it is read afterwards, on purpose.
+    "components/aurora/week-summary.tsx",
   ];
 
   /** Screens the athlete reads DURING training. A conclusion has no business on

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ACTIVITY_RANGE_PRESETS, activityBaselineWindows, activityMonthId, activityMonths,
-  activitySummary, activityTotals, groupDistanceDisplay, resolveActivityRange,
+  activitySummary, activityTotals, activityWeekRange, groupDistanceDisplay, resolveActivityRange,
 } from "./activity-window";
 import { addLocalDays, localMondayMs } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -72,6 +72,28 @@ describe("resolveActivityRange", () => {
 
   it("offers every preset the filter shows", () => {
     for (const p of ACTIVITY_RANGE_PRESETS) expect(resolveActivityRange(p.id, NOW).id).toBe(p.id);
+  });
+});
+
+describe("activityWeekRange", () => {
+  it("resolves the week containing ANY instant, not the week `now` is in", () => {
+    const threeWeeksBack = addLocalDays(NOW, -21);
+    const r = activityWeekRange(threeWeeksBack, NOW);
+    expect(r.from).toBe(localMondayMs(threeWeeksBack));
+    expect(r.to).toBe(addLocalDays(r.from, 7));
+    expect(r.kind).toBe("week");
+  });
+
+  it("sums a FINISHED week whole — the shortcut of passing a date inside it as `now` would not", () => {
+    const past = activityWeekRange(addLocalDays(NOW, -21), NOW);
+    expect(past.through).toBe(past.to);
+    expect(past.days).toBe(7);
+    expect(past.inProgress).toBe(false);
+    // and the week in progress is still truncated to today, exactly like the preset
+    const here = activityWeekRange(NOW, NOW);
+    expect(here.from).toBe(resolveActivityRange("week", NOW).from);
+    expect(here.days).toBe(3);
+    expect(here.inProgress).toBe(true);
   });
 });
 
