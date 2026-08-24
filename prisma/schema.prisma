@@ -1566,8 +1566,18 @@ model OnboardingQuestion {
   // to the code default and this column is ignored for it: persona scope is
   // structural rather than copy, and a stored row that could widen it would
   // silently un-fork the wizard. Custom questions own theirs.
-  // reference/sql-onboarding-personas.sql.
+  // reference/sql-onboarding-scope-grouping.sql.
   personas     String[] @default([])
+  // WHICH SCREEN THIS SHARES. Adjacent questions with the same group id are
+  // asked together instead of one each — sex + birth + body mass are one
+  // screen, "A little about you". NULL means "inherit the code default";
+  // an EMPTY STRING is an explicit ungrouping, which is how an admin takes a
+  // built-in off a shared screen. Grouping is PRESENTATION, so unlike
+  // `personas` an admin may set it on a built-in: it changes how many screens
+  // the intake takes, never who is asked or what reads the answer.
+  // reference/sql-onboarding-scope-grouping.sql.
+  groupKey     String?
+  groupTitle   String?
   order        Int      @default(0)
   authorId     String?
   authorEmail  String?

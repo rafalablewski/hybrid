@@ -19,6 +19,7 @@ type Body = {
   key?: unknown; kind?: unknown; title?: unknown; subtitle?: unknown; engineKey?: unknown;
   choices?: unknown; min?: unknown; max?: unknown; step?: unknown; defaultValue?: unknown;
   required?: unknown; enabled?: unknown; order?: unknown; personas?: unknown;
+  group?: unknown; groupTitle?: unknown;
 };
 
 const KINDS = ["persona", "goal", "single", "multi", "number", "text"];
@@ -115,6 +116,13 @@ export async function POST(request: Request) {
     enabled: b.enabled === undefined ? true : !!b.enabled,
     system: builtIn,
     personas: builtIn ? [] : personas,
+    // GROUPING. Allowed on a built-in, unlike the intake scope: it is
+    // presentation, so the worst an operator can do is change how many screens
+    // the intake takes. An empty string is stored as an empty string
+    // deliberately — it is what says "this question is on its own screen", as
+    // distinct from a row that has never been told either way.
+    groupKey: typeof b.group === "string" ? slug(b.group).slice(0, 48) : null,
+    groupTitle: typeof b.groupTitle === "string" && b.groupTitle.trim() ? b.groupTitle.trim().slice(0, 120) : null,
     order: num(b.order) ?? 0,
     authorId: gate.admin.id,
     authorEmail: gate.admin.email,
@@ -127,8 +135,8 @@ export async function POST(request: Request) {
     } catch {
       // The `personas` column is not migrated yet. Saving the rest of the
       // question is better than refusing the edit over one field the operator
-      // may not have used — reference/sql-onboarding-personas.sql adds it.
-      const { personas: _dropped, ...rest } = data;
+      // may not have used — reference/sql-onboarding-scope-grouping.sql adds it.
+      const { personas: _p, groupKey: _g, groupTitle: _gt, ...rest } = data;
       saved = await prisma.onboardingQuestion.upsert({ where: { key }, update: rest, create: { key, ...rest } });
     }
     await audit({

@@ -4,6 +4,7 @@ import {
   ONBOARDING_ENGINE_KEYS,
   normalizeOnboardingQuestion,
   onboardingQuestionsForClient,
+  onboardingSteps,
   questionnaireFromAnswers,
 } from "@hybrid/core";
 
@@ -109,5 +110,40 @@ describe("an engine key on a custom question cannot reach the model", () => {
     expect(profile.sleep).toBeUndefined();
     expect(profile.daysPerWeek).toBeUndefined();
     expect(profile).toEqual({});
+  });
+});
+
+describe("scope is locked, grouping is not", () => {
+  // The two fields the editor gained look alike and are governed oppositely,
+  // which is worth pinning: SCOPE decides who is asked and can break the fork,
+  // so a built-in's is the code's. GROUPING decides how many screens the same
+  // questions take, cannot change who is asked or what reads the answer, and is
+  // therefore an operator's to set on anything.
+  const rows = DEFAULT_ONBOARDING_QUESTIONS.map((q) => {
+    const { personas: _p, group: _g, groupTitle: _gt, ...rest } = q;
+    return { ...rest, personas: [] };
+  });
+
+  it("ignores a stored scope on a built-in", () => {
+    const widened = rows.map((r) => (r.key === "goal" ? { ...r, personas: ["casual", "athlete"] } : r));
+    expect(onboardingQuestionsForClient(widened, "casual").map((q) => q.key)).not.toContain("goal");
+  });
+
+  it("inherits the code's grouping when a row is silent about it", () => {
+    const s = onboardingSteps(
+      onboardingQuestionsForClient(rows, "casual").filter((q) => q.engineKey !== "persona"),
+    );
+    expect(s).toHaveLength(1);
+    expect(s[0]!.questions.map((q) => q.key)).toEqual(["sex", "birth", "bodyweight"]);
+  });
+
+  it("lets a stored row ungroup a built-in", () => {
+    const split = rows.map((r) => (r.key === "birth" ? { ...r, group: "" } : r));
+    const s = onboardingSteps(
+      onboardingQuestionsForClient(split, "casual").filter((q) => q.engineKey !== "persona"),
+    );
+    // sex alone, birth alone, body mass alone — the group is broken by the
+    // question that left it, and adjacency does the rest.
+    expect(s.map((x) => x.questions.map((q) => q.key))).toEqual([["sex"], ["birth"], ["bodyweight"]]);
   });
 });

@@ -22,10 +22,11 @@ type Row = {
   engineKey: string | null; choices: unknown; min: number | null; max: number | null;
   step: number | null; defaultValue: string | null; required: boolean; enabled: boolean;
   system: boolean; order: number; personas?: string[] | null;
+  groupKey?: string | null; groupTitle?: string | null;
 };
 
-/** Every column except `personas`, so a database without that column can still
- *  be read. Prisma selects the whole model by default and errors on a column
+/** Every column except the ones added with intake scoping and grouping, so a
+ *  database without them can still be read. Prisma selects the whole model by default and errors on a column
  *  that is not there, which would take the entire questionnaire down rather
  *  than one field of it — the same soft-guard Macrocycle.planId uses. */
 const WITHOUT_PERSONAS = {
@@ -50,6 +51,12 @@ function rowToQuestion(r: Row): OnboardingQuestion | null {
     // that could widen a built-in's scope would put every tracker back on the
     // goal question with nothing in the editor to show why.
     personas: def ? def.personas : r.personas ?? undefined,
+    // GROUPING IS PRESENTATION, so a stored row wins even for a built-in —
+    // unlike `personas` above, regrouping cannot change who is asked or what
+    // reads the answer. `null` means the row says nothing and the code default
+    // applies; an empty string is an explicit ungrouping.
+    group: r.groupKey ?? undefined,
+    groupTitle: r.groupTitle ?? undefined,
     choices: r.choices ?? (def ? def.choices : undefined),
     min: r.min ?? undefined,
     max: r.max ?? undefined,
@@ -74,7 +81,7 @@ export async function effectiveOnboardingQuestions(): Promise<{ questions: Onboa
     } catch {
       // The `personas` column is not migrated yet — read everything else and
       // let custom questions fall back to "both", which is what they were
-      // before the column existed (reference/sql-onboarding-personas.sql).
+      // before the column existed (reference/sql-onboarding-scope-grouping.sql).
       found = (await prisma.onboardingQuestion.findMany({
         orderBy: { order: "asc" }, select: WITHOUT_PERSONAS,
       })) as Row[];

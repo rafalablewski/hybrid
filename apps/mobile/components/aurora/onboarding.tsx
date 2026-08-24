@@ -8,6 +8,7 @@ import {
   springToRN,
   springs,
   states,
+  onboardingSteps,
   type OnboardingQuestion,
 } from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
@@ -103,7 +104,14 @@ export default function AuroraOnboarding() {
   // So it is lifted out: no rail, no counter, no Back, two full cards. The
   // wizard begins at the question after it, and its Back returns here.
   const forkQ = useMemo(() => questions.find((x) => x.engineKey === "persona") ?? null, [questions]);
-  const steps = useMemo(() => questions.filter((x) => x.engineKey !== "persona"), [questions]);
+  // A QUESTION IS NOT A SCREEN. Sex, birth date and body mass are three
+  // questions and one screen — three parts of asking who this body is — and for
+  // a tracker that is the entire intake. `onboardingSteps` is what knows the
+  // difference; this file walks screens and no longer assumes one holds one.
+  const steps = useMemo(
+    () => onboardingSteps(questions.filter((x) => x.engineKey !== "persona")),
+    [questions],
+  );
   const hasPlanStep = intake !== "casual";
   const total = steps.length + (hasPlanStep ? 1 : 0);
   // Switching the persona answer re-derives the wizard, which can make it
@@ -111,7 +119,7 @@ export default function AuroraOnboarding() {
   // questions). Without this the screen would render an undefined question.
   useEffect(() => { setIdx((i) => Math.min(i, Math.max(0, total - 1))); }, [total]);
   const onPlanStep = hasPlanStep && idx >= steps.length;
-  const q = onPlanStep ? null : steps[Math.min(idx, steps.length - 1)] ?? null;
+  const step = onPlanStep ? null : steps[Math.min(idx, steps.length - 1)] ?? null;
   const waiting = loading && questions.length === 0;
 
   /** Move a step. The scroll position is part of the move: a step is a PAGE, so
@@ -179,7 +187,10 @@ export default function AuroraOnboarding() {
     const v = answers[qq.key];
     return v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0);
   };
-  const canNext = onPlanStep ? true : !q || answered(q);
+  // EVERY required question on the screen, not just the first: a grouped screen
+  // that let you leave with one of three answered would be worse than three
+  // screens, because the thing you skipped is no longer a screen you skipped.
+  const canNext = onPlanStep ? true : !step || step.questions.every(answered);
 
   if (forkQ && !intake) {
     return (
@@ -223,9 +234,31 @@ export default function AuroraOnboarding() {
           <LoadSwap loading={waiting} placeholder={<StepSkeleton />}>
             {() => (
               <StepSwap step={idx} dir={dir}>
-                {q ? (
-                  <Step title={q.title} sub={q.subtitle}>
-                    <QuestionBody q={q} answers={answers} setAnswer={setAnswer} personaChoice={persona} />
+                {step ? (
+                  <Step title={step.title} sub={step.subtitle}>
+                    {step.grouped ? (
+                      // A GROUPED SCREEN IS A FORM, so each question keeps its
+                      // own title as the field's label and its own subtitle as
+                      // the fine print under it. One subtitle at the top would
+                      // be describing whichever question happened to be first.
+                      <View style={{ gap: space.xl }}>
+                        {step.questions.map((qq) => (
+                          <View key={qq.key}>
+                            <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk, lineHeight: leading(fs.bodyLg, "tight") }}>
+                              {qq.title}
+                            </Text>
+                            {!!qq.subtitle && (
+                              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: space.xxs, lineHeight: leading(fs.caption) }}>
+                                {qq.subtitle}
+                              </Text>
+                            )}
+                            <QuestionBody q={qq} answers={answers} setAnswer={setAnswer} personaChoice={persona} />
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <QuestionBody q={step.questions[0]!} answers={answers} setAnswer={setAnswer} personaChoice={persona} />
+                    )}
                   </Step>
                 ) : (
                   <Step title={t("w.account.onboarding.plan-title")} sub={plan ? undefined : t("w.account.onboarding.plan-sub")}>

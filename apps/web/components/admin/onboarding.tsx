@@ -20,6 +20,9 @@ type Draft = {
   system: boolean;
   /** Which intake asks it. Empty = both. Locked for a built-in. */
   personas: string[];
+  /** Shared-screen id. "" = its own screen. Editable on a built-in too. */
+  group: string;
+  groupTitle: string;
   id: string;
 };
 
@@ -36,7 +39,7 @@ function toDraft(q: OnboardingQuestion): Draft {
     choices: q.choices ? q.choices.map((c) => ({ ...c })) : [], min: q.min, max: q.max, step: q.step,
     defaultValue: q.defaultValue != null ? String(q.defaultValue) : undefined,
     required: !!q.required, enabled: q.enabled, order: q.order, system: !!q.system,
-    personas: q.personas ? [...q.personas] : [], id: q.id,
+    personas: q.personas ? [...q.personas] : [], group: q.group ?? "", groupTitle: q.groupTitle ?? "", id: q.id,
   };
 }
 
@@ -128,7 +131,7 @@ export default function AdminOnboarding() {
 
       {adding && (
         <QuestionEditor
-          draft={{ key: "", kind: "single", title: "", subtitle: "", choices: [{ value: "", label: "" }], required: false, enabled: true, order: (questions?.length ?? 0) + 10, system: false, personas: [], id: "" }}
+          draft={{ key: "", kind: "single", title: "", subtitle: "", choices: [{ value: "", label: "" }], required: false, enabled: true, order: (questions?.length ?? 0) + 10, system: false, personas: [], group: "", groupTitle: "", id: "" }}
           busy={busy}
           onCancel={() => setAdding(false)}
           onSave={(d) => save(draftToBody(d))}
@@ -157,6 +160,9 @@ export default function AdminOnboarding() {
                       <Chip c={q.personas?.length ? LIME : ASH}>
                         {q.personas?.length ? q.personas.join(" + ") : "both intakes"}
                       </Chip>
+                      {/* WHICH SCREEN. Only shown when it shares one — an
+                          unshared question is the default and needs no chip. */}
+                      {q.group && <Chip c={BLUE}>▤ {q.group}</Chip>}
                       {q.required && <Chip c={ASH}>required</Chip>}
                     </div>
                     <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{q.title}</div>
@@ -200,6 +206,7 @@ function draftToBody(d: Draft): Record<string, unknown> {
     step: d.kind === "number" ? d.step : undefined, defaultValue: d.defaultValue,
     required: d.required, enabled: d.enabled, order: d.order,
     engineKey: d.engineKey ?? undefined, personas: d.personas,
+    group: d.group, groupTitle: d.groupTitle,
   };
 }
 
@@ -263,6 +270,34 @@ function QuestionEditor({ draft, busy, onSave, onCancel }: { draft: Draft; busy:
           </Mono>
         </Field>
       )}
+
+      {/* ── WHICH SCREEN ──────────────────────────────────────────────────
+          Questions sharing a group id, and ADJACENT in the order above, are
+          asked on one screen. Offered on built-ins too: grouping is
+          presentation, so the worst it can do is change how many screens the
+          intake takes — it cannot change who is asked or what reads the answer,
+          which is why the scope above is locked and this is not. */}
+      <Field label="Shares a screen with (optional)">
+        <input
+          value={d.group}
+          onChange={(e) => set({ group: e.target.value })}
+          placeholder="body"
+          style={inp}
+        />
+        {!!d.group && (
+          <input
+            value={d.groupTitle}
+            onChange={(e) => set({ groupTitle: e.target.value })}
+            placeholder="Heading for the shared screen — set it on the FIRST question of the group"
+            style={inp}
+          />
+        )}
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
+          {d.group
+            ? `asked together with any ADJACENT question in group "${d.group}" — separate them in the order and they become two screens again`
+            : "asked on its own screen"}
+        </Mono>
+      </Field>
 
       {/* ── WHAT READS IT ─────────────────────────────────────────────────
           A custom question is informational by default. Keying it to an engine

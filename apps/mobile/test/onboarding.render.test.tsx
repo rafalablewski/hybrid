@@ -1,10 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES, onboardingQuestionsForClient } from "@hybrid/core";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES, onboardingQuestionsForClient, onboardingSteps } from "@hybrid/core";
 
 /** The intake each persona actually walks — DERIVED, so adding a question to
  *  the shipped set changes these tests' step counts instead of breaking them. */
 const intake = (p: "casual" | "athlete") => onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, p);
+
+/** The SCREENS the wizard walks after the fork — not the questions. Sex, birth
+ *  and body mass share one, so a question's index is no longer its step's. */
+const wiz = (p: "casual" | "athlete") =>
+  onboardingSteps(intake(p).filter((x) => x.engineKey !== "persona"));
+/** Which screen carries the question with this engine key. */
+const stepWith = (p: "casual" | "athlete", engineKey: string) =>
+  wiz(p).findIndex((st) => st.questions.some((q) => q.engineKey === engineKey));
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
 import { SCRUB_UNSET } from "../components/aurora/kit";
@@ -133,11 +141,9 @@ describe("a date the athlete has not answered", () => {
     // The fork is a screen: picking IS the advance, so no Next follows it.
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    // Derived: the wizard is goal(0), sex(1), birth(2), … since setup stopped
-    // asking for a training age it can measure off the bar instead.
-    const wiz = intake("athlete").filter((x) => x.engineKey !== "persona");
-    const born = wiz.findIndex((x) => x.engineKey === "birthYear");
-    for (let i = 0; i < born; i++) next(container);
+    // Derived, and it is a SCREEN index now: the birth question shares its
+    // screen with sex and body mass, so counting questions would overshoot.
+    for (let i = 0; i < stepWith("athlete", "birthYear"); i++) next(container);
     const body = container.textContent ?? "";
     // Non-vacuity: the assertions below are trivially true on any screen that
     // is not this one, so prove we arrived. The title is core's own — the mock
@@ -196,15 +202,14 @@ describe("what setup writes down", () => {
     // then sleep did, and neither is asked any more — the app measures training
     // age off the bar and sleep off the daily check-in. Stress is the one
     // recovery input nothing can measure.
-    const wiz = intake("athlete").filter((x) => x.engineKey !== "persona");
-    const sleepAt = wiz.findIndex((x) => x.engineKey === "stress");
-    for (let i = 0; i < sleepAt; i++) fireEvent.click(cta(container));
+    const stressAt = stepWith("athlete", "stress");
+    for (let i = 0; i < stressAt; i++) fireEvent.click(cta(container));
     // A 1–5 range draws as segments rather than a scrub, so the pick is a tab.
     const seg = Array.from(container.querySelectorAll('[role="tab"]'))
       .find((e) => (e.textContent ?? "").startsWith("4"));
     fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
-    // Past every remaining question without touching any of them, then commit.
-    for (let i = sleepAt; i < wiz.length; i++) fireEvent.click(cta(container));
+    // Past every remaining screen without touching any of them, then commit.
+    for (let i = stressAt; i < wiz("athlete").length; i++) fireEvent.click(cta(container));
     fireEvent.click(cta(container)); // the plan step's commit
 
     await waitFor(() => expect(written).toHaveBeenCalled());
@@ -259,10 +264,10 @@ describe("choosing the tracker", () => {
     // question is asked here rather than as step one — capture it, then walk.
     const seen: string[] = [container.textContent ?? ""];
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
-    const qs = intake("casual").filter((x) => x.engineKey !== "persona");
-    for (let i = 0; i < qs.length; i++) {
+    const screens = wiz("casual");
+    for (let i = 0; i < screens.length; i++) {
       seen.push(container.textContent ?? "");
-      if (i < qs.length - 1) fireEvent.click(cta(container)); // the last commits
+      if (i < screens.length - 1) fireEvent.click(cta(container)); // the last commits
     }
     const all = seen.join(" ");
     for (const q of intake("casual")) {

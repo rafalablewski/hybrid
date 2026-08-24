@@ -176,6 +176,30 @@ export interface OnboardingQuestion {
    * models read it. It does not need to be asked what it is training for.
    */
   personas?: ClientPersona[];
+  /**
+   * WHICH SCREEN THIS QUESTION SHARES. Questions with the same group id, and
+   * ADJACENT in `order`, are asked on one screen instead of one each.
+   *
+   * The wizard's default is one question per screen and that is right for most
+   * of them: a goal is a decision, a body mass is a measurement, and putting
+   * either beside something else invites a skim. But three short questions
+   * about the same subject — sex, birth date, body mass — are one thing being
+   * asked, and asking them across three screens is three transitions for one
+   * answer. On the intake most people will walk, that is most of the intake.
+   *
+   * ADJACENCY IS REQUIRED, not incidental: a group is a screen, and a screen
+   * cannot be assembled from questions with something else between them. A
+   * group whose members are separated by an ungrouped question renders as two
+   * screens, which is the honest reading of the order it was given.
+   *
+   * Presentation rather than structure, which is why — unlike `personas` — an
+   * admin may set it on a BUILT-IN. Regrouping changes how many screens the
+   * intake takes; it cannot change who is asked or what reads the answer.
+   */
+  group?: string;
+  /** The heading for a grouped screen, taken from its FIRST member. Ignored on
+   *  any other member, and on an ungrouped question. */
+  groupTitle?: string;
   /** Display order (ascending). */
   order: number;
 }
@@ -269,6 +293,11 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // figure; nothing is stored until it is moved.
   {
     id: "sex", key: "sex", kind: "single", engineKey: "sex", system: true, enabled: true, order: 2,
+    // THE ONE GROUPED SCREEN. These three are what a tracker is asked, in full,
+    // and they are one question in three parts: who is this body. Asked one per
+    // screen they were three transitions for a single answer, on the intake
+    // most people will walk.
+    group: "body", groupTitle: "A little about you",
     title: "Male or female?",
     subtitle: "Every strength and pace standard is published for men. Without this we hold you to the men's bar.",
     choices: [
@@ -285,10 +314,12 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // is optional in the model; `questionnaireFromAnswers` parses both.
   {
     id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 3,
+    group: "body",
     title: "When were you born?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",
   },
   {
     id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 4,
+    group: "body",
     title: "What do you weigh?", subtitle: "It sets how much you have to recover from per set — and your working loads.",
     min: 25, max: 300, step: 0.5,
   },
@@ -417,7 +448,25 @@ export function normalizeOnboardingQuestion(raw: unknown): OnboardingQuestion | 
     // ("both") rather than "nobody" — a question no persona can see is a
     // question that has deleted itself, which is the failure mode `kind` and
     // `engineKey` each shipped with once already.
-    personas: normalizePersonas(r.personas) ?? DEFAULT_PERSONAS_BY_KEY[key],
+    // A BUILT-IN'S SCOPE IS THE CODE'S, WHATEVER THE ROW SAYS — not merely when
+    // the row is silent, which is what an earlier cut of this did. The
+    // difference is the whole guarantee: `?? default` locks nothing, because a
+    // row carrying a valid list wins it. The admin API happens never to send
+    // one for a built-in, so the hole was unreachable through the editor and
+    // would have stayed invisible until something else wrote a row.
+    personas: key in DEFAULT_PERSONAS_BY_KEY
+      ? DEFAULT_PERSONAS_BY_KEY[key]
+      : normalizePersonas(r.personas),
+    // GROUP. A row that carries no value at all inherits the code default (a
+    // stored row written before grouping existed, or by an editor that does not
+    // send the field). An EMPTY STRING is an explicit "no group" — which is how
+    // an admin ungroups a built-in, and why the two cases cannot be collapsed.
+    group: r.group === undefined || r.group === null
+      ? DEFAULT_GROUP_BY_KEY[key]
+      : (String(r.group).trim() || undefined),
+    groupTitle: r.groupTitle === undefined || r.groupTitle === null
+      ? DEFAULT_GROUP_TITLE_BY_KEY[key]
+      : (String(r.groupTitle).trim() || undefined),
     order: typeof r.order === "number" ? r.order : 0,
   };
 }
@@ -430,10 +479,73 @@ const DEFAULT_PERSONAS_BY_KEY: Record<string, ClientPersona[] | undefined> = Obj
   DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.personas]),
 );
 
+const DEFAULT_GROUP_BY_KEY: Record<string, string | undefined> = Object.fromEntries(
+  DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.group]),
+);
+const DEFAULT_GROUP_TITLE_BY_KEY: Record<string, string | undefined> = Object.fromEntries(
+  DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.groupTitle]),
+);
+
 function normalizePersonas(raw: unknown): ClientPersona[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const list = raw.filter((v): v is ClientPersona => CLIENT_PERSONAS.includes(v as ClientPersona));
   return list.length ? [...new Set(list)] : undefined;
+}
+
+/**
+ * ONE SCREEN OF THE WIZARD — one question, or a group of them.
+ *
+ * The wizard used to step over `questions` directly, which made "a question"
+ * and "a screen" the same thing and left no way to say otherwise. They are not
+ * the same thing: sex, birth date and body mass are three questions and one
+ * screen, because they are three parts of asking who this body is.
+ */
+export interface OnboardingStep {
+  /** Stable id for the step — the group id, or the lone question's key. */
+  key: string;
+  /** The heading. A group's own title, else the single question's. */
+  title: string;
+  /** Shown under the heading. Absent on a group: each member carries its own
+   *  subtitle beside its own control, so one at the top would be describing
+   *  whichever question happened to be first. */
+  subtitle?: string;
+  /** True when this screen carries more than one question. */
+  grouped: boolean;
+  questions: OnboardingQuestion[];
+}
+
+/**
+ * Group an ordered question list into the screens the wizard actually walks.
+ *
+ * ADJACENT MEMBERS ONLY. A group is a screen, and a screen cannot be assembled
+ * out of questions with something else between them — so a group whose members
+ * are separated by an ungrouped question becomes two screens rather than one
+ * screen that silently reorders the intake. The order it was given is the order
+ * it is asked in, always.
+ */
+export function onboardingSteps(questions: OnboardingQuestion[]): OnboardingStep[] {
+  const steps: OnboardingStep[] = [];
+  for (const q of questions) {
+    const last = steps[steps.length - 1];
+    if (q.group && last && last.key === q.group && last.grouped) {
+      last.questions.push(q);
+      continue;
+    }
+    steps.push(
+      q.group
+        ? { key: q.group, title: q.groupTitle?.trim() || q.title, grouped: true, questions: [q] }
+        : { key: q.key, title: q.title, subtitle: q.subtitle, grouped: false, questions: [q] },
+    );
+  }
+  // A group that ended up with ONE member is not a group — it renders as the
+  // question it is, with its own title and subtitle, rather than under a
+  // heading written for a set it no longer has. Reachable whenever a persona
+  // filter or a disabled row leaves a single member standing.
+  return steps.map((st) =>
+    st.grouped && st.questions.length === 1
+      ? { key: st.questions[0]!.key, title: st.questions[0]!.title, subtitle: st.questions[0]!.subtitle, grouped: false, questions: st.questions }
+      : st,
+  );
 }
 
 /** Whether `q` is asked of `persona`. No `personas` means both, and no persona
