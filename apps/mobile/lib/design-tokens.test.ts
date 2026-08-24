@@ -2341,7 +2341,7 @@ describe("spacing", () => {
   });
 
   it("BURN-DOWN — and then the screens", () => {
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 588, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 571, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**
@@ -2443,7 +2443,124 @@ describe("spacing", () => {
     expect(
       kit!.text,
       "the section seam moved out of the tokens — ASection is where both numbers are written",
-    ).toContain("const rhythm: ViewStyle = { marginTop: space.xxl, marginBottom: space.ms };");
+    ).toContain("const rhythm: ViewStyle = { marginTop: lead ? 0 : space.xxl, marginBottom: space.ms };");
+  });
+
+  /**
+   * A SEAM SITS BETWEEN THINGS. IT DOES NOT OPEN THEM.
+   *
+   * `ASection`'s `space.xxl` is the gap between two sections of a SCREEN. A
+   * card already pays its own `CARD_PAD`, so a head that is the card's first
+   * child stacks the two: 20 of card pad plus 24 of seam puts the title 44dp
+   * from the top edge against 20dp at the sides, and the card reads as sagging.
+   *
+   * Five did — three on Performance, one on the volume screen, and the week
+   * verdict's comparison page (which reaches its card through a component whose
+   * own root is the head, so a shallow look-back never sees it). A sixth,
+   * `questionnaire.tsx`, had already patched it with a local `marginTop: 0`:
+   * the standard could not express the case, so the caller re-derived it, which
+   * is the same failure the `sub` slot was added to stop.
+   *
+   * The rule the file's other guards could not catch: they check that the seam
+   * is stated in TOKENS, not that it is the RIGHT seam for the container. This
+   * one reads the container.
+   */
+  it("HARD — a head that opens a card takes `lead`", () => {
+    const OPENS = /<(ACard|APressCard)\b/;
+    const SEAMED = /^\{?\s*<(ASection|GroupMark|DoorRow)\b/;
+    const indent = (l: string) => l.length - l.trimStart().length;
+    const skip = (t: string) =>
+      t === "" || t.startsWith("*") || t.startsWith("//") || t.startsWith("/*") || t.startsWith("{/*") || t.startsWith("<>");
+
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      const p = path.split("\\").join("/");
+      if (!/^(components|app)\//.test(p)) continue;
+      const L = text.split("\n");
+      for (let i = 0; i < L.length; i++) {
+        if (!OPENS.test(L[i])) continue;
+        const base = indent(L[i]);
+        for (let j = i + 1; j < Math.min(L.length, i + 14); j++) {
+          const t = L[j].trimStart();
+          if (skip(t)) continue;
+          if (indent(L[j]) <= base) break;
+          if (!t.startsWith("<") && !t.startsWith("{")) continue;
+          if (SEAMED.test(t)) {
+            const block = L.slice(j, j + 8).join(" ");
+            const cancels = /\blead\b/.test(block) || /marginTop:\s*0/.test(block) || /mt=\{0\}/.test(block);
+            if (!cancels) bad.push(`${p}:${j + 1}  ${t.slice(0, 70)}`);
+          }
+          break;
+        }
+      }
+    }
+    expect(
+      bad,
+      "this head OPENS its card, so there is no preceding section to seam against — " +
+        "pass `lead` (ASection) or cancel the top margin explicitly:\n" + bad.join("\n"),
+    ).toEqual([]);
+  });
+
+  /**
+   * THE EYEBROW'S OTHER HALF.
+   *
+   * `ty(C, "kicker")` and `ty(C, "overline")` name the app's dominant label
+   * voice, and the tier shipped without the one measurement that completes it:
+   * how far its value sits beneath it. So every call site decided again, and
+   * the sweep found ONE relationship spelled EIGHT ways across 29 sites — 1, 2,
+   * 3, 4, 5, 6, 7 and 8dp, eighteen of them on no rung at all. Two sat in the
+   * same card on Performance: the freshness band 2dp under its kicker, the
+   * capability line 5dp under its own.
+   *
+   * `LABEL_GAP` (@hybrid/core scale.ts) is that number. This rule is HARD
+   * rather than a burn-down because the class is small, mechanical and now
+   * empty — and because a ninth spelling would cost nothing to add and be
+   * invisible in review, which is exactly the shape a guard is for.
+   *
+   * SCOPE, stated so the number is honest: only a NAMED eyebrow counts. The
+   * ~46 hand-rolled mono-uppercase labels are governed by the existing
+   * "mono uppercase eyebrow → ty(C, …)" burn-down above; converging those onto
+   * the token pulls their gaps onto LABEL_GAP with them, which is why this rule
+   * does not try to reach them with a heuristic it cannot make precise.
+   */
+  it("HARD — a named eyebrow's value takes LABEL_GAP", () => {
+    const NAMED = /ty\(C,\s*"(kicker|overline)"\)/;
+    // The whole OPENING TAG of the element at line j — it routinely wraps, and
+    // reading only the first line was this rule's own first bug: it picked up
+    // the NEXT SIBLING's margin and flagged five sites that are not this class.
+    const openTag = (L: string[], j: number) => {
+      let s = "", depth = 0;
+      for (let k = j; k < Math.min(L.length, j + 8); k++) {
+        s += L[k] + " ";
+        for (const ch of L[k]) { if (ch === "{") depth++; else if (ch === "}") depth--; }
+        if (depth <= 0 && /(?:^|[^{])>\s*$|\/>\s*$|>\s*\{?\s*$/.test(L[k])) break;
+      }
+      return s;
+    };
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      const p = path.split("\\").join("/");
+      if (!/^(components|app)\//.test(p)) continue;
+      const L = text.split("\n");
+      for (let i = 0; i < L.length; i++) {
+        if (!/<Text/.test(L[i]) || !NAMED.test(openTag(L, i))) continue;
+        for (let j = i + 1; j < Math.min(L.length, i + 6); j++) {
+          const t = L[j].trim();
+          if (t === "" || t === ")}" || t === ")" || t === "}" || t.startsWith("{") || t.startsWith("*") || t.startsWith("//")) continue;
+          if (!t.startsWith("<")) continue;
+          if (!/^<Text/.test(t)) break;              // an intervening element — a different relationship
+          const tag = openTag(L, j);
+          if (NAMED.test(tag)) break;                // a second eyebrow, not its value
+          const m = tag.match(/marginTop:\s*(\d+)\b/);
+          if (m) bad.push(`${p}:${j + 1}  marginTop: ${m[1]}`);
+          break;
+        }
+      }
+    }
+    expect(
+      bad,
+      "the gap under an eyebrow is LABEL_GAP (@hybrid/core), not a literal:\n" + bad.join("\n"),
+    ).toEqual([]);
   });
 });
 

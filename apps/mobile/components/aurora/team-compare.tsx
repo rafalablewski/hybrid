@@ -5,7 +5,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, FIXED_FONT_SCALE, LoadSwap, Loading, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
-import type { AccentKey } from "@hybrid/core";
+import { LABEL_GAP, type AccentKey } from "@hybrid/core";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
  * , so a coach reads the same columns on either client. */
@@ -154,7 +154,7 @@ function Cell({ C, label, value }: { C: Palette; label: string; value: string })
   return (
     <View style={{ width: "33.33%", paddingVertical: 5 }}>
       <Text style={ty(C, "kicker")}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: LABEL_GAP }}>{value}</Text>
     </View>
   );
 }

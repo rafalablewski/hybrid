@@ -113,7 +113,7 @@ import {
   HERO,
   SATELLITE,
   type ReadinessFeeling,
-  ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+  ALPHA, FEEDBACK, STATE_OPACITY, LABEL_GAP } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
 
 // Today's one-tap readiness feeling from the check-in list → scales the AI
@@ -2348,11 +2348,11 @@ function ExerciseSheet({
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
                 <Text style={{ fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
-                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{t("workout.totalVolume")}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{t("workout.totalVolume")}</Text>
               </View>
               <View>
                 <Text style={{ fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{setLine}</Text>
-                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP  }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
               </View>
             </View>
 

@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import {
   READINESS_FACE, readinessReasonsKey,
   type Prescription, type ReadinessDeficit, type ReadinessFact, type ReadinessVerdict,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -69,7 +70,7 @@ export default function ReadinessDaySheet({ deficit, facts, verdict, rx, onClose
               </Text>
               {/* THE FACE — one line, naming the limiter and nothing else. The
                   same sentence the card wears, so the two cannot disagree. */}
-              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 5, lineHeight: leading(fs.subtitle) }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: LABEL_GAP, lineHeight: leading(fs.subtitle) }}>
                 {t(verdict.key).replace("{tissue}", verdict.muscle ? t(`w.home.today.muscle.${verdict.muscle}`) : "")}
               </Text>
             </View>

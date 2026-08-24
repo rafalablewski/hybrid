@@ -583,7 +583,7 @@ function Changed({ C, t, factors }: {
   const real = factors.filter((f) => f.multiplier !== 1);
   return (
     <ACard solid style={{ marginTop: space.lg }}>
-      <ASection title={t("w.quiz.changed.title")} style={{ marginTop: 0 }} />
+      <ASection lead title={t("w.quiz.changed.title")} />
       {real.length === 0 ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>
           {t("w.quiz.changed.none")}

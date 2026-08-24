@@ -25,6 +25,7 @@ import {
   type HeatCell,
   type AuroraIconName,
   ALPHA,
+  LABEL_GAP,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -831,7 +832,7 @@ function HighlightGrid({
                 <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate: rotations[idx % 3] }] : [] }}>
                   <AuroraIcon name={tile.icon} size={22} color={C.lime} />
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: tracking(19), marginTop: 6 }}>{tile.v}</Text>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: 4, maxWidth: "100%"  }}>{tile.k}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: LABEL_GAP, maxWidth: "100%"  }}>{tile.k}</Text>
                 </Animated.View>
               </Pressable>
               {editMode && (

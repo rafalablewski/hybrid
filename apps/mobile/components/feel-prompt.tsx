@@ -13,7 +13,7 @@ import {
   readNoteKey,
   FEEL_READ_KEY,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, LABEL_GAP } from "@hybrid/core";
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
@@ -153,7 +153,7 @@ export function FeelPrompt({
       ) : (
         <Text style={ty(C, "overline")}>{t("session.feel.q")}</Text>
       )}
-      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: tracking(compact ? 18 : 21), lineHeight: compact ? 22 : 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
+      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: tracking(compact ? 18 : 21), lineHeight: compact ? 22 : 25, marginTop: LABEL_GAP }}>{t("session.feel.lead")}</Text>
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
