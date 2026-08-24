@@ -74,6 +74,7 @@ const EXEMPT: { marker: string; why: string }[] = [
 const MUST_TRAVEL = [
   "addSet",
   "applyPreset",
+  "repeatLast",
   "addDropSet",
   "addWarmupSet",
   "addCooldownSet",

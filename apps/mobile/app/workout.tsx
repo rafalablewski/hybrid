@@ -285,21 +285,27 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
 
 
 /**
- * Carry a lift's last session forward as its opening queue.
+ * Last session's WORKING sets, as a queue this session could adopt — or `null`
+ * when there is nothing worth adopting (a new lift, or a last time that was a
+ * single empty set).
  *
- * Only the WORKING sets, and only their numbers — the previous session's
- * warm-up ramp is not this session's plan, and nothing is marked done. If the
- * lift is new, or last time was a single empty set, the exercise arrives as it
- * always did: one blank set to type into.
+ * Only the working sets, and only their numbers: the previous session's warm-up
+ * ramp is not this session's plan, and nothing arrives marked done.
+ *
+ * THIS IS OFFERED, NEVER APPLIED. A new exercise used to arrive with these
+ * already filled in, on the argument that the default is the answer. It is not:
+ * the numbers that showed up were last week's, in chalk, indistinguishable from
+ * ones the athlete had just typed — so the set they actually did got banked at
+ * whatever the previous session happened to be unless they noticed and
+ * corrected every field. A default you have to check is worse than a blank one,
+ * because a blank one cannot be wrong. The card arrives EMPTY, the "last time"
+ * line beneath the name says what was done, and tapping that line lays it out.
  */
-const seedFromLast = (x: WExercise, last?: StrengthBlock): WExercise => {
-  if (x.kind !== "strength" || !last) return x;
+const setsFromLast = (kind: WKind, last?: StrengthBlock): WSet[] | null => {
+  if (kind !== "strength" || !last) return null;
   const carried = last.sets.filter((s) => setType(s) === "working" && (s.reps || s.load));
-  if (!carried.length) return x;
-  return {
-    ...x,
-    sets: carried.map((s) => ({ uid: uid(), load: s.load ?? "", reps: s.reps ?? "", rpe: "", done: false })),
-  };
+  if (!carried.length) return null;
+  return carried.map((s) => ({ uid: uid(), load: s.load ?? "", reps: s.reps ?? "", rpe: "", done: false }));
 };
 
 type Summ = {
@@ -769,15 +775,10 @@ export default function Workout() {
     const clean = picks.map((p) => ({ ...p, name: p.name.trim() })).filter((p) => p.name);
     if (!clean.length) return;
     animateListChange(reducedMotion);
-    // SEEDED FROM LAST TIME. A lift you have done before arrives with its last
-    // session's sets already queued and their numbers filled IN — chalk, not a
-    // grey placeholder zero — so logging set one is a single tap instead of a
-    // tap, a keyboard, a number and a dismissal. The default is the answer;
-    // it is also, unlike a 0, a true statement about your training.
-    setExercises((xs) => [
-      ...xs,
-      ...clean.map((p) => seedFromLast(newExercise(p.name, p.kind), lastByLift.get(p.name))),
-    ]);
+    // AN EXERCISE ARRIVES EMPTY. Not blank-because-nobody-thought-about-it: see
+    // `setsFromLast` for why last session's numbers are OFFERED on the card's
+    // "last time" line rather than typed into the fields for you.
+    setExercises((xs) => [...xs, ...clean.map((p) => newExercise(p.name, p.kind))]);
     setPickerOpen(false);
   };
   const removeExercise = (u: string) => {
@@ -926,6 +927,14 @@ export default function Workout() {
       const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
       return [...done, ...work];
     });
+  // REPEAT LAST TIME — the "last time" line under the lift's name is the button.
+  // Lays out that session's working sets as this session's queue, in one tap,
+  // which is the whole reason the fields are allowed to arrive empty: the offer
+  // is visible, it is legible (it says what it will do before you take it), and
+  // taking it is deliberate. Banked sets are kept and the un-banked plan is
+  // replaced — the same contract as a preset, because it is the same move.
+  const repeatLast = (u: string, sets: WSet[]) =>
+    commitSets(u, (cur) => [...cur.filter((s) => s.done), ...sets.map((s) => ({ ...s, uid: uid() }))]);
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
     commitSets(u, (sets) => [...sets, { ...emptySet(), drop: true }]);
@@ -1555,12 +1564,41 @@ export default function Workout() {
                 {(() => {
                   // "Last time" reference — the most recent prior session's sets
                   // for this lift, so progressive overload has a target to beat.
+                  //
+                  // AND IT IS THE WAY TO REPEAT IT. The line already states the
+                  // thing a "repeat" control would have to name, so a second
+                  // control beside it would print the same sentence twice; the
+                  // reading IS the offer, and tapping takes it. Bare ＋, no ring,
+                  // in ash — the exit rule's grammar: this GROWS the queue in
+                  // place, it does not open anything, and the accent on this
+                  // screen belongs to Log set alone.
+                  //
+                  // Not tappable when there is nothing to lay out (last time was
+                  // warm-ups, or empty sets): an affordance that does nothing on
+                  // press is worse than none.
                   const last = lastByLift.get(x.name);
-                  return last ? (
-                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginBottom: 8 }}>
-                      {t("workout.lastTime")} – {blockSummary(last)}
+                  if (!last) return null;
+                  const carried = setsFromLast(x.kind, last);
+                  const line = `${t("workout.lastTime")} – ${blockSummary(last)}`;
+                  const label = (
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+                      {line}
                     </Text>
-                  ) : null;
+                  );
+                  if (!carried) return <View style={{ marginBottom: 8 }}>{label}</View>;
+                  return (
+                    <Pressable
+                      onPress={() => { haptic.light(); repeatLast(x.uid, carried); }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t("workout.repeatLast")} — ${line}`}
+                      accessibilityHint={t("workout.repeatLastHint")}
+                      hitSlop={8}
+                      style={{ flexDirection: "row", alignItems: "center", gap: space.xs, marginBottom: 8 }}
+                    >
+                      {label}
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>＋</Text>
+                    </Pressable>
+                  );
                 })()}
                 {/* A bilateral dumbbell lift takes ONE dumbbell's weight;
                     tonnage counts both bells. Guide the athlete so the doubled
