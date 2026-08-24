@@ -16,7 +16,7 @@ import {
   type QuestionKey,
 } from "./questionnaire";
 import { VOLUME_PROFILE_FIELDS } from "./engines/athlete-profile";
-import { DEFAULT_ONBOARDING_QUESTIONS, onboardingQuestionsForClient } from "./onboarding";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_ENGINE_KEYS, onboardingQuestionsForClient } from "./onboarding";
 import { personalizeLandmarks, sanitizeVolumeProfile, effectiveAgeYears, type AthleteVolumeProfile } from "./engines/landmark-profile";
 
 /** A legal answer to any question, for the round-trip and factor checks. */
@@ -262,10 +262,15 @@ describe("what setup already asked", () => {
     const p = questionnaireFromAnswers(qs, {
       persona: "athlete", goal: "hybrid", experience: "advanced",
       sex: "F", birth: "1992-04", bodyweight: 61.5, days: 5, equipment: "full",
+      sleep: 4, stress: 2,
     }, { now: NOW });
-    // The date is stored as given, and body mass is not here at all — it is a
-    // dated measurement and goes to the body log.
-    expect(p).toEqual({ experience: "advanced", sex: "F", birthYear: 1992, birthMonth: 4, daysPerWeek: 5 });
+    // The date is stored as given; body mass is not here at all (a dated
+    // measurement, so it goes to the body log); and neither is TRAINING AGE,
+    // even though an answer for it was passed in — setup does not ask for one,
+    // and the profile takes it from the log rather than from a tap.
+    expect(p).toEqual({
+      sex: "F", birthYear: 1992, birthMonth: 4, daysPerWeek: 5, sleep: 4, stress: 2,
+    });
     expect(effectiveAgeYears(p, NOW)).toBe(34);
     expect(bodyMassFromAnswers(qs, { bodyweight: 61.5 })).toBe(61.5);
   });
@@ -356,19 +361,47 @@ describe("what setup already asked", () => {
    */
   it("reaches the estimate — an intake answer moves the multipliers", () => {
     const bare = personalizeLandmarks({});
-    const fromIntake = personalizeLandmarks(questionnaireFromAnswers(qs, { experience: "advanced", days: 5 }));
-    expect(fromIntake.stimulus).not.toBe(bare.stimulus);
+    const fromIntake = personalizeLandmarks(
+      questionnaireFromAnswers(qs, { days: 5, sleep: 5, birth: "1998-04" }, { now: NOW }),
+    );
     expect(fromIntake.recovery).toBeGreaterThan(bare.recovery);
   });
 
+  /**
+   * TRAINING AGE IS NOT ONE OF THE ANSWERS ANY MORE, and this is the guard.
+   *
+   * It is the strongest single input to the model — the only one that scales
+   * the STIMULUS end — and it used to come from one tap at setup. Self
+   * assessment is unreliable in both directions, engines/fitness-level.ts
+   * measures it from the log instead, and `resolveExperience` gives a STATED
+   * answer permanent priority over that measurement. So an answer typed before
+   * the athlete had logged anything outranked their own training forever.
+   *
+   * Setup no longer asks. The questionnaire screen still lets someone overrule
+   * the estimate deliberately; what is gone is the version of that override
+   * given by an athlete with no evidence either way.
+   */
+  it("never writes a training age onto the profile", () => {
+    expect(questionnaireFromAnswers(qs, { experience: "advanced" }).experience).toBeUndefined();
+    expect(qs.some((q) => q.engineKey === "experience")).toBe(false);
+  });
+
   it("takes an athlete most of the way before their first session", () => {
-    const answers = { experience: "intermediate", sex: "M", birth: "1998-04", bodyweight: 79, days: 4 };
+    const answers = { sex: "M", birth: "1998-04", bodyweight: 79, days: 4, sleep: 4, stress: 2 };
     const p = questionnaireFromAnswers(qs, answers, { now: NOW });
     // Body mass reaches the profile the way it does in the app: setup logs a
     // weigh-in, and the measured layer merges the newest one back in.
     const resolved = { ...p, bodyweightKg: bodyMassFromAnswers(qs, answers) };
-    // experience .27 + sex .08 + age .13 + mass .17 + days .11 = .76
-    expect(questionnaireProgress(resolved, [], { now: NOW }).score).toBe(0.76);
+    // TRAINING AGE (.27) IS DELIBERATELY MISSING HERE and the figure is lower
+    // for it. That is the honest reading of what the athlete has TOLD us — and
+    // it is not what the Volume screen shows, because `useVolumeModel` measures
+    // completeness on the profile it hands the model, which carries the
+    // log-derived training age as soon as there is a log to derive one from.
+    const score = questionnaireProgress(resolved, [], { now: NOW }).score;
+    expect(score).toBeGreaterThan(0.6);
+    // …and it climbs the rest of the way once the log can speak for it.
+    expect(questionnaireProgress({ ...resolved, experience: "intermediate" }, [], { now: NOW }).score)
+      .toBeGreaterThan(score);
   });
 
   /** The age question counts as answered from the birth year alone — the form
@@ -398,9 +431,13 @@ describe("what setup already asked", () => {
 
   it("asks every question whose engine key is a questionnaire field", () => {
     const asked = new Set(qs.map((q) => q.engineKey).filter(Boolean));
-    for (const k of ["experience", "sex", "birthYear", "bodyweightKg", "daysPerWeek"]) {
+    for (const k of ["sex", "birthYear", "bodyweightKg", "daysPerWeek", "sleep", "stress"]) {
       expect(asked, k).toContain(k);
     }
+    // …and NOT training age, which the log measures. It stays a legal engine
+    // key so an operator can re-add the question; it is simply not shipped.
+    expect(asked).not.toContain("experience");
+    expect(ONBOARDING_ENGINE_KEYS).toContain("experience");
   });
 
   /**

@@ -133,9 +133,11 @@ describe("a date the athlete has not answered", () => {
     // The fork is a screen: picking IS the advance, so no Next follows it.
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    next(container); // → experience
-    next(container); // → sex
-    next(container); // → born
+    // Derived: the wizard is goal(0), sex(1), birth(2), … since setup stopped
+    // asking for a training age it can measure off the bar instead.
+    const wiz = intake("athlete").filter((x) => x.engineKey !== "persona");
+    const born = wiz.findIndex((x) => x.engineKey === "birthYear");
+    for (let i = 0; i < born; i++) next(container);
     const body = container.textContent ?? "";
     // Non-vacuity: the assertions below are trivially true on any screen that
     // is not this one, so prove we arrived. The title is core's own — the mock
@@ -188,34 +190,32 @@ describe("what setup writes down", () => {
     // this branch is asked the five plan-shaping questions this test steps past.
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label)); // → goal
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
-    fireEvent.click(cta(container)); // → experience
-    // The three experience choices are short, so the wizard draws them as a
-    // segmented control rather than option rows — a tab, not a button.
-    const seg = Array.from(container.querySelectorAll('[role="tab"]')).find((e) => e.textContent === "Intermediate");
+    // SLEEP is the question this proves the rule on now: it carries a default
+    // (a mid-scale prior is honest to SHOW) and it reaches the profile, which
+    // is exactly the pair the rule is about. Experience used to play this part
+    // and no longer exists — setup measures training age instead of asking.
+    const wiz = intake("athlete").filter((x) => x.engineKey !== "persona");
+    const sleepAt = wiz.findIndex((x) => x.engineKey === "sleep");
+    for (let i = 0; i < sleepAt; i++) fireEvent.click(cta(container));
+    // A 1–5 range draws as segments rather than a scrub, so the pick is a tab.
+    const seg = Array.from(container.querySelectorAll('[role="tab"]'))
+      .find((e) => (e.textContent ?? "").startsWith("4"));
     fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
-    // Past every remaining question without touching any of them. Experience is
-    // step index 2, the plan step sits at `length`, so that is the distance.
-    // Derived rather than counted: the fork took the persona OUT of the step
-    // list, so the wizard is goal(0), experience(1), … and the plan step sits
-    // at `wizardSteps`. Experience is where this walk currently stands.
-    const wizardSteps = intake("athlete").filter((x) => x.engineKey !== "persona").length;
-    const steps = wizardSteps - 1;
-    for (let i = 0; i < steps; i++) fireEvent.click(cta(container));
+    // Past every remaining question without touching any of them, then commit.
+    for (let i = sleepAt; i < wiz.length; i++) fireEvent.click(cta(container));
     fireEvent.click(cta(container)); // the plan step's commit
 
     await waitFor(() => expect(written).toHaveBeenCalled());
     const profile = written.mock.calls.at(-1)![0] as Record<string, unknown>;
-    expect(profile.experience).toBe("intermediate");
+    expect(profile.sleep, "the answer that was given").toBe(4);
+    // Never a training age, whatever the wizard shows — it is measured, not told.
+    expect(profile.experience, "a training age nobody can self-assess").toBeUndefined();
     // `days` carries defaultValue 3 and `sex`/`birth`/`bodyweight` carry none —
     // every one of them was stepped past, so none of them may be on the profile.
     expect(profile.daysPerWeek, "a frequency nobody chose").toBeUndefined();
+    expect(profile.stress, "a stress score nobody chose").toBeUndefined();
     expect(profile.sex).toBeUndefined();
     expect(profile.birthYear).toBeUndefined();
-    // The two recovery questions carry a default too, and are held to the same
-    // rule: a mid-scale prior is fine to SHOW and must never be recorded as an
-    // answer, or the model would read a 3 nobody gave as a measured value.
-    expect(profile.sleep, "a sleep score nobody chose").toBeUndefined();
-    expect(profile.stress, "a stress score nobody chose").toBeUndefined();
     expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();
   });
 });

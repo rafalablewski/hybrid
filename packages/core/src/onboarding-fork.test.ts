@@ -65,17 +65,29 @@ describe("which questions each intake is asked", () => {
     expect(keys("athlete").length - keys("casual").length).toBe(1);
   });
 
-  it("asks every intake for all seven inputs the recovery model scales by", () => {
+  it("asks every intake for the model inputs it can only be TOLD", () => {
     // personalizeLandmarks multiplies the athlete's ceiling by seven supplied
-    // inputs and divides its confidence by the same seven. Setup asked for five
-    // of them until sleep and stress were added, so nobody could reach a
+    // inputs. Five of them are things only the athlete knows, and setup asked
+    // for three until sleep and stress were added — so nobody could reach a
     // confident model without finding the questionnaire screen on their own.
     const asked = new Set(
       onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, "casual").map((q) => q.engineKey),
     );
-    for (const k of ["experience", "birthYear", "bodyweightKg", "sleep", "stress", "daysPerWeek"]) {
+    for (const k of ["birthYear", "bodyweightKg", "sleep", "stress", "daysPerWeek"]) {
       expect(asked, `the model reads ${k} and setup never asks for it`).toContain(k);
     }
+  });
+
+  it("does not ask for the one input it can MEASURE", () => {
+    // Training age is the strongest input of the seven and the only one the
+    // app can read off the bar (engines/fitness-level.ts). Asking for it was
+    // asking an athlete to self-assess the figure that then governs their
+    // volume ceiling — and `resolveExperience` gives a stated answer permanent
+    // priority, so the tap outranked the measurement forever.
+    const asked = new Set(
+      onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, "athlete").map((q) => q.engineKey),
+    );
+    expect(asked).not.toContain("experience");
   });
 });
 

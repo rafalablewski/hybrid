@@ -357,7 +357,13 @@ export function questionnaireFromAnswers(
   // type to carry it.
   const birth = parseBirth(read("birthYear"));
   return sanitizeVolumeProfile({
-    experience: read("experience"),
+    // NO `experience`. Setup no longer asks for it, and it would not belong here
+    // if it did: the profile's training age is MEASURED from the log
+    // (engines/fitness-level.ts, resolved by useVolumeModel), and a value
+    // written here would outrank that measurement permanently, because
+    // `resolveExperience` gives a stated answer priority by design. The
+    // questionnaire screen is where an athlete can still overrule the estimate
+    // deliberately; setup is not, because at setup there is nothing to overrule.
     sex: read("sex"),
     birthYear: birth?.year,
     birthMonth: birth?.month,

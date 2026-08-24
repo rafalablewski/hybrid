@@ -18,7 +18,9 @@ export type Equipment = "full" | "home" | "minimal";
 
 export interface OnboardingAnswers {
   goal: OnboardingGoal;
-  experience: Experience;
+  /** Optional since Aug 2026: setup no longer asks. It is measured from the log
+   *  (engines/fitness-level.ts) and only ever narrows a tie here. */
+  experience?: Experience;
   daysPerWeek: number;
   equipment?: Equipment;
   sessionMin?: number;
@@ -229,16 +231,34 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
     personas: ["athlete"],
     title: "What's your main goal?", subtitle: "We'll shape your first plan around it.",
   },
-  {
-    id: "experience", key: "experience", kind: "single", engineKey: "experience", system: true, enabled: true, order: 2,
-    title: "What's your experience?", subtitle: "So we set the right starting load.",
-    defaultValue: "beginner",
-    choices: [
-      { value: "beginner", label: "Beginner" },
-      { value: "intermediate", label: "Intermediate" },
-      { value: "advanced", label: "Advanced" },
-    ],
-  },
+  // NO EXPERIENCE QUESTION, and its absence is a decision worth reading.
+  //
+  // Training age is the strongest single input to the volume model — the only
+  // one that scales the STIMULUS end, so it moves MEV as well as MRV — and it
+  // came from one tap on this screen. Self-assessment is unreliable in both
+  // directions: eight hard months reads as "intermediate", a decade of
+  // unprogressive gym-going reads as "advanced".
+  //
+  // engines/fitness-level.ts already measures it instead, from relative
+  // strength on five benchmark lifts against published standards, shifted for
+  // sex and age. That estimator shipped, and it reached the model — but only
+  // through `resolveExperience`, where the STATED answer always wins. So one
+  // tap at setup permanently outranked the measurement, and the log's only
+  // recourse was to report that it `disagrees` on a screen four taps deep. An
+  // answer given once, before the athlete had logged anything, governed their
+  // volume ceiling forever.
+  //
+  // The question is gone rather than demoted. With no answer, `resolveExperience`
+  // returns the derived value; with no log to derive from, it returns nothing
+  // and `personalizeLandmarks` simply omits the factor and reports lower
+  // confidence — the population table, honestly labelled. That is the same rule
+  // the body questions already keep: "we don't know" must stay distinguishable
+  // from "we guessed", and a guess about this one is expensive.
+  //
+  // It remains an `engineKey`, so an operator can re-add it as an explicit
+  // question, and it remains editable on the questionnaire screen where an
+  // athlete who wants to overrule the estimate still can. What it no longer is
+  // is something we ask for before we have any way to check it.
   // ── THE THREE BODY QUESTIONS ────────────────────────────────────────────
   // NONE OF THEM CARRIES A `defaultValue`, and that is the whole design. The
   // client seeds every answer from its default before the athlete touches
@@ -248,7 +268,7 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // with. Unanswered has to stay unanswered. The controls open at a plausible
   // figure; nothing is stored until it is moved.
   {
-    id: "sex", key: "sex", kind: "single", engineKey: "sex", system: true, enabled: true, order: 3,
+    id: "sex", key: "sex", kind: "single", engineKey: "sex", system: true, enabled: true, order: 2,
     title: "Male or female?",
     subtitle: "Every strength and pace standard is published for men. Without this we hold you to the men's bar.",
     choices: [
@@ -264,11 +284,11 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // "YYYY-MM" — or "YYYY" while only the year has been given, since the month
   // is optional in the model; `questionnaireFromAnswers` parses both.
   {
-    id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 4,
+    id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 3,
     title: "When were you born?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",
   },
   {
-    id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 5,
+    id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 4,
     title: "What do you weigh?", subtitle: "It sets how much you have to recover from per set — and your working loads.",
     min: 25, max: 300, step: 0.5,
   },
@@ -280,24 +300,24 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // measurement — but the profile still records only what was TOUCHED, so a
   // skipped one stays unknown rather than becoming a 3 nobody chose.
   {
-    id: "sleep", key: "sleep", kind: "number", engineKey: "sleep", system: true, enabled: true, order: 6,
+    id: "sleep", key: "sleep", kind: "number", engineKey: "sleep", system: true, enabled: true, order: 5,
     title: "How do you usually sleep?",
     subtitle: "1 is broken, 5 is consistently great. Sleep moves your recovery ceiling more than anything else we can ask about.",
     min: 1, max: 5, step: 1, defaultValue: 3,
   },
   {
-    id: "stress", key: "stress", kind: "number", engineKey: "stress", system: true, enabled: true, order: 7,
+    id: "stress", key: "stress", kind: "number", engineKey: "stress", system: true, enabled: true, order: 6,
     title: "How stressful is life right now?",
     subtitle: "1 is calm, 5 is very stressed. It costs recovery the same way a hard training week does.",
     min: 1, max: 5, step: 1, defaultValue: 3,
   },
   {
-    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 8,
+    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 7,
     title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
-    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 9,
+    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 8,
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [
@@ -407,7 +427,7 @@ export function onboardingQuestionsForClient(
 export function extractEngineAnswers(
   questions: OnboardingQuestion[],
   answers: OnboardingAnswerMap,
-): { goal?: string; experience: Experience; daysPerWeek: number; equipment: Equipment } {
+): { goal?: string; experience?: Experience; daysPerWeek: number; equipment: Equipment } {
   const byEngine = (k: OnboardingEngineKey) => questions.find((q) => q.engineKey === k);
   const read = (k: OnboardingEngineKey): unknown => {
     const q = byEngine(k);
@@ -417,13 +437,16 @@ export function extractEngineAnswers(
   };
   const exps: Experience[] = ["beginner", "intermediate", "advanced"];
   const equips: Equipment[] = ["full", "home", "minimal"];
-  const rawExp = String(read("experience") ?? "beginner");
+  // UNDEFINED WHEN NOT ASKED, rather than "beginner". This function's job is to
+  // hand the recommender a usable set, and a fabricated tier is not usable — it
+  // is the same claim the removed question used to make, restated as a default.
+  const rawExp = read("experience");
   const rawEquip = String(read("equipment") ?? "full");
   const rawGoal = read("goal");
   const days = Number(read("daysPerWeek"));
   return {
     goal: typeof rawGoal === "string" && rawGoal ? rawGoal : undefined,
-    experience: exps.includes(rawExp as Experience) ? (rawExp as Experience) : "beginner",
+    experience: exps.includes(rawExp as Experience) ? (rawExp as Experience) : undefined,
     daysPerWeek: Number.isFinite(days) && days > 0 ? days : 3,
     equipment: equips.includes(rawEquip as Equipment) ? (rawEquip as Equipment) : "full",
   };
@@ -457,13 +480,25 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
     const dx = Math.abs(x.sessions - days);
     const dy = Math.abs(y.sessions - days);
     if (dx !== dy) return dx - dy;
-    return expRank[a.experience] >= 2 ? y.sessions - x.sessions : x.sessions - y.sessions;
+    // THE TIE-BREAK, and it is all `experience` was ever used for here. With no
+    // stated tier — which is now the normal case at setup — it breaks toward
+    // FEWER sessions, which is this screen's own stated principle ("a plan
+    // you'll actually finish beats an ideal one") rather than a guess that the
+    // athlete is a beginner.
+    return a.experience && expRank[a.experience] >= 2
+      ? y.sessions - x.sessions
+      : x.sessions - y.sessions;
   })[0] as GoalPlan | undefined;
 
   if (!pick) return null;
 
+  // The sentence NAMES A TIER ONLY IF ONE WAS GIVEN. It used to assert one
+  // unconditionally, which — with the question gone and `extractEngineAnswers`
+  // defaulting to "beginner" — would have told every athlete in the app that
+  // they were a beginner, in the one paragraph they read before starting.
+  const asTier = a.experience ? ` as ${a.experience === "advanced" ? "an" : "a"} ${a.experience}` : "";
   const why =
-    `For ${node.name.toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +
+    `For ${node.name.toLowerCase()}, training ${days}×/week${asTier} — ` +
     `${pick.name} (${pick.sessions}×/wk) fits best: ${pick.desc}`;
 
   return {
