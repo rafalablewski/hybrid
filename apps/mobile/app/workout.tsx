@@ -1736,7 +1736,7 @@ export default function Workout() {
                                     // a door — it is also one VoiceOver cannot make.
                                     // Last, in the destructive slot, exactly where the
                                     // hold-menu puts its own.
-                                    extras={[...SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) })), { key: DELETE_SET_KEY, label: t("workout.deleteSet") }]}
+                                    extras={[...SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) })), { key: DELETE_SET_KEY, label: t("workout.deleteSet"), destructive: true }]}
                                     onExtra={(k) => (k === DELETE_SET_KEY ? removeSetTravelling(x.uid, s) : runSetExtra(x.uid, k))}
                                   />
                                 ) : (
