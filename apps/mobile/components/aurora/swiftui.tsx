@@ -1,16 +1,14 @@
-import { useEffect, useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Platform, View, StyleSheet } from "react-native";
 import {
   Button,
   ContextMenu,
   DatePicker,
   Divider,
-  GlassEffectContainer,
   HStack,
   Host,
   Image as SwiftImage,
   Menu,
-  Namespace,
   Picker,
   RNHostView,
   RoundedRectangle,
@@ -26,7 +24,6 @@ import {
   foregroundColor,
   frame,
   glassEffect,
-  glassEffectId,
   lineLimit,
   minimumScaleFactor,
   padding,
@@ -207,6 +204,12 @@ export function GlassNavButton({
  * "Followed ✓" the way the RN card did — so callers report outcomes with a
  * toast instead. Rows carry no icons: the RN card and the web twin are
  * label-only, and the mark set must not fork by renderer.
+ *
+ * It also carries an optional inline PICKER above those rows (`select`) — the
+ * radio group with the checkmark, divided from the actions. That is where a
+ * VALUE goes when it belongs to the menu's subject but must not cost a second
+ * top-level control: the logger's rest timer used to be a pill of its own
+ * beside this one, and is now this menu's picker, "Off" included.
  */
 export function GlassMenuButton({
   items,
@@ -217,6 +220,7 @@ export function GlassMenuButton({
   glyph = "ellipsis",
   glyphSize = 15,
   circle,
+  select,
 }: {
   items: { key: string; label: string; destructive?: boolean }[];
   onSelect: (key: string) => void;
@@ -240,6 +244,13 @@ export function GlassMenuButton({
    * nothing (see the native-leaf rule in lib/design-tokens.test.ts).
    */
   circle?: number;
+  /**
+   * An inline picker ABOVE the action rows, separated by the system divider —
+   * a selection the menu's subject owns (the logger's rest duration, "Off"
+   * being the disarm). Absent → the menu is actions only, which is what every
+   * row overflow is.
+   */
+  select?: { options: { id: string; label: string }[]; value: string; onPick: (v: string) => void };
 }) {
   if (!LIQUID_GLASS_RENDERED) return null;
   return (
@@ -267,6 +278,16 @@ export function GlassMenuButton({
         }
         modifiers={[accessibilityLabel(label)]}
       >
+        {select ? (
+          <Picker selection={select.value} onSelectionChange={(v) => select.onPick(String(v))}>
+            {select.options.map((o) => (
+              <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+                {o.label}
+              </SwiftText>
+            ))}
+          </Picker>
+        ) : null}
+        {select && items.length ? <Divider /> : null}
         {items.map((it) => (
           <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
         ))}
@@ -472,129 +493,19 @@ export function GlassSelectMenu<T extends string>({
   );
 }
 
-/**
- * THE TOOLBAR CAPSULE — two native leaves sharing ONE lozenge of glass, which
- * is what the `⋯` in Apple Music actually is: not a glyph with a circle drawn
- * round it, but a real button inside a `GlassEffectContainer` next to the
- * button it belongs with.
- *
- * The pieces already existed separately and drifted apart: `GlassMenuButton`
- * drew a menu and `GlassSelectMenu` drew a picker trigger. This is those joined
- * up, and it is a stricter reading of the composition rule than what it
- * replaces: today the logger's timer chip and its `⋯` are two separate `Host`s
- * standing next to each other pretending to be a group. (The now-deleted
- * `GlassPillRow`, the Today dock's fusing capsules, knew the same trick but
- * only as decoration — `pointerEvents="none"` with React Native taking the
- * taps.)
- *
- * The LEFT slot is a toggle you flip in the moment (the rest timer: armed or
- * not, counting when it counts). The RIGHT slot is the menu holding everything
- * that must not be one tap — including the toggle's own value, as an inline
- * picker, because a duration is a preference and a preference belongs one
- * level in.
+/*
+ * NOT HERE ANY MORE: `GlassToolbarGroup`, the two-leaf toolbar lozenge — a
+ * SwiftUI Button (the logger's rest-timer toggle) and a Menu (its `⋯`) fused
+ * inside a GlassEffectContainer so the system flowed the glass between them as
+ * the timer's readout appeared and disappeared. The fusing was right and the
+ * PAIR was not: two circles side by side in the header rail read as two equals,
+ * and arming a rest timer is a preference, not a peer of the session menu. Its
+ * value already lived one level in as this file's Menu picker, so the toggle
+ * folded into that picker ("Off" is the disarm) and the group collapsed to the
+ * single leaf above — `GlassMenuButton` with `select`. The state the toggle
+ * used to show is read off the logger's dock line, which names the armed
+ * duration and becomes the live countdown while a rest runs.
  */
-export function GlassToolbarGroup<T extends string>({
-  toggleGlyph,
-  toggleReadout,
-  toggleColor,
-  toggleLabel,
-  onToggle,
-  menuLabel,
-  options,
-  value,
-  onPick,
-  actions,
-  onAction,
-  glyphColor,
-  fontFamily,
-  height = 34,
-}: {
-  /** An SF Symbol for the left slot — `timer` / `timer.slash`. */
-  toggleGlyph: SFSymbol;
-  /** The value read out beside the glyph while it is on (a duration, a
-   *  countdown). Absent when off — the mark alone carries the state. */
-  toggleReadout?: string;
-  toggleColor: string;
-  toggleLabel: string;
-  onToggle: () => void;
-  /** The `⋯`'s accessibility name. */
-  menuLabel: string;
-  /** The inline picker — the toggle's own value, one level in. */
-  options: { id: T; label: string }[];
-  value: T;
-  onPick: (v: T) => void;
-  /** Rows after the divider: things that are not a selection. */
-  actions?: { key: string; label: string; destructive?: boolean }[];
-  onAction?: (key: string) => void;
-  glyphColor: string;
-  fontFamily: string;
-  height?: number;
-}) {
-  const ns = useId();
-  if (!LIQUID_GLASS_RENDERED) return null;
-  const radius = height / 2;
-  return (
-    <Host matchContents>
-      <Namespace id={ns}>
-        {/* `spacing` is the blend distance: at 2pt the two capsules are inside
-            each other's threshold, so the system fuses them into one lozenge
-            and flows the glass between them as either changes width — which is
-            what the readout appearing and disappearing does. */}
-        <GlassEffectContainer spacing={2}>
-          <HStack spacing={2}>
-            <Button onPress={onToggle} modifiers={[buttonStyle("plain"), accessibilityLabel(toggleLabel)]}>
-              <HStack
-                spacing={5}
-                modifiers={[
-                  padding({ horizontal: 11 }),
-                  frame({ height }),
-                  glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" }),
-                  glassEffectId(`toolbar-toggle`, ns),
-                  contentShape(shapes.capsule()),
-                ]}
-              >
-                <SwiftImage systemName={toggleGlyph} size={14} color={toggleColor} />
-                {toggleReadout ? (
-                  <SwiftText modifiers={[font({ family: nativeFace(fontFamily), size: 11 }), foregroundColor(toggleColor)]}>{toggleReadout}</SwiftText>
-                ) : null}
-              </HStack>
-            </Button>
-
-            <Menu
-              label={
-                <SwiftImage
-                  systemName="ellipsis"
-                  size={15}
-                  color={glyphColor}
-                  modifiers={[
-                    padding({ horizontal: 11 }),
-                    frame({ height }),
-                    glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" }),
-                    glassEffectId(`toolbar-menu`, ns),
-                    contentShape(shapes.capsule()),
-                  ]}
-                />
-              }
-              modifiers={[accessibilityLabel(menuLabel)]}
-            >
-              <Picker selection={value} onSelectionChange={(v) => onPick(v as T)}>
-                {options.map((o) => (
-                  <SwiftText key={o.id} modifiers={[tag(o.id)]}>
-                    {o.label}
-                  </SwiftText>
-                ))}
-              </Picker>
-              {actions?.length ? <Divider /> : null}
-              {actions?.map((a) => (
-                <Button key={a.key} label={a.label} role={a.destructive ? "destructive" : "default"} onPress={() => onAction?.(a.key)} />
-              ))}
-            </Menu>
-          </HStack>
-        </GlassEffectContainer>
-      </Namespace>
-    </Host>
-  );
-}
 
 /**
  * LONG-PRESS PREVIEW — the system ContextMenu around ordinary RN content, and

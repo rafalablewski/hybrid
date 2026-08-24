@@ -154,8 +154,8 @@ import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
 import type { AuroraIconName } from "@hybrid/core";
-import { AuroraField, withAlpha, ACard, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
-import { GlassSelectMenu, GlassToolbarGroup, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
+import { AuroraField, withAlpha, ACard, ASegment, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
+import { GlassMenuButton, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
 import ASatellite from "../components/aurora/satellite";
 import { SHARE_MARK } from "../components/aurora/share-mark";
 import { HeroNav } from "../components/aurora/hero";
@@ -193,6 +193,12 @@ const DEFAULT_REST = 90;
 /** The rest durations, in one place: the capsule's inline picker and the rest
  *  banner's preset row are the same four numbers and must not drift. */
 const REST_PRESETS = [60, 90, 120, 180] as const;
+// The header's ⋯ — the height the toolbar lozenge had when it was two leaves,
+// kept as its diameter now that it is one, so collapsing the pair changed the
+// rail's weight in no other way. It is deliberately short of HeroNav's 40pt
+// circle on the other end: the chevron LEAVES the session, this only opens a
+// menu, and the rail should not read as two equal exits.
+const TOOLBAR = 34;
 /** "What kind of set" — the picker section, then the rows that follow it.
  *  One question, one menu: these three tables replaced a ＋ that cycled, a ⚡
  *  tile and a ⋯ zone. */
@@ -1250,17 +1256,17 @@ export default function Workout() {
   const restLeft = restSince != null && restTarget != null ? restTarget - restNow : null;
   const restReadout =
     restLeft != null ? (restLeft > 0 ? mmss(restLeft) : `+${mmss(-restLeft)}`) : mmss(prefs.restSeconds);
-  const toggleRestArmed = () => {
-    const next = !prefs.restTimer;
-    haptic.light();
-    setLoggerPref("restTimer", next);
-    if (!next) stopRest();
-  };
+  // ONE handler for the rest timer, because it is ONE decision: a duration, or
+  // Off. The header used to carry a separate arm/disarm tap beside the menu —
+  // a second pill for the half of the choice the picker already had.
   const pickRestPref = (v: string) => {
+    haptic.light();
     if (v === "off") { setLoggerPref("restTimer", false); stopRest(); return; }
     setLoggerPref("restTimer", true);
     setLoggerPref("restSeconds", Number(v));
   };
+  const restChoices = REST_OPTIONS.map((o) => ({ id: o.id, label: o.id === "off" ? t("common.off") : o.label }));
+  const restChoice = prefs.restTimer ? String(prefs.restSeconds) : "off";
   // Bank the session's active set — what the docked primary does.
   const logActiveSet = () => {
     if (!cursor || !cursorEx || !canLog) return;
@@ -1325,64 +1331,45 @@ export default function Workout() {
             {mmss(elapsed)}{paused ? ` – ${t("workout.paused").toUpperCase()}` : ""}
           </Text>
         </View>
-        {/* THE TOOLBAR CAPSULE — the rest timer and the way in to everything
-            that must not be one tap, fused into one lozenge of glass. The
-            timer keeps its own tap because you arm it mid-workout; its
-            DURATION is a preference, so it sits one level in, in the menu
-            beside it. Finish is not here any more: it lives in the dock with
-            Pause, where the thumb is. */}
+        {/* THE ⋯ — ONE control, and the whole of what must not be one tap.
+            It used to be TWO pills fused into a lozenge: a rest-timer toggle
+            beside this menu. Two circles side by side in a 44pt rail read as
+            two equals, and they were not — arming a rest timer is a
+            PREFERENCE, and its value already lived one level in, as the menu's
+            own picker. So the toggle folded into that picker ("Off" is the
+            disarm) and the pair became one mark. Nothing was lost with it: the
+            state the toggle carried is read where it is used, off the dock's
+            hint line, which names the armed duration and turns into the live
+            countdown while a rest runs. */}
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
           {LIQUID_GLASS_RENDERED ? (
-            <GlassToolbarGroup
-              // ONE mark, `timer` — SF Symbols 7 has no `timer.slash`, and two
-              // different drawings for one control would read as two controls.
-              // The state is carried by colour and, for anyone not reading
-              // colour, by the accessibility label naming the value.
-              toggleGlyph="timer"
-              toggleReadout={prefs.restTimer ? restReadout : undefined}
-              toggleColor={prefs.restTimer ? txt(C, C.blue) : C.ash}
-              toggleLabel={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
-              onToggle={toggleRestArmed}
-              menuLabel={t("workout.sessionOptions")}
-              options={REST_OPTIONS.map((o) => ({ id: o.id, label: o.id === "off" ? t("common.off") : o.label }))}
-              value={prefs.restTimer ? String(prefs.restSeconds) : "off"}
-              onPick={pickRestPref}
-              actions={[
+            /* The shared overflow leaf, wearing the glassed circle — not a
+               second owner of the system Menu drawn to this screen's taste. */
+            <GlassMenuButton
+              label={t("workout.sessionOptions")}
+              glyphColor={C.ash}
+              size={TOOLBAR}
+              circle={TOOLBAR}
+              select={{ options: restChoices, value: restChoice, onPick: pickRestPref }}
+              items={[
                 { key: "rpe", label: t("w.train.blocks.whatsRpe") },
                 { key: "discard", label: t("workout.discardSession"), destructive: true },
               ]}
-              onAction={(k) => (k === "rpe" ? setRpeHelp(true) : discard())}
-              glyphColor={C.ash}
-              fontFamily={F.mono}
+              onSelect={(k) => (k === "rpe" ? setRpeHelp(true) : discard())}
             />
           ) : (
-            /* The capsule's floor wears the SATELLITE rim — it is the same
-               material as the buttons in the dock, so it is the same fill and
-               the same ring, not a third pair of alphas. */
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(C.chalk, SATELLITE.alpha.stroke), backgroundColor: withAlpha(C.chalk, SATELLITE.alpha.fill), padding: 3 }}>
-              <Pressable
-                onPress={toggleRestArmed}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityState={{ selected: prefs.restTimer }}
-                accessibilityLabel={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
-                style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 28, paddingHorizontal: 10, borderRadius: RADIUS.pill }}
-              >
-                <AuroraIcon name="stopwatch" size={13} color={prefs.restTimer ? txt(C, C.blue) : C.ash} />
-                {prefs.restTimer ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>{restReadout}</Text>
-                ) : null}
-              </Pressable>
-              <Pressable
-                onPress={() => setMenuOpen(true)}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel={t("workout.sessionOptions")}
-                style={{ height: 28, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderRadius: RADIUS.pill }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking(fs.subtitle, "label") }}>⋯</Text>
-              </Pressable>
-            </View>
+            /* The floor wears the SATELLITE rim — it is the same material as
+               the buttons in the dock, so it is the same fill and the same
+               ring, not a third pair of alphas. */
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={t("workout.sessionOptions")}
+              style={{ width: TOOLBAR, height: TOOLBAR, alignItems: "center", justifyContent: "center", borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(C.chalk, SATELLITE.alpha.stroke), backgroundColor: withAlpha(C.chalk, SATELLITE.alpha.fill) }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking(fs.subtitle, "label") }}>⋯</Text>
+            </Pressable>
           )}
         </View>
       </View>
@@ -2240,14 +2227,21 @@ export default function Workout() {
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
 
-      {/* The ⋯ menu. One row today, and that is the point: the header carries a
-          single top-level exit, and the irreversible one is reached through a
-          menu and then a confirm. Anything added here later inherits that
-          protection for free. */}
+      {/* The ⋯ menu — what the native Menu carries on iOS 26, for everywhere
+          else, and now that means the rest timer too: the header's second pill
+          folded in here rather than standing beside the mark that opens this.
+          The header carries a single top-level exit, and the irreversible thing
+          is reached through a menu and then a confirm. */}
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.sessionOptions")}>
-        {/* What the native Menu carries on iOS 26, for everywhere else. The
-            rest DURATIONS live in the rest banner's preset row; the arm/disarm
-            is the capsule's own tap. */}
+        {/* THE REST TIMER, arm and duration as ONE control — which is what it
+            always was: "Off" is the disarm, and the native Menu's picker has
+            read it that way since it shipped. `surface="card"` because a Sheet
+            panel is ink2, and so is the segment's default track. */}
+        <Text style={{ ...ty(C, "overline"), marginBottom: 10 }}>{t("workout.armRest")}</Text>
+        <ASegment options={restChoices} value={restChoice} onPick={pickRestPref} surface="card" />
+        {/* The rows below separate from the segment by whitespace — a rule here
+            would be the divider the section markers retired. */}
+        <View style={{ height: space.sm }} />
         <Pressable
           onPress={() => { setMenuOpen(false); setRpeHelp(true); }}
           accessibilityRole="button"
